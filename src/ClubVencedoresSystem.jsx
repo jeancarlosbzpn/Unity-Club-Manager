@@ -3,6 +3,7 @@ import { Search, Plus, Edit2, Save, X, UserPlus, Users, Menu, ChevronLeft, Home,
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import ClubLogo from './components/ClubLogo';
 import adventistLogo from './assets/adventist-logo.png';
+import { saveCollectionToFirestore, loadCollectionFromFirestore } from './firebase-config';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -869,11 +870,44 @@ const ClubVencedoresSystem = () => {
 
   // Load data from Electron Storage
   // Load data from Electron Storage
+  // Load data from Storage (Hybrid: Firebase -> Electron/Local Fallback)
   const loadFromStorage = async () => {
     try {
       let data = {};
+      console.log('🌐 Attempting to load from Firebase...');
 
-      // 1. Try Electron Storage first
+      // Defined keys to load
+      const keys = [
+        'members', 'transactions', 'activities', 'points', 'lockedSaturdays',
+        'units', 'users', 'inventory', 'cuotaAmount', 'masterGuideData',
+        'financeCategories', 'tents', 'tentAssignments', 'cleaningSchedule',
+        'clubSettings', 'uniformInspections', 'memberUniforms', 'uniformItems', 'uniformCategories'
+      ];
+
+      // Parallel fetch
+      const promises = keys.map(async (key) => {
+        const val = await loadCollectionFromFirestore(key);
+        return { key, val };
+      });
+
+      const results = await Promise.all(promises);
+
+      let firebaseHasData = false;
+      results.forEach(({ key, val }) => {
+        if (val) {
+          data[key] = val;
+          firebaseHasData = true;
+        }
+      });
+
+      if (firebaseHasData) {
+        console.log('✅ Loaded data from Firebase');
+        return data;
+      }
+
+      console.log('⚠️ Firebase empty, trying local fallback...');
+
+      // 1. Try Electron Storage first as fallback
       if (window.electronAPI) {
         data = await window.electronAPI.readData();
       }
@@ -902,11 +936,8 @@ const ClubVencedoresSystem = () => {
           if (localStorage.getItem(STORAGE_KEYS.TENT_ASSIGNMENTS)) data.tentAssignments = JSON.parse(localStorage.getItem(STORAGE_KEYS.TENT_ASSIGNMENTS));
           if (localStorage.getItem(STORAGE_KEYS.CLEANING_SCHEDULE)) data.cleaningSchedule = JSON.parse(localStorage.getItem(STORAGE_KEYS.CLEANING_SCHEDULE));
 
-          // Optional: Force save to Electron immediately to complete migration
-          if (window.electronAPI) {
-            await window.electronAPI.writeData(data);
-            console.log('✅ Migrated localStorage data to Electron Storage');
-          }
+          // We do NOT save to Firebase automatically here to avoid overwriting cloud with stale local data
+          // unless user explicitly triggers a migration/save.
         }
       }
 
@@ -918,11 +949,27 @@ const ClubVencedoresSystem = () => {
   };
 
   // Save data to Electron Storage
+  // Save data to Firebase (and Electron as backup)
   const saveToElectron = async (dataToSave) => {
     try {
+      // 1. Save to Firebase (Split by collection)
+      const keys = Object.keys(dataToSave);
+      // We don't want to await EVERY individual write if it blocks UI, but for safety lets do it.
+      // To optimize: only save changed keys? 
+      // Current architecture passes EVERYTHING.
+      // We will perform a "smart" save by just iterating keys and overwriting.
+      // Ideally, we should diff, but for now we rely on the fact this is triggered lazily.
+
+      const promises = keys.map(key => saveCollectionToFirestore(key, dataToSave[key]));
+      // We don't await strictly to keep UI snappy? Or we do?
+      // Lets await.
+      await Promise.all(promises);
+      console.log('☁️ Synced to Firebase');
+
+      // 2. Save to local electron file (Backup)
       if (window.electronAPI) {
         await window.electronAPI.writeData(dataToSave);
-        console.log('✅ Datos guardados en Electron Storage');
+        console.log('💾 Saved to local Electron storage');
       }
     } catch (error) {
       console.error('Error saving data:', error);
