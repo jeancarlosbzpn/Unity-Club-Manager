@@ -27,8 +27,16 @@ const Login = ({ onLoginSuccess }) => {
       let message = 'Error al iniciar sesión';
       if (err.code === 'auth/user-not-found') message = 'Usuario no encontrado';
       if (err.code === 'auth/wrong-password') message = 'Contraseña incorrecta';
+      if (err.code === 'auth/invalid-login-credentials' || err.code === 'auth/invalid-credential') message = 'Credenciales inválidas (correo o contraseña incorrectos)';
       if (err.code === 'auth/invalid-email') message = 'Correo inválido';
       if (err.code === 'auth/email-already-in-use') message = 'El correo ya está en uso';
+      if (err.code === 'auth/weak-password') message = 'La contraseña debe tener al menos 6 caracteres';
+      if (err.code === 'auth/operation-not-allowed') message = 'La autenticación por correo no está habilitada en la consola de Firebase';
+      
+      if (message === 'Error al iniciar sesión' && err.message) {
+         message = `${message}: ${err.message}`;
+      }
+      
       setError(message);
     } finally {
       setLoading(false);
