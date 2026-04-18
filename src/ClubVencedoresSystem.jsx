@@ -2005,6 +2005,10 @@ const ClubVencedoresSystem = () => {
   // Check if user has access to a module
   const hasModuleAccess = (moduleId) => {
     if (!currentUser) return false;
+    
+    // Bypás de seguridad para el dueño de la nube primaria
+    if (currentUser.email === 'jeancarlosbzpn@gmail.com') return true;
+
     if (currentUser.role === 'administrator' || currentUser.position === 'Director') return true;
 
     // Check for explicit allowedModules

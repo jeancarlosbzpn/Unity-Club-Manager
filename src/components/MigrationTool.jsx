@@ -28,6 +28,17 @@ const MigrationTool = ({ onComplete }) => {
       const keys = Object.keys(dataToSync);
       addLog(`Encontradas ${keys.length} categorías de datos. Preparando subida a Firebase...`);
 
+      // Limpiar fotos base64 ultra pesadas antes de Firebase
+      if (dataToSync.members) {
+        addLog("Removiendo fotos base64 temporales para cumplir límite de 1MB de Firestore...");
+        dataToSync.members = dataToSync.members.map(m => {
+          if (m.photo && m.photo.length > 1000) {
+            return { ...m, photo: null };
+          }
+          return m;
+        });
+      }
+
       for (const key of keys) {
         addLog(`Subiendo: ${key}...`);
         await dataService.writeData(key, dataToSync[key]);
