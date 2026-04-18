@@ -342,6 +342,7 @@ const ClubVencedoresSystem = () => {
   };
 
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // Authentication observer
