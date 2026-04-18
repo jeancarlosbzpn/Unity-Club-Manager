@@ -12284,7 +12284,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">Sincronización Cloud</h3>
                         <button onClick={() => setShowMigration(false)} className="text-sm text-gray-500 hover:text-gray-700 underline">Cerrar</button>
                       </div>
-                      <MigrationTool onComplete={() => setTimeout(() => setShowMigration(false), 3000)} />
+                      <MigrationTool onComplete={() => setTimeout(() => { setShowMigration(false); window.location.reload(); }, 3000)} />
                     </div>
                   )}
                   
