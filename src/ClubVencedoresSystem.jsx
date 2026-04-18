@@ -12743,7 +12743,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
                           );
                         });
-                      })()}
+                        })()}
+            </div>
           </div>
         </div>
       )
@@ -23806,11 +23807,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 </div>
               )
             }
-          </div> {/* End max-w-7xl */}
+          </div>
         </div>
       </div>
     </div>
-  ));
+  );
 };
 
 // Render the application
