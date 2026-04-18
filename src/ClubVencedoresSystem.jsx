@@ -14,6 +14,8 @@ import MigrationTool from './components/MigrationTool';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import CarnetFront from './assets/Carnet/frontal.svg';
+
+const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 import CarnetBack from './assets/Carnet/trasero.svg';
 import MedalIcon from './assets/certificate-medal.svg';
 // Certificate Backgrounds-Conquistadores (10-15)
