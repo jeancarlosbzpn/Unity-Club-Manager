@@ -1,0 +1,40 @@
+
+> triclub-manager@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 22 modules transformed.
+✗ Build failed in 2.19s
+error during build:
+[vite:esbuild] Transform failed with 2 errors:
+/Users/jeancarlosbaez/Desktop/Vencedores/src/ClubVencedoresSystem.jsx:14254:14: ERROR: Unexpected closing "div" tag does not match opening fragment tag
+/Users/jeancarlosbaez/Desktop/Vencedores/src/ClubVencedoresSystem.jsx:14255:14: ERROR: Unterminated regular expression
+file: /Users/jeancarlosbaez/Desktop/Vencedores/src/ClubVencedoresSystem.jsx:14254:14
+
+Unexpected closing "div" tag does not match opening fragment tag
+14252 |                  </div>
+14253 |                </div>
+14254 |              </div>
+      |                ^
+14255 |          </div>
+14256 |  
+
+Unterminated regular expression
+14253 |                </div>
+14254 |              </div>
+14255 |          </div>
+      |                ^
+14256 |  
+14257 |          <div style={{ display: activeModule === 'units' ? 'block' : 'none' }}>
+
+    at failureErrorWithLog (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:736:50
+    at responseCallbacks.<computed> (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

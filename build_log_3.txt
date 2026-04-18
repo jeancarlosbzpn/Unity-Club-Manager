@@ -1,0 +1,31 @@
+
+> triclub-manager@0.0.0 build
+> vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 22 modules transformed.
+✗ Build failed in 2.09s
+error during build:
+[vite:esbuild] Transform failed with 1 error:
+/Users/jeancarlosbaez/Desktop/Vencedores/src/ClubVencedoresSystem.jsx:19692:2: ERROR: Expected "}" but found "{"
+file: /Users/jeancarlosbaez/Desktop/Vencedores/src/ClubVencedoresSystem.jsx:19692:2
+
+Expected "}" but found "{"
+19690 |                    </div>
+19691 |  
+19692 |    {/* CLEANING TAB - RENDERED AS MODULE */}
+      |    ^
+19693 |                  <div style={{ display: activeModule === 'cleaning' ? 'block' : 'none' }} className="h-full overflow-y...
+19694 |                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+
+    at failureErrorWithLog (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:736:50
+    at responseCallbacks.<computed> (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/jeancarlosbaez/Desktop/Vencedores/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+    at Readable.push (node:internal/streams/readable:390:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)

@@ -1,0 +1,2266 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finanzas — TriClub Manager</title>
+    <meta name="description"
+        content="Vista pública de finanzas del club. Consulta ingresos, gastos, pagos de miembros y balance general." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --green: #16a34a;
+            --green-light: #dcfce7;
+            --green-dark: #14532d;
+            --red: #dc2626;
+            --red-light: #fee2e2;
+            --indigo: #4f46e5;
+            --indigo-light: #e0e7ff;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #f9fafb 50%, #eff6ff 100%);
+            min-height: 100vh;
+            color: var(--gray-900);
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .header-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-icon svg {
+            color: white;
+            width: 22px;
+            height: 22px;
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--gray-900);
+        }
+
+        .header-title p {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        .header-badge {
+            margin-left: auto;
+            background: var(--green-light);
+            color: var(--green);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid #86efac;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        /* Tabs */
+        .tabs {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 1.5rem;
+            display: flex;
+            gap: 0;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 0.9rem 1.25rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            transition: color 0.15s;
+        }
+
+        .tab-btn:hover {
+            color: var(--gray-900);
+        }
+
+        .tab-btn.active {
+            color: var(--green);
+            border-bottom-color: var(--green);
+        }
+
+        .main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.09);
+        }
+
+        .card-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--gray-500);
+            margin-bottom: 0.4rem;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .card.income .card-value {
+            color: var(--green);
+        }
+
+        .card.expense .card-value {
+            color: var(--red);
+        }
+
+        .card.balance .card-value {
+            color: var(--indigo);
+        }
+
+        .card.balance.negative .card-value {
+            color: var(--red);
+        }
+
+        .card-sub {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            margin-top: 0.2rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .count-badge {
+            background: var(--gray-100);
+            color: var(--gray-500);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+
+        .table-wrap {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--gray-500);
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--gray-100);
+            transition: background 0.15s;
+        }
+
+        tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 0.85rem 1rem;
+            font-size: 0.85rem;
+            color: var(--gray-700);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .badge-income {
+            background: var(--green-light);
+            color: var(--green-dark);
+        }
+
+        .badge-expense {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .badge-paid {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .badge-pending {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .amount-income {
+            font-weight: 700;
+            color: var(--green);
+            white-space: nowrap;
+        }
+
+        .amount-expense {
+            font-weight: 700;
+            color: var(--red);
+            white-space: nowrap;
+        }
+
+        .date-cell {
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: var(--gray-500);
+            white-space: nowrap;
+        }
+
+        .responsible-cell {
+            font-size: 0.8rem;
+            color: var(--gray-700);
+            white-space: nowrap;
+        }
+
+        /* Category cards */
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        .cat-card {
+            background: white;
+            border-radius: 14px;
+            border: 1px solid var(--gray-200);
+            padding: 1rem 1.25rem;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .cat-name {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cat-type {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+        }
+
+        .cat-type.income {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .cat-type.expense {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .cat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .cat-row-label {
+            color: var(--gray-500);
+        }
+
+        .cat-divider {
+            border: none;
+            border-top: 1px solid var(--gray-100);
+            margin: 0.5rem 0;
+        }
+
+        .cat-balance {
+            font-weight: 800;
+            font-size: 0.88rem;
+        }
+
+        .cat-balance.pos {
+            color: var(--green);
+        }
+
+        .cat-balance.neg {
+            color: var(--red);
+        }
+
+        .cat-count {
+            font-size: 0.68rem;
+            color: var(--gray-400);
+            margin-top: 0.25rem;
+        }
+
+        /* Category payment sections */
+        .pay-cat-section {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .pay-cat-section-header {
+            background: linear-gradient(135deg, #f0fdf4, #f9fafb);
+            border-bottom: 2px solid var(--gray-200);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .pay-cat-section-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pay-cat-totals {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            font-size: 0.72rem;
+        }
+
+        .pay-cat-totals .paid {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .pay-cat-totals .not-paid {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        .pay-cat-body {
+            padding: 1rem 1.5rem;
+        }
+
+        .payers-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--green);
+            margin-bottom: 0.5rem;
+        }
+
+        .payers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        .payers-table td {
+            padding: 0.5rem 0.25rem;
+            font-size: 0.82rem;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .payers-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .payers-table .name-cell {
+            color: var(--gray-800);
+            font-weight: 500;
+        }
+
+        .payers-table .amount-cell {
+            text-align: right;
+            color: var(--green);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .payers-table .date-small {
+            color: var(--gray-400);
+            font-size: 0.72rem;
+            text-align: right;
+        }
+
+        .no-payers-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--red);
+            margin-bottom: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .no-payers-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+
+        .no-payer-chip {
+            background: var(--red-light);
+            color: var(--red);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            border: 1px solid #fca5a5;
+        }
+
+        .member-pay-card {
+            background: white;
+            border-radius: 14px;
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .member-pay-header {
+            padding: 0.9rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .member-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--gray-500);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .member-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--gray-900);
+        }
+
+        .member-total {
+            font-size: 0.72rem;
+            color: var(--gray-500);
+            margin-top: 0.1rem;
+        }
+
+        .pay-status-icon {
+            margin-left: auto;
+            font-size: 1.1rem;
+        }
+
+        .member-pay-cats {
+            padding: 0.5rem 1rem;
+        }
+
+        .pay-cat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.3rem 0;
+            border-bottom: 1px dashed var(--gray-100);
+            font-size: 0.75rem;
+        }
+
+        .pay-cat-row:last-child {
+            border-bottom: none;
+        }
+
+        .pay-cat-name {
+            color: var(--gray-700);
+        }
+
+        .pay-cat-amount {
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        /* Pending list */
+        .pending-section {
+            margin-top: 1.5rem;
+        }
+
+        .pending-header {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .pending-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .pending-chip {
+            background: var(--red-light);
+            color: var(--red);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            border: 1px solid #fca5a5;
+        }
+
+        .state-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            color: var(--gray-400);
+            text-align: center;
+        }
+
+        .state-box svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.75rem;
+            opacity: 0.4;
+        }
+
+        .state-box p {
+            font-size: 0.9rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--green);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 0.75rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--gray-400);
+            font-size: 0.75rem;
+        }
+
+        /* Admin button */
+        .admin-btn {
+            margin-left: auto;
+            background: white;
+            color: var(--gray-500);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid var(--gray-200);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.15s;
+        }
+
+        .admin-btn:hover {
+            border-color: var(--indigo);
+            color: var(--indigo);
+        }
+
+        .admin-btn.active {
+            background: var(--indigo);
+            color: white;
+            border-color: var(--indigo);
+        }
+
+        /* Session badge */
+        .session-badge {
+            background: #e0e7ff;
+            color: var(--indigo);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid #a5b4fc;
+            display: none;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .session-badge.visible {
+            display: flex;
+        }
+
+        /* PIN Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            width: 340px;
+            max-width: 95vw;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-sub {
+            font-size: 0.78rem;
+            color: var(--gray-500);
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-error {
+            color: var(--red);
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .modal-error.show {
+            display: block;
+        }
+
+        /* Form */
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .form-title {
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-input,
+        .form-select {
+            padding: 0.6rem 0.85rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--gray-900);
+            background: white;
+            transition: border-color 0.15s;
+            outline: none;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            border-color: var(--indigo);
+        }
+
+        .form-input.error,
+        .form-select.error {
+            border-color: var(--red);
+        }
+
+        .type-toggle {
+            display: flex;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 0.6rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--gray-500);
+        }
+
+        .type-btn.selected-income {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .type-btn.selected-expense {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: var(--indigo);
+            color: white;
+            margin-top: 1.25rem;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.88;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: #1e293b;
+            color: white;
+            padding: 0.85rem 1.25rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+            transform: translateY(120%);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--green);
+        }
+
+        .toast.error-toast {
+            background: var(--red);
+        }
+
+        /* Pin input */
+        .pin-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1.25rem;
+            letter-spacing: 0.3em;
+            text-align: center;
+            outline: none;
+            font-family: monospace;
+            transition: border-color 0.15s;
+        }
+
+        .pin-input:focus {
+            border-color: var(--indigo);
+        }
+
+        .pin-btn {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: var(--indigo);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .pin-btn:hover {
+            opacity: 0.88;
+        }
+
+        .pin-cancel {
+            width: 100%;
+            margin-top: 0.5rem;
+            padding: 0.6rem;
+            background: none;
+            color: var(--gray-500);
+            border: none;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        @media (max-width: 640px) {
+            .main {
+                padding: 1rem;
+            }
+
+            td,
+            th {
+                padding: 0.6rem 0.65rem;
+            }
+
+            .hide-mobile {
+                display: none;
+            }
+
+            .cat-grid,
+            .payments-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33" />
+            </svg>
+        </div>
+        <div class="header-title">
+            <h1 id="club-name">Finanzas del Club</h1>
+            <p>Vista de solo lectura &mdash; datos actualizados manualmente</p>
+        </div>
+        <div class="session-badge" id="session-badge">✏️ Modo Admin</div>
+        <button class="admin-btn" id="admin-btn" onclick="openPinModal()">🔐 Acceso Admin</button>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('transacciones')">📋 Transacciones</button>
+        <button class="tab-btn" onclick="switchTab('categorias')">📊 Por Categoría</button>
+        <button class="tab-btn" onclick="switchTab('pagos')">💳 Pagos de Miembros</button>
+            <button class="tab-btn" id="tab-fijos" onclick="switchTab('fijos')">📌 Pagos Fijos</button>
+            <button class="tab-btn" id="tab-cuotas" onclick="switchTab('cuotas')" style="display:none">💰 Capturar
+                Cuotas</button>
+        <button class="tab-btn" id="tab-nueva" onclick="switchTab('nueva')" style="display:none">➕ Nueva
+            Transacción</button>
+    </nav>
+
+    <main class="main">
+
+        <!-- ===== Tab: Transacciones ===== -->
+        <div class="tab-panel active" id="panel-transacciones">
+            <div class="summary-grid">
+                <div class="card income">
+                    <div class="card-label">📈 Total Ingresos</div>
+                    <div class="card-value" id="total-income">—</div>
+                    <div class="card-sub" id="income-count">— transacciones</div>
+                </div>
+                <div class="card expense">
+                    <div class="card-label">📉 Total Gastos</div>
+                    <div class="card-value" id="total-expense">—</div>
+                    <div class="card-sub" id="expense-count">— transacciones</div>
+                </div>
+                <div class="card balance" id="balance-card">
+                    <div class="card-label">⚖️ Balance Actual</div>
+                    <div class="card-value" id="total-balance">—</div>
+                    <div class="card-sub" id="last-updated">Cargando…</div>
+                </div>
+            </div>
+
+            <div class="section-header" style="flex-wrap: wrap; gap: 0.5rem; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0 0.5rem;">
+                <span class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+                    </svg>
+                    Historial de Transacciones
+                </span>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="submit-btn" id="btn-ver-facturas" style="width: auto; padding: 0.4rem 1rem; margin-top: 0; background: var(--gray-800); font-size: 0.8rem; display: none;" onclick="openInvoiceModal()">🧾 Ver Facturas</button>
+                    <span class="count-badge" id="tx-count-badge">Cargando…</span>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <div id="table-container">
+                    <div class="state-box">
+                        <div class="spinner"></div>
+                        <p>Cargando transacciones…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Tab: Por Categoría ===== -->
+        <div class="tab-panel" id="panel-categorias">
+            <div class="section-header" style="margin-bottom:1.25rem">
+                <span class="section-title">📊 Ingresos y Gastos por Categoría</span>
+                <span class="count-badge" id="cat-count-badge">—</span>
+            </div>
+            <div class="cat-grid" id="cat-container">
+                <div class="state-box">
+                    <div class="spinner"></div>
+                    <p>Cargando categorías…</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Tab: Pagos de Miembros ===== -->
+        <div class="tab-panel" id="panel-pagos">
+            <div class="section-header" style="margin-bottom:1.25rem">
+                <span class="section-title">💳 Pagos por Categoría de Ingreso</span>
+                <span class="count-badge" id="pay-count-badge">—</span>
+            </div>
+            <p style="font-size:0.78rem;color:var(--gray-500);margin-bottom:1.5rem;">Para cada categoría de ingreso:
+                quiénes pagaron (orden alfabético) y quiénes faltan.</p>
+            <div id="payments-container">
+                <div class="state-box">
+                    <div class="spinner"></div>
+                    <p>Cargando pagos…</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Tab: Cuotas ===== -->
+        <div class="tab-panel" id="panel-cuotas">
+            <div class="form-card" style="max-width: 800px;">
+                <div class="form-title">💰 Registro Rápido de Cuotas Semanales</div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label">Fecha de Recolección (Sábado)</label>
+                    <input type="date" id="cuotas-date" class="form-input">
+                </div>
+                <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:1rem;">Ingresa el monto cobrado a cada
+                    miembro. Deja en 0 o vacío los que no pagaron.</p>
+
+                <div id="cuotas-container" style="max-height: 500px; overflow-y: auto; padding-right: 0.5rem;">
+                    <div class="state-box">
+                        <div class="spinner"></div>
+                        <p>Cargando miembros...</p>
+                    </div>
+                </div>
+
+                <style>
+                    .cuotas-member-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 0.75rem;
+                        border-bottom: 1px solid var(--gray-200);
+                        gap: 1rem;
+                    }
+
+                    .cuotas-member-row:last-child {
+                        border-bottom: none;
+                    }
+
+                    .cuotas-name {
+                        font-weight: 600;
+                        font-size: 0.9rem;
+                        color: var(--gray-800);
+                    }
+
+                    .cuotas-input {
+                        width: 120px;
+                        text-align: right;
+                    }
+                </style>
+
+                <button type="button" class="submit-btn" id="btn-save-cuotas" style="margin-top: 1.5rem;" onclick="handleSaveCuotas()">
+                    <span id="cuotas-submit-label">💾 Guardar Todas las Cuotas</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== Tab: Pagos Fijos ===== -->
+        <div class="tab-panel" id="panel-fijos">
+            <div class="table-wrap" style="padding: 1.5rem;">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div class="section-title" style="margin-bottom: 0;">📌 Control de Pagos Fijos</div>
+                    <button class="submit-btn" id="btn-nuevo-concepto" style="width: auto; padding: 0.5rem 1rem; display: none; margin-top: 0;" onclick="openConceptModal()">+ Nuevo Concepto</button>
+                </div>
+                <div id="fijos-container" style="overflow-x: auto; padding-bottom: 1rem;">
+                    <div class="state-box">
+                        <div class="spinner"></div>
+                        <p>Cargando información de pagos fijos…</p>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .fijos-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+                .fijos-table th { 
+                    background: var(--gray-50); 
+                    padding: 0.75rem; 
+                    text-align: center; 
+                    font-size: 0.75rem; 
+                    color: var(--gray-700); 
+                    border: 1px solid var(--gray-200);
+                }
+                .fijos-table td { 
+                    padding: 0.75rem; 
+                    text-align: center; 
+                    border: 1px solid var(--gray-200); 
+                    font-size: 0.85rem;
+                }
+                .fijos-name-col { text-align: left !important; font-weight: 600; background: white; position: sticky; left: 0; z-index: 2; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+                .fijos-concept-amount { display: block; font-size: 0.65rem; color: var(--green); margin-top: 0.2rem; }
+                .fijos-check { width: 1.2rem; height: 1.2rem; cursor: pointer; accent-color: var(--green); }
+                .fijos-input { width: 70px; text-align: right; padding: 0.3rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.8rem; }
+                .fijos-input:disabled { background: var(--gray-50); color: var(--gray-700); border-color: transparent; font-weight: 700;}
+                .fijos-check:disabled { opacity: 1; accent-color: var(--green); cursor: default; }
+                .fijos-total { font-weight: 700; color: var(--green); background: var(--gray-50); }
+            </style>
+        </div>
+
+        <!-- ===== Tab: Nueva Transacción ===== -->
+        <div class="tab-panel" id="panel-nueva">
+            <div class="form-card">
+                <div class="form-title">➕ Registrar Transacción</div>
+                <form id="tx-form" onsubmit="handleSubmit(event)">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label">Tipo</label>
+                            <div class="type-toggle">
+                                <button type="button" class="type-btn selected-income" id="btn-income"
+                                    onclick="setType('income')">📈 Ingreso</button>
+                                <button type="button" class="type-btn" id="btn-expense" onclick="setType('expense')">📉
+                                    Gasto</button>
+                            </div>
+                            <input type="hidden" id="tx-type" value="income">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Categoría</label>
+                            <select id="tx-category" class="form-select" required>
+                                <option value="">Seleccionar…</option>
+                            </select>
+                            <input type="text" id="tx-category-custom" class="form-input"
+                                placeholder="Escribe la categoría…" maxlength="80"
+                                style="display:none;margin-top:0.4rem">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Monto (RD$)</label>
+                            <input type="number" id="tx-amount" class="form-input" placeholder="0.00" min="0.01"
+                                step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" id="tx-date" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Método de Pago</label>
+                            <select id="tx-method" class="form-select">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Miembro (opcional)</label>
+                            <select id="tx-member" class="form-select">
+                                <option value="">— Ninguno —</option>
+                            </select>
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" id="tx-desc" class="form-input"
+                                placeholder="Descripción de la transacción…" maxlength="200">
+                        </div>
+                        <div class="form-group full" id="receipt-upload-container"
+                            style="display:none; background: var(--gray-50); padding: 1rem; border-radius: 8px; border: 1px dashed var(--gray-300);">
+                            <label class="form-label">📎 Subir Recibo / Factura (Opcional)</label>
+                            <input type="file" id="tx-receipt" class="form-input" accept="image/*" capture="environment"
+                                style="background: white;">
+                            <p
+                                style="font-size: 0.75rem; color: var(--gray-500); margin-top: 0.5rem; line-height: 1.3;">
+                                Sube una foto del recibo. Esto se guardará en la nube y el enlace se adjuntará a la
+                                transacción automáticamente.</p>
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">Estado</label>
+                            <select id="tx-status" class="form-select">
+                                <option value="official">✅ Oficial (con recibo)</option>
+                                <option value="pending_receipt">⏳ Pendiente de recibo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn" id="submit-btn">
+                        <span id="submit-label">💾 Guardar Transacción</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- PIN Modal -->
+    <div class="modal-overlay" id="pin-modal">
+        <div class="modal-box">
+            <div class="modal-title">🔐 Acceso Administrador</div>
+            <div class="modal-sub">Ingresa el PIN para activar el modo de edición.</div>
+            <input type="password" class="pin-input" id="pin-input" placeholder="••••" maxlength="8"
+                onkeydown="if(event.key==='Enter') checkPin()">
+            <div class="modal-error" id="pin-error">PIN incorrecto. Intenta de nuevo.</div>
+            <button class="pin-btn" onclick="checkPin()">Entrar</button>
+            <button class="pin-cancel" onclick="closePinModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Concept Modal -->
+    <div class="modal-overlay" id="concept-modal">
+        <div class="modal-box">
+            <div class="modal-title" id="concept-modal-title">✨ Nuevo Concepto Fijo</div>
+            <div class="modal-sub">Ingresa los detalles del concepto.</div>
+            
+            <div class="form-group full" style="margin-top: 1rem; text-align: left;">
+                <label class="form-label">Nombre del Concepto</label>
+                <input type="text" id="concept-name" class="form-input" placeholder="Ej. Inscripción" maxlength="50" required>
+            </div>
+            
+            <div class="form-group full" style="margin-top: 1rem; text-align: left;">
+                <label class="form-label">Tipo</label>
+                <select id="concept-type" class="form-select">
+                    <option value="income">📈 Ingreso</option>
+                    <option value="expense">📉 Gasto</option>
+                </select>
+            </div>
+            
+            <div class="form-group full" style="margin-top: 1rem; text-align: left;">
+                <label class="form-label">Monto Fijo (RD$)</label>
+                <input type="number" id="concept-amount" class="form-input" placeholder="0.00 (Dejar vacío para variable)" min="0" step="0.01">
+            </div>
+
+            <input type="hidden" id="concept-edit-id" value="">
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                <button class="pin-btn" style="flex:1" onclick="saveFixedConcept()">Guardar</button>
+                <button class="pin-cancel" style="flex:1" onclick="closeConceptModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Viewer Modal -->
+    <div class="modal-overlay" id="invoice-modal">
+        <div class="modal-box" style="max-width: 900px; width: 95%; height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden;">
+            <div style="padding: 1rem; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; background: white;">
+                <div>
+                    <div class="modal-title" style="margin-bottom: 0;">🧾 Visor de Facturas</div>
+                    <div class="modal-sub" id="invoice-count-sub" style="margin-top: 0.2rem;">0 facturas encontradas</div>
+                </div>
+                <button class="pin-cancel" style="margin-top: 0; width: auto; padding: 0.4rem 1rem;" onclick="closeInvoiceModal()">Cerrar</button>
+            </div>
+            
+            <div style="display: flex; flex: 1; overflow: hidden;">
+                <!-- Sidebar List -->
+                <div style="width: 300px; border-right: 1px solid var(--gray-200); background: var(--gray-50); overflow-y: auto;" id="invoice-list">
+                    <!-- Javascript inflates this -->
+                </div>
+                
+                <!-- Viewer Canvas -->
+                <div style="flex: 1; background: #e5e7eb; display: flex; justify-content: center; align-items: center; padding: 1rem; position: relative;" id="invoice-canvas">
+                    <p style="color: var(--gray-500); font-size: 0.9rem;">Selecciona una transacción para ver su factura.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <footer class="footer">
+        <p id="footer-txt">🔒 Esta página es de <strong>solo lectura</strong>. Administrado con TriClub Manager.</p>
+    </footer>
+
+    <script>
+        // =============================================
+        // CONFIGURACIÓN — cambia el PIN aquí
+        // =============================================
+        const ADMIN_PIN = '1234';
+
+        // State (all on window so the Firebase module can access them)
+        window.adminActive = false;
+        window.globalCategories = [];
+        window.globalMembers = [];
+        window.dataLoaded = false;
+        let currentType = 'income';
+
+        // --- Tab switching ---
+        function switchTab(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // --- PIN Modal ---
+        function openPinModal() {
+            if (window.adminActive) { deactivateAdmin(); return; }
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').classList.remove('show');
+            document.getElementById('pin-modal').classList.add('open');
+            setTimeout(() => document.getElementById('pin-input').focus(), 100);
+        }
+        function closePinModal() {
+            document.getElementById('pin-modal').classList.remove('open');
+        }
+        function checkPin() {
+            const val = document.getElementById('pin-input').value.trim();
+            if (val === ADMIN_PIN) {
+                sessionStorage.setItem('finAdmin', '1');
+                closePinModal();
+                activateAdmin();
+            } else {
+                document.getElementById('pin-error').classList.add('show');
+                document.getElementById('pin-input').value = '';
+                document.getElementById('pin-input').focus();
+            }
+        }
+        function activateAdmin() {
+            window.adminActive = true;
+            document.getElementById('btn-nuevo-concepto').style.display = 'inline-block';
+            document.getElementById('tab-nueva').style.display = 'inline-block';
+            document.getElementById('tab-cuotas').style.display = 'inline-block';
+            document.getElementById('session-badge').classList.add('visible');
+            document.getElementById('admin-btn').textContent = '🔓 Cerrar Sesión';
+            document.getElementById('admin-btn').classList.add('active');
+            document.getElementById('footer-txt').innerHTML = '✅ Modo Admin activo. Administrado con TriClub Manager.';
+            // Only populate form if data is already loaded; otherwise the module will do it
+            if (window.dataLoaded) {
+                if (typeof window.populateForm === 'function') populateForm();
+                if (typeof window.refreshTables === 'function') window.refreshTables();
+                if (typeof window.renderCuotasTab === 'function') window.renderCuotasTab();
+                if (typeof window.renderFixedPayments === 'function') window.renderFixedPayments();
+            }
+        }
+        function deactivateAdmin() {
+            window.adminActive = false;
+            sessionStorage.removeItem('finAdmin');
+            document.getElementById('btn-nuevo-concepto').style.display = 'none';
+            document.getElementById('tab-nueva').style.display = 'none';
+            document.getElementById('tab-cuotas').style.display = 'none';
+            document.getElementById('session-badge').classList.remove('visible');
+            document.getElementById('admin-btn').textContent = '🔐 Acceso Admin';
+            document.getElementById('admin-btn').classList.remove('active');
+            document.getElementById('footer-txt').innerHTML = '🔒 Esta página es de <strong>solo lectura</strong>. Administrado con TriClub Manager.';
+
+            if (window.dataLoaded) {
+                if (typeof window.refreshTables === 'function') window.refreshTables();
+                if (typeof window.renderFixedPayments === 'function') window.renderFixedPayments();
+            }
+            switchTabByName('transacciones');
+        }
+        function switchTabByName(name) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            const btns = document.querySelectorAll('.tab-btn');
+            if (name === 'transacciones') btns[0].classList.add('active');
+        }
+
+        // --- Type Toggle ---
+        function setType(type) {
+            currentType = type;
+            document.getElementById('tx-type').value = type;
+            const btnInc = document.getElementById('btn-income');
+            const btnExp = document.getElementById('btn-expense');
+            btnInc.className = 'type-btn' + (type === 'income' ? ' selected-income' : '');
+            btnExp.className = 'type-btn' + (type === 'expense' ? ' selected-expense' : '');
+
+            const receiptDiv = document.getElementById('receipt-upload-container');
+            if (receiptDiv) {
+                receiptDiv.style.display = (type === 'expense') ? 'flex' : 'none';
+            }
+            populateCategorySelect();
+        }
+
+        // --- Populate dropdowns — exposed on window so module can call them ---
+        window.populateForm = function populateForm() {
+            const now = new Date();
+            const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            document.getElementById('tx-date').value = localDate;
+            populateCategorySelect();
+            populateMemberSelect();
+        };
+        function populateForm() { window.populateForm(); }
+        function populateCategorySelect() {
+            const sel = document.getElementById('tx-category');
+            const all = window.globalCategories;
+            const filtered = all.filter(c => !c.type || c.type === currentType);
+            const toShow = filtered.length > 0 ? filtered : all;
+            sel.innerHTML = '<option value="">Seleccionar…</option>' +
+                toShow.map(c => {
+                    const name = typeof c === 'string' ? c : (c.name || c);
+                    return `<option value="${name}">${name}</option>`;
+                }).join('') +
+                '<option value="__custom__">➕ Escribir categoría…</option>';
+            sel.onchange = function () {
+                const customInput = document.getElementById('tx-category-custom');
+                if (sel.value === '__custom__') {
+                    customInput.style.display = 'block';
+                    customInput.required = true;
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                    customInput.required = false;
+                }
+            };
+        }
+        function populateMemberSelect() {
+            const sel = document.getElementById('tx-member');
+            const sorted = [...window.globalMembers].sort((a, b) =>
+                `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+            sel.innerHTML = '<option value="">— Ninguno —</option>' +
+                sorted.map(m => `<option value="${m.id}">${m.firstName} ${m.lastName}</option>`).join('');
+        }
+
+        // --- Toast ---
+        let toastTimer;
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast show ${type === 'error' ? 'error-toast' : 'success'}`;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        // --- Check session on load ---
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('finAdmin') === '1') {
+                activateAdmin();
+            }
+        });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1PFUEHzOjb5UlINsYy-TYthOd9hiQSTA",
+            authDomain: "unityclubmanager.firebaseapp.com",
+            projectId: "unityclubmanager",
+            storageBucket: "unityclubmanager.firebasestorage.app",
+            messagingSenderId: "403617338105",
+            appId: "1:403617338105:web:38cce769fc80e06c630828"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const COLL = 'club_vencedores_data';
+
+        const fmt = (n) => new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP', minimumFractionDigits: 2 }).format(n || 0);
+        const fmtDate = (d) => {
+            if (!d) return '—';
+            const dt = new Date(d.length > 10 ? d : d + 'T00:00:00');
+            return isNaN(dt) ? d : dt.toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+        const el = (id) => document.getElementById(id);
+
+        // Global cache
+        let cachedTransactions = [];
+        let membersMap = {};
+        let membersList = [];
+        window.globalFixedConcepts = [];
+        window.globalFixedPayments = {};
+
+        window.refreshTables = () => {
+            renderTable(cachedTransactions, membersMap);
+            if (window.renderFixedPayments) window.renderFixedPayments();
+        };
+
+        async function load() {
+            try {
+                const [txSnap, settingsSnap, membersSnap, catSnap, fpcSnap, fpSnap] = await Promise.all([
+                    getDoc(doc(db, COLL, 'transactions')),
+                    getDoc(doc(db, COLL, 'clubSettings')),
+                    getDoc(doc(db, COLL, 'membersSummary')),
+                    getDoc(doc(db, COLL, 'financeCategories')),
+                    getDoc(doc(db, COLL, 'fixedPaymentConcepts')),
+                    getDoc(doc(db, COLL, 'fixedPayments'))
+                ]);
+
+                if (settingsSnap.exists()) {
+                    const n = settingsSnap.data().data?.name || 'Mi Club';
+                    el('club-name').textContent = `Finanzas — ${n}`;
+                    document.title = `Finanzas — ${n}`;
+                }
+
+                membersList = membersSnap.exists() ? (membersSnap.data().data || []) : [];
+                membersList.forEach(m => { membersMap[m.id] = `${m.firstName} ${m.lastName}`.trim(); });
+                window.globalMembers = membersList;
+
+                const cats = catSnap.exists() ? (catSnap.data().data || []) : [];
+
+                if (cats.length === 0 && txSnap.exists()) {
+                    // Fallback: extract unique categories from existing transactions
+                    const txData = txSnap.data().data || [];
+                    const uniqueIncome = [...new Set(txData.filter(t => t.type === 'income').map(t => t.category).filter(Boolean))];
+                    const uniqueExpense = [...new Set(txData.filter(t => t.type === 'expense').map(t => t.category).filter(Boolean))];
+                    window.globalCategories = [
+                        ...uniqueIncome.map(name => ({ name, type: 'income' })),
+                        ...uniqueExpense.map(name => ({ name, type: 'expense' }))
+                    ];
+                } else {
+                    window.globalCategories = cats;
+                }
+
+                if (!txSnap.exists()) { showEmpty(); return; }
+                cachedTransactions = (txSnap.data().data || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                window.globalFixedConcepts = fpcSnap.exists() ? (fpcSnap.data().data || []) : [];
+                window.globalFixedPayments = fpSnap.exists() ? (fpSnap.data().data || {}) : {};
+
+                renderSummary(cachedTransactions);
+                renderTable(cachedTransactions, membersMap);
+                renderCategories(cachedTransactions);
+                renderPayments(cachedTransactions, membersMap, membersList);
+                if (window.renderFixedPayments) window.renderFixedPayments();
+
+                // Mark data as loaded and populate form if admin
+                window.dataLoaded = true;
+                if (window.adminActive && typeof window.populateForm === 'function') {
+                    window.populateForm();
+                    window.renderCuotasTab();
+                }
+
+            } catch (err) {
+                console.error(err);
+                el('table-container').innerHTML = `<div class="state-box"><p>❌ Error al cargar: ${err.message}</p></div>`;
+            }
+        }
+
+        /* ---- SAVE TRANSACTION ---- */
+        window.handleSubmit = async (e) => {
+            e.preventDefault();
+            const btn = el('submit-btn');
+            const label = el('submit-label');
+            btn.disabled = true;
+            label.textContent = 'Guardando…';
+
+            try {
+                const type = el('tx-type').value;
+                const catSel = el('tx-category').value;
+                const category = catSel === '__custom__'
+                    ? el('tx-category-custom').value.trim()
+                    : catSel;
+                const amount = parseFloat(el('tx-amount').value);
+                const date = el('tx-date').value;
+                const description = el('tx-desc').value.trim();
+                const paymentMethod = el('tx-method').value;
+                const memberId = el('tx-member').value;
+                const status = el('tx-status').value;
+
+                if (!category || !amount || !date) {
+                    window.showToast('❌ Completa los campos requeridos.', 'error');
+                    btn.disabled = false; label.textContent = '💾 Guardar Transacción';
+                    return;
+                }
+
+                let receiptUrl = null;
+                const receiptInput = el('tx-receipt');
+                if (type === 'expense' && receiptInput && receiptInput.files.length > 0) {
+                    label.textContent = 'Subiendo Recibo…';
+                    const file = receiptInput.files[0];
+                    const storageRef = ref(storage, `receipts/${Date.now()}_${file.name}`);
+                    const uploadResult = await uploadBytes(storageRef, file);
+                    receiptUrl = await getDownloadURL(uploadResult.ref);
+                    label.textContent = 'Guardando Transacción…';
+                }
+
+                // Read current transactions from Firestore
+                const snap = await getDoc(doc(db, COLL, 'transactions'));
+                const existing = snap.exists() ? (snap.data().data || []) : [];
+
+                const newTx = {
+                    id: Date.now().toString(),
+                    type,
+                    category,
+                    amount,
+                    date,
+                    description,
+                    paymentMethod,
+                    status,
+                    responsibleId: memberId || null,
+                    createdAt: new Date().toISOString(),
+                    source: 'web'
+                };
+
+                if (receiptUrl) {
+                    newTx.receipt = receiptUrl;
+                }
+
+                const updated = [newTx, ...existing];
+                await setDoc(doc(db, COLL, 'transactions'), { data: updated });
+
+                window.showToast('✅ Transacción guardada correctamente.');
+
+                // Reset form
+                e.target.reset();
+                el('tx-type').value = 'income';
+                window.setType('income');
+                window.populateForm();
+
+                // Reload data display
+                cachedTransactions = updated.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderSummary(cachedTransactions);
+                renderTable(cachedTransactions, membersMap);
+                renderCategories(cachedTransactions);
+                renderPayments(cachedTransactions, membersMap, membersList);
+
+            } catch (err) {
+                console.error(err);
+                window.showToast('❌ Error al guardar: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                label.textContent = '💾 Guardar Transacción';
+            }
+        };
+
+        /* ---- TRANSACCIONES ---- */
+        function renderSummary(tx) {
+            const inc = tx.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+            const exp = tx.filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount || 0), 0);
+            const bal = inc - exp;
+            el('total-income').textContent = fmt(inc);
+            el('income-count').textContent = `${tx.filter(t => t.type === 'income').length} transacciones`;
+            el('total-expense').textContent = fmt(exp);
+            el('expense-count').textContent = `${tx.filter(t => t.type === 'expense').length} transacciones`;
+            el('total-balance').textContent = (bal >= 0 ? '+' : '') + fmt(bal);
+            el('last-updated').textContent = `Actualizado: ${new Date().toLocaleDateString('es-DO')}`;
+            if (bal < 0) el('balance-card').classList.add('negative');
+            else el('balance-card').classList.remove('negative');
+        }
+
+        window.handleDeleteTransaction = async (id) => {
+            if (!window.adminActive) return;
+
+            try {
+                // Read current transactions from Firestore
+                const snap = await getDoc(doc(db, COLL, 'transactions'));
+                const existing = snap.exists() ? (snap.data().data || []) : [];
+
+                // Filter out the one we want to delete
+                const updated = existing.filter(t => t.id !== id);
+
+                // Save updated array
+                await setDoc(doc(db, COLL, 'transactions'), { data: updated });
+                window.showToast('🗑️ Transacción eliminada correctamente.');
+
+                // Reload data display locally
+                cachedTransactions = updated.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderSummary(cachedTransactions);
+                renderTable(cachedTransactions, membersMap);
+                renderCategories(cachedTransactions);
+                renderPayments(cachedTransactions, membersMap, membersList);
+
+            } catch (err) {
+                console.error(err);
+                window.showToast('❌ Error al eliminar: ' + err.message, 'error');
+            }
+        };
+
+        function renderTable(tx, membersMap) {
+            el('tx-count-badge').textContent = `${tx.length} registros`;
+            
+            const btnFacturas = el('btn-ver-facturas');
+            if (btnFacturas) {
+                const conRecibos = tx.filter(t => t.receipt).length;
+                btnFacturas.style.display = conRecibos > 0 ? 'inline-block' : 'none';
+                btnFacturas.innerHTML = `🧾 Ver Facturas (${conRecibos})`;
+            }
+
+            if (!tx.length) { showEmpty(); return; }
+            const rows = tx.map(t => {
+                const isInc = t.type === 'income';
+                const responsible = t.responsibleId && membersMap[t.responsibleId] ? membersMap[t.responsibleId] : '—';
+                const receiptHtml = t.receipt ? `<a href="${t.receipt}" target="_blank" title="Ver Recibo" style="text-decoration:none; margin-left:8px;">🧾</a>` : '';
+                const deleteActionHtml = window.adminActive ?
+                    `<button type="button" onclick="event.preventDefault(); event.stopPropagation(); if(confirm('⚠️ ¿Estás seguro de que deseas eliminar esta transacción? Al eliminarla desaparecerá de la página web.')) { window.handleDeleteTransaction('${t.id}'); }" title="Eliminar Transacción" style="background:none; border:none; cursor:pointer; color:var(--error); margin-left:8px; display:inline-flex; align-items:center;">🗑️</button>` : '';
+
+                return `<tr>
+          <td class="date-cell">${fmtDate(t.date)}</td>
+          <td><span class="badge ${isInc ? 'badge-income' : 'badge-expense'}">${isInc ? '↑ Ingreso' : '↓ Gasto'}</span></td>
+          <td>${t.category || '—'}</td>
+          <td class="hide-mobile" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.description || ''}">${t.description || '—'}${receiptHtml}</td>
+          <td class="responsible-cell hide-mobile">${responsible}</td>
+          <td class="${isInc ? 'amount-income' : 'amount-expense'}">${isInc ? '+' : '-'}${fmt(t.amount)} ${deleteActionHtml}</td>
+        </tr>`;
+            }).join('');
+            el('table-container').innerHTML = `<div style="overflow-x:auto"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th class="hide-mobile">Descripción</th><th class="hide-mobile">Responsable</th><th>Monto</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+        }
+
+        /* ---- CATEGORÍAS ---- */
+        function renderCategories(tx) {
+            const catMap = {};
+            tx.forEach(t => {
+                const cat = t.category || 'Sin categoría';
+                if (!catMap[cat]) catMap[cat] = { income: 0, expense: 0, countInc: 0, countExp: 0 };
+                const amt = parseFloat(t.amount || 0);
+                if (t.type === 'income') { catMap[cat].income += amt; catMap[cat].countInc++; }
+                else { catMap[cat].expense += amt; catMap[cat].countExp++; }
+            });
+            const cats = Object.entries(catMap).sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense));
+            el('cat-count-badge').textContent = `${cats.length} categorías`;
+            if (!cats.length) { el('cat-container').innerHTML = '<div class="state-box"><p>No hay datos.</p></div>'; return; }
+            el('cat-container').innerHTML = cats.map(([name, data]) => {
+                const balance = data.income - data.expense;
+                const dominantType = data.income >= data.expense ? 'income' : 'expense';
+                return `<div class="cat-card">
+          <div class="cat-name">
+            ${name}
+            <span class="cat-type ${dominantType}">${dominantType === 'income' ? 'Ingreso' : 'Gasto'}</span>
+          </div>
+          ${data.income > 0 ? `<div class="cat-row"><span class="cat-row-label">📈 Ingresos (${data.countInc})</span><span class="amount-income">+${fmt(data.income)}</span></div>` : ''}
+          ${data.expense > 0 ? `<div class="cat-row"><span class="cat-row-label">📉 Gastos (${data.countExp})</span><span class="amount-expense">-${fmt(data.expense)}</span></div>` : ''}
+          <hr class="cat-divider"/>
+          <div class="cat-row">
+            <span class="cat-row-label" style="font-weight:600">Balance</span>
+            <span class="cat-balance ${balance >= 0 ? 'pos' : 'neg'}">${balance >= 0 ? '+' : ''}${fmt(balance)}</span>
+          </div>
+        </div>`;
+            }).join('');
+        }
+
+        /* ---- PAGOS POR CATEGORÍA ---- */
+        function renderPayments(tx, membersMap, membersList) {
+            const incTx = tx.filter(t => t.type === 'income' && t.responsibleId);
+            const incomeCategories = [...new Set(incTx.map(t => t.category || 'Sin categoría'))].sort();
+            el('pay-count-badge').textContent = `${incomeCategories.length} categorías`;
+            if (!incomeCategories.length) {
+                el('payments-container').innerHTML = '<div class="state-box"><p>No hay transacciones de ingreso con responsable asignado aún.</p></div>';
+                return;
+            }
+            const html = incomeCategories.map(cat => {
+                const catTx = incTx.filter(t => (t.category || 'Sin categoría') === cat);
+                const payerMap = {};
+                catTx.forEach(t => {
+                    const name = membersMap[t.responsibleId] || 'Desconocido';
+                    if (!payerMap[t.responsibleId]) payerMap[t.responsibleId] = { name, total: 0 };
+                    payerMap[t.responsibleId].total += parseFloat(t.amount || 0);
+                });
+                const payers = Object.values(payerMap).sort((a, b) => a.name.localeCompare(b.name));
+                const nonPayers = membersList.filter(m => !payerMap[m.id])
+                    .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+                const totalPaid = payers.reduce((s, p) => s + p.total, 0);
+                const payersRows = payers.map(p =>
+                    `<tr><td class="name-cell">✅ ${p.name}</td><td class="amount-cell">+${fmt(p.total)}</td></tr>`
+                ).join('');
+                const nonPayersChips = nonPayers.map(m =>
+                    `<span class="no-payer-chip">⚠️ ${m.firstName} ${m.lastName}</span>`
+                ).join('');
+                return `<div class="pay-cat-section">
+                    <div class="pay-cat-section-header">
+                        <span class="pay-cat-section-title">💰 ${cat}</span>
+                        <span class="pay-cat-totals">
+                            <span class="paid">✅ ${payers.length} pagaron &bull; ${fmt(totalPaid)}</span>
+                            ${nonPayers.length > 0 ? `<span class="not-paid">⚠️ ${nonPayers.length} faltan</span>` : ''}
+                        </span>
+                    </div>
+                    <div class="pay-cat-body">
+                        ${payers.length > 0 ? `<div class="payers-label">✅ Pagaron</div><table class="payers-table"><tbody>${payersRows}</tbody></table>` : '<p style="font-size:0.8rem;color:var(--gray-400);margin-bottom:0.75rem">Ningún miembro ha pagado esta categoría aún.</p>'}
+                        ${nonPayers.length > 0 ? `<div class="no-payers-label">⚠️ Faltan por pagar</div><div class="no-payers-chips">${nonPayersChips}</div>` : '<p style="font-size:0.78rem;color:var(--green);font-weight:600">🎉 Todos los miembros han pagado esta categoría.</p>'}
+                    </div>
+                </div>`;
+            }).join('');
+            el('payments-container').innerHTML = html;
+        }
+
+        /* ---- PAGOS FIJOS ---- */
+        window.renderFixedPayments = function () {
+            const container = el('fijos-container');
+            const concepts = window.globalFixedConcepts || [];
+            const payments = window.globalFixedPayments || {};
+            
+            if (!concepts.length) {
+                container.innerHTML = `<div class="state-box"><p>No hay conceptos de pagos fijos configurados.</p></div>`;
+                return;
+            }
+
+            const sortedMembers = [...window.globalMembers].sort((a, b) =>
+                `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+                
+            if (!sortedMembers.length) {
+                container.innerHTML = `<div class="state-box"><p>No hay miembros guardados.</p></div>`;
+                return;
+            }
+
+            const isAdmin = window.adminActive;
+            
+            let html = '<table class="fijos-table">';
+            html += '<thead><tr>';
+            html += '<th class="fijos-name-col">Miembro</th>';
+            concepts.forEach(c => {
+                let editBtn = '';
+                if (isAdmin) {
+                    editBtn = `<div style="display:flex; justify-content:center; gap:8px; margin-top:6px;">
+                        <button onclick="openConceptModal('${c.id}')" style="background:var(--gray-50); border:1px solid var(--gray-300); border-radius:4px; cursor:pointer; padding:2px 5px; font-size:10px; color:var(--blue-600)" title="Editar">📝</button>
+                        <button onclick="deleteFixedConcept('${c.id}', '${c.name.replace(/'/g, "\\'")}')" style="background:var(--gray-50); border:1px solid var(--gray-300); border-radius:4px; cursor:pointer; padding:2px 5px; font-size:10px; color:var(--red-600)" title="Eliminar">🗑️</button>
+                    </div>`;
+                }
+                html += `<th><div>${c.name}</div>${c.amount > 0 ? `<span class="fijos-concept-amount">${fmt(c.amount)}</span>` : ''}${editBtn}</th>`;
+            });
+            html += '<th style="background:var(--gray-50); color:var(--green)">Total Pagado</th>';
+            html += '</tr></thead><tbody>';
+
+            sortedMembers.forEach(m => {
+                let memberTotal = 0;
+                let cells = '';
+                
+                concepts.forEach(c => {
+                    const fp = payments[c.id] || {};
+                    const payment = fp[m.id];
+                    
+                    let cellValue = 0;
+                    if (payment) {
+                        if (c.amount > 0) cellValue = c.amount;
+                        else if (typeof payment === 'object' && payment.amount) cellValue = parseFloat(payment.amount);
+                    }
+                    memberTotal += cellValue;
+                    
+                    cells += '<td>';
+                    if (c.amount > 0) {
+                        const isChecked = !!payment;
+                        if (isAdmin) {
+                            cells += `<input type="checkbox" class="fijos-check" ${isChecked ? 'checked' : ''} onchange="handleFixedPaymentToggle('${c.id}', '${m.id}', this.checked)">`;
+                        } else {
+                            cells += isChecked ? '✅' : '<span style="color:var(--gray-400)">—</span>';
+                        }
+                    } else {
+                        const amountVal = (typeof payment === 'object' && payment.amount) ? payment.amount : '';
+                        if (isAdmin) {
+                            cells += `<input type="number" class="fijos-input" placeholder="0.00" value="${amountVal}" onchange="handleFixedPaymentAmount('${c.id}', '${m.id}', this.value)" min="0" step="0.01">`;
+                        } else {
+                            cells += amountVal ? `<span style="color:var(--green);font-weight:700">${fmt(amountVal)}</span>` : '<span style="color:var(--gray-400)">—</span>';
+                        }
+                    }
+                    cells += '</td>';
+                });
+                
+                html += `<tr>`;
+                html += `<td class="fijos-name-col">${m.firstName} ${m.lastName}</td>`;
+                html += cells;
+                html += `<td class="fijos-total">${fmt(memberTotal)}</td>`;
+                html += `</tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        };
+
+        window.handleFixedPaymentToggle = async (conceptId, memberId, isChecked) => {
+            if (!window.adminActive) return;
+            const concept = window.globalFixedConcepts.find(c => c.id === conceptId);
+            if (!concept) return;
+
+            try {
+                // Update local memory
+                if (!window.globalFixedPayments[conceptId]) window.globalFixedPayments[conceptId] = {};
+                window.globalFixedPayments[conceptId][memberId] = isChecked ? new Date().toISOString() : false;
+                
+                // Transactions array sync
+                const txId = `fixed-${conceptId}-${memberId}`;
+                let updatedTransactions = [...cachedTransactions];
+                
+                if (isChecked) {
+                    const newTx = {
+                        id: txId,
+                        type: 'income',
+                        category: concept.name,
+                        description: concept.name,
+                        amount: concept.amount,
+                        date: new Date().toISOString().split('T')[0],
+                        memberId: memberId,
+                        responsibleId: memberId,
+                        status: 'official',
+                        source: 'web',
+                        createdAt: new Date().toISOString()
+                    };
+                    updatedTransactions = [newTx, ...updatedTransactions];
+                } else {
+                    updatedTransactions = updatedTransactions.filter(t => t.id !== txId);
+                }
+                
+                // Publish strictly to Firestore right now
+                await setDoc(doc(db, COLL, 'fixedPayments'), { data: window.globalFixedPayments });
+                await setDoc(doc(db, COLL, 'transactions'), { data: updatedTransactions });
+
+                cachedTransactions = updatedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                window.refreshTables();
+                window.showToast(isChecked ? `✅ Pago de ${concept.name} registrado.` : `🗑️ Pago de ${concept.name} removido.`);
+            } catch(e) {
+                console.error(e);
+                window.showToast('❌ Error: ' + e.message, 'error');
+                // Re-render UI to rollback state visually
+                window.renderFixedPayments();
+            }
+        };
+
+        window.handleFixedPaymentAmount = async (conceptId, memberId, valueStr) => {
+            if (!window.adminActive) return;
+            const concept = window.globalFixedConcepts.find(c => c.id === conceptId);
+            if (!concept) return;
+
+            try {
+                const amount = parseFloat(valueStr);
+                const isValid = !isNaN(amount) && valueStr !== '';
+                const txId = `fixed-${conceptId}-${memberId}`;
+
+                // Update local memory
+                if (!window.globalFixedPayments[conceptId]) window.globalFixedPayments[conceptId] = {};
+                window.globalFixedPayments[conceptId][memberId] = isValid ? { amount: amount, date: new Date().toISOString() } : false;
+                
+                let updatedTransactions = [...cachedTransactions].filter(t => t.id !== txId);
+                
+                if (isValid) {
+                    const newTx = {
+                        id: txId,
+                        type: 'income',
+                        category: concept.name,
+                        description: concept.name,
+                        amount: amount,
+                        date: new Date().toISOString().split('T')[0],
+                        memberId: memberId,
+                        responsibleId: memberId,
+                        status: 'official',
+                        source: 'web',
+                        createdAt: new Date().toISOString()
+                    };
+                    updatedTransactions = [newTx, ...updatedTransactions];
+                }
+                
+                // Publish strictly to Firestore right now
+                await setDoc(doc(db, COLL, 'fixedPayments'), { data: window.globalFixedPayments });
+                await setDoc(doc(db, COLL, 'transactions'), { data: updatedTransactions });
+
+                cachedTransactions = updatedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                window.refreshTables();
+                window.showToast(isValid ? `✅ Pago de ${concept.name} guardado.` : `🗑️ Pago de ${concept.name} limpiado.`);
+            } catch(e) {
+                console.error(e);
+                window.showToast('❌ Error: ' + e.message, 'error');
+                window.renderFixedPayments();
+            }
+        };
+
+        window.openConceptModal = (id = null) => {
+            if (!window.adminActive) return;
+            el('concept-edit-id').value = id || '';
+            
+            if (id) {
+                const concept = window.globalFixedConcepts.find(c => c.id === id);
+                if (concept) {
+                    el('concept-modal-title').textContent = '📝 Editar Concepto';
+                    el('concept-name').value = concept.name || '';
+                    el('concept-type').value = concept.type || 'income';
+                    el('concept-amount').value = concept.amount > 0 ? concept.amount : '';
+                }
+            } else {
+                el('concept-modal-title').textContent = '✨ Nuevo Concepto Fijo';
+                el('concept-name').value = '';
+                el('concept-type').value = 'income';
+                el('concept-amount').value = '';
+            }
+            
+            el('concept-modal').classList.add('open');
+        };
+
+        window.closeConceptModal = () => {
+             el('concept-modal').classList.remove('open');
+        };
+
+        window.saveFixedConcept = async () => {
+            if (!window.adminActive) return;
+            const name = el('concept-name').value.trim();
+            if (!name) { window.showToast('El nombre es requerido', 'error'); return; }
+            
+            const type = el('concept-type').value;
+            const amountRaw = el('concept-amount').value;
+            const amount = amountRaw ? parseFloat(amountRaw) : 0;
+            const editId = el('concept-edit-id').value;
+
+            try {
+                let updatedConcepts = [...(window.globalFixedConcepts || [])];
+                const cleanAmount = isNaN(amount) ? 0 : amount;
+                
+                if (editId) {
+                    updatedConcepts = updatedConcepts.map(c => 
+                        c.id === editId ? { ...c, name, type, amount: cleanAmount } : c
+                    );
+                } else {
+                    const newConcept = {
+                        id: 'concept-' + Date.now().toString(36) + Math.random().toString(36).substr(2),
+                        name,
+                        type,
+                        amount: cleanAmount
+                    };
+                    updatedConcepts.push(newConcept);
+                }
+
+                await setDoc(doc(db, COLL, 'fixedPaymentConcepts'), { data: updatedConcepts });
+                window.globalFixedConcepts = updatedConcepts;
+                closeConceptModal();
+                window.renderFixedPayments();
+                window.showToast(editId ? '✅ Concepto actualizado.' : '✅ Concepto creado.');
+            } catch (err) {
+                console.error(err);
+                window.showToast('❌ Error: ' + err.message, 'error');
+            }
+        };
+
+        window.deleteFixedConcept = async (id, name) => {
+            if (!window.adminActive) return;
+            if (!confirm(`¿Estás seguro de eliminar el concepto "${name}"?\nEsto no eliminará los pagos de tu historial de transacciones, pero sí ocultará está columna de control.`)) return;
+
+            try {
+                const updatedConcepts = window.globalFixedConcepts.filter(c => c.id !== id);
+                await setDoc(doc(db, COLL, 'fixedPaymentConcepts'), { data: updatedConcepts });
+                
+                // Cleanup dangling memory in fixedPayments
+                const updatedPayments = { ...window.globalFixedPayments };
+                delete updatedPayments[id];
+                await setDoc(doc(db, COLL, 'fixedPayments'), { data: updatedPayments });
+
+                window.globalFixedConcepts = updatedConcepts;
+                window.globalFixedPayments = updatedPayments;
+                window.renderFixedPayments();
+                window.showToast('🗑️ Concepto eliminado.');
+            } catch (err) {
+                console.error(err);
+                window.showToast('❌ Error: ' + err.message, 'error');
+            }
+        };
+
+        function showEmpty() {
+            ['tx-count-badge', 'cat-count-badge', 'pay-count-badge'].forEach(id => el(id).textContent = '0');
+            el('total-income').textContent = fmt(0);
+            el('total-expense').textContent = fmt(0);
+            el('total-balance').textContent = fmt(0);
+            el('income-count').textContent = '0 transacciones';
+            el('expense-count').textContent = '0 transacciones';
+            el('last-updated').textContent = 'Sin datos publicados aún';
+            const empty = `<div class="state-box"><p>No hay datos publicados. Usa el botón <strong>"Publicar en la Web"</strong> en la aplicación.</p></div>`;
+            el('table-container').innerHTML = empty;
+            el('cat-container').innerHTML = empty;
+            el('payments-container').innerHTML = empty;
+        }
+
+        /* ---- CUOTAS SEMANALES ---- */
+        window.renderCuotasTab = function () {
+            const container = el('cuotas-container');
+            const dateInput = el('cuotas-date');
+
+            // Set date to most recent Saturday if empty
+            if (!dateInput.value) {
+                const d = new Date();
+                const day = d.getDay();
+                const diff = (day === 6) ? 0 : (day + 1); // logic to get previous saturday
+                d.setDate(d.getDate() - diff);
+                dateInput.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            }
+
+            const sorted = [...window.globalMembers].sort((a, b) =>
+                `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+
+            if (sorted.length === 0) {
+                container.innerHTML = `<div class="state-box"><p>No hay miembros guardados.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = sorted.map(m => `
+                <div class="cuotas-member-row">
+                    <div class="cuotas-name">${m.firstName} ${m.lastName}</div>
+                    <input type="number" class="form-input cuotas-input" id="cuota-member-${m.id}" data-member-id="${m.id}" placeholder="0.00" min="0" step="0.01">
+                </div>
+            `).join('');
+        };
+
+        window.handleSaveCuotas = async () => {
+            const btn = el('btn-save-cuotas');
+            const label = el('cuotas-submit-label');
+            const date = el('cuotas-date').value;
+
+            if (!date) {
+                window.showToast('❌ Selecciona una fecha válida', 'error');
+                return;
+            }
+
+            const inputs = document.querySelectorAll('.cuotas-input');
+            const newTransactions = [];
+            const baseTime = Date.now();
+
+            inputs.forEach((input, index) => {
+                const val = parseFloat(input.value);
+                if (val > 0) {
+                    newTransactions.push({
+                        id: (baseTime + index).toString(),
+                        type: 'income',
+                        category: 'Cuotas',
+                        amount: val,
+                        date: date,
+                        description: 'Pago de cuota semanal',
+                        paymentMethod: 'Efectivo',
+                        status: 'official',
+                        responsibleId: input.getAttribute('data-member-id'),
+                        createdAt: new Date().toISOString(),
+                        source: 'web'
+                    });
+                }
+            });
+
+            if (newTransactions.length === 0) {
+                window.showToast('ℹ️ No hay cuotas ingresadas para guardar.', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            label.textContent = `Guardando ${newTransactions.length} cuota(s)…`;
+
+            try {
+                // Read current transactions from Firestore
+                const snap = await getDoc(doc(db, COLL, 'transactions'));
+                const existing = snap.exists() ? (snap.data().data || []) : [];
+
+                const updated = [...newTransactions, ...existing];
+                await setDoc(doc(db, COLL, 'transactions'), { data: updated });
+
+                window.showToast(`✅ Se guardaron ${newTransactions.length} cuotas exitosamente.`);
+
+                // Reset inputs
+                inputs.forEach(input => input.value = '');
+
+                // Reload data display
+                cachedTransactions = updated.sort((a, b) => new Date(b.date) - new Date(a.date));
+                renderSummary(cachedTransactions);
+                renderTable(cachedTransactions, membersMap);
+                renderCategories(cachedTransactions);
+                renderPayments(cachedTransactions, membersMap, membersList);
+
+            } catch (err) {
+                console.error(err);
+                window.showToast('❌ Error guardando cuotas: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                label.textContent = '💾 Guardar Todas las Cuotas';
+            }
+        };
+
+        load();
+    </script>
+</body>
+
+</html>

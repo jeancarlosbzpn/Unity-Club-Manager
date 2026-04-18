@@ -1,0 +1,67 @@
+{
+  "name": "triclub-manager",
+  "private": true,
+  "version": "0.0.0",
+  "description": "A comprehensive management system for Pathfinder and Adventurer clubs.",
+  "author": "Jean Carlos Baez",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron": "wait-on tcp:5173 && electron .",
+    "electron:dev": "concurrently -k --raw \"npm run dev\" \"npm run electron\"",
+    "package": "vite build && electron-builder build --mac",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "build": {
+    "appId": "com.clubvencedores.app",
+    "productName": "TriClub Manager",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "target": [
+        "dir",
+        "zip"
+      ]
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "extends": null
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "firebase": "^12.8.0",
+    "html2canvas": "^1.4.1",
+    "lucide-react": "^0.562.0",
+    "quill-mention": "^6.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-quill-new": "^3.8.3",
+    "recharts": "^3.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.23",
+    "concurrently": "^9.2.1",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.1",
+    "vite": "^7.3.1",
+    "wait-on": "^9.0.3"
+  }
+}

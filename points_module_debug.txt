@@ -1,0 +1,691 @@
+                </div>
+              )
+            }
+            {/* Points System Module */}
+            {
+              activeModule === 'points' && (
+                <div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                          <Award className="w-7 h-7 text-yellow-600 dark:text-yellow-400" />
+                          Sistema de Puntos
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-300 mt-1">Rastrea los puntos de los miembros para cada sábado del mes</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">Seleccionar Mes</div>
+                          <input
+                            type="month"
+                            value={selectedPointsMonth}
+                            onChange={(e) => {
+                              setSelectedPointsMonth(e.target.value);
+                              setSelectedSaturday('');
+                            }}
+                            className="mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Statistics & Tabs */}
+                  {(() => {
+                    const regularMembers = members.filter(m => !m.position || m.position === '');
+                    return (
+                      <>
+                        {/* Statistics Widgets */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                          {/* High Score Widget */}
+                          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg shadow-md p-6 border border-yellow-200 dark:border-yellow-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <Award className="w-10 h-10 text-yellow-600 dark:text-yellow-400" />
+                              <span className="text-3xl font-bold text-yellow-900 dark:text-yellow-100">
+                                {(() => {
+                                  let max = 0;
+                                  regularMembers.forEach(member => {
+                                    const memberPoints = points.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                    if (memberPoints) {
+                                      let total = 0;
+                                      Object.values(memberPoints.saturdays).forEach(sat => {
+                                        total += (sat.punctuality || 0) + (sat.bible || 0) + (sat.uniform || 0) +
+                                          (sat.discipline || 0) + (sat.homework || 0) + (sat.worship || 0) + (sat.participation || 0) +
+                                          (sat.worshipFriday || 0) + (sat.worshipSaturday || 0) + (sat.sabbathSchool || 0) + (parseFloat(sat.additional) || 0);
+                                      });
+                                      if (total > max) max = total;
+                                    }
+                                  });
+                                  return max;
+                                })()}
+                              </span>
+                            </div>
+                            <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-300 uppercase tracking-wide">Puntaje Más Alto</h3>
+                            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                              {(() => {
+                                let max = 0;
+                                let topMember = 'Sin puntajes aún';
+                                regularMembers.forEach(member => {
+                                  const memberPoints = points.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                  if (memberPoints) {
+                                    let total = 0;
+                                    Object.values(memberPoints.saturdays).forEach(sat => {
+                                      total += (sat.punctuality || 0) + (sat.bible || 0) + (sat.uniform || 0) +
+                                        (sat.discipline || 0) + (sat.homework || 0) + (sat.worship || 0) + (sat.participation || 0) +
+                                        (sat.worshipFriday || 0) + (sat.worshipSaturday || 0) + (sat.sabbathSchool || 0) + (parseFloat(sat.additional) || 0);
+                                    });
+                                    if (total > max) {
+                                      max = total;
+                                      topMember = `${member.firstName} ${member.lastName} `;
+                                    }
+                                  }
+                                });
+                                return topMember;
+                              })()}
+                            </p>
+                          </div>
+
+                          {/* Average Score Widget */}
+                          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg shadow-md p-6 border border-blue-200 dark:border-blue-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <Users className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                              <span className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                                {Math.round((() => {
+                                  let total = 0;
+                                  let count = 0;
+                                  regularMembers.forEach(member => {
+                                    const memberPoints = points.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                    if (memberPoints && Object.keys(memberPoints.saturdays).length > 0) {
+                                      Object.values(memberPoints.saturdays).forEach(sat => {
+                                        total += (sat.punctuality || 0) + (sat.bible || 0) + (sat.uniform || 0) +
+                                          (sat.discipline || 0) + (sat.homework || 0) + (sat.worship || 0) + (sat.participation || 0) +
+                                          (sat.worshipFriday || 0) + (sat.worshipSaturday || 0) + (sat.sabbathSchool || 0) + (parseFloat(sat.additional) || 0);
+                                      });
+                                      count++;
+                                    }
+                                  });
+                                  return count > 0 ? total / count : 0;
+                                })())}
+                              </span>
+                            </div>
+                            <h3 className="text-sm font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Puntaje Promedio</h3>
+                            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Por miembro este mes</p>
+                          </div>
+
+                          {/* Total Score Widget */}
+                          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/40 rounded-lg shadow-md p-6 border border-green-200 dark:border-green-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <TrendingUp className="w-10 h-10 text-green-600 dark:text-green-400" />
+                              <span className="text-3xl font-bold text-green-900 dark:text-green-100">
+                                {(() => {
+                                  let total = 0;
+                                  points.forEach(p => {
+                                    if (p.month === selectedPointsMonth) {
+                                      const member = members.find(m => m.id === p.memberId);
+                                      if (member && (!member.position || member.position === '')) {
+                                        Object.values(p.saturdays).forEach(sat => {
+                                          total += (sat.punctuality || 0) + (sat.bible || 0) + (sat.uniform || 0) +
+                                            (sat.discipline || 0) + (sat.homework || 0) + (sat.worship || 0) + (sat.participation || 0) +
+                                            (sat.worshipFriday || 0) + (sat.worshipSaturday || 0) + (sat.sabbathSchool || 0) + (parseFloat(sat.additional) || 0);
+                                        });
+                                      }
+                                    }
+                                  });
+                                  return total;
+                                })()}
+                              </span>
+                            </div>
+                            <h3 className="text-sm font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">Puntos Totales</h3>
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">Todos los miembros combinados</p>
+                          </div>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="grid grid-cols-3 gap-4 mb-6">
+                          <button
+                            onClick={() => { setGradesTab('society'); setSelectedSaturday(''); }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${gradesTab === 'society'
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 shadow-md'
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-purple-300 hover:bg-purple-50/50'
+                              }`}
+                          >
+                            <span className="text-lg font-bold">Sociedad de Jóvenes</span>
+                            <span className="text-xs opacity-80">(Viernes)</span>
+                          </button>
+                          <button
+                            onClick={() => { setGradesTab('morning'); setSelectedSaturday(''); }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${gradesTab === 'morning'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 shadow-md'
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-blue-300 hover:bg-blue-50/50'
+                              }`}
+                          >
+                            <span className="text-lg font-bold">Sábado en la Mañana</span>
+                            <span className="text-xs opacity-80">(Culto + Esc. Sabática)</span>
+                          </button>
+                          <button
+                            onClick={() => { setGradesTab('club'); setSelectedSaturday(''); }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${gradesTab === 'club'
+                              ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 shadow-md'
+                              : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:border-yellow-300 hover:bg-yellow-50/50'
+                              }`}
+                          >
+                            <span className="text-lg font-bold">Reunión de Club</span>
+                            <span className="text-xs opacity-80">(Sábado Tarde)</span>
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
+
+                  {/* Points Legend */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
+                    <h3 className="text-base font-bold text-gray-800 dark:text-white mb-3">Categorías de Puntos</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 2xl:grid-cols-8 gap-2">
+                      <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                        <div className="text-lg font-bold text-blue-600">+5</div>
+                        <div>
+                          <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">Punt.</div>
+                          <div className="text-xs text-blue-700 dark:text-blue-200">Antes 4:30</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
+                        <div className="text-lg font-bold text-purple-600">+5</div>
+                        <div>
+                          <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">Biblia</div>
+                          <div className="text-xs text-purple-700 dark:text-purple-200">Trae Biblia</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                        <div className="text-lg font-bold text-green-600">+5</div>
+                        <div>
+                          <div className="text-sm font-semibold text-green-900 dark:text-green-100">Uniforme</div>
+                          <div className="text-xs text-green-700 dark:text-green-200">Correcto</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded border border-indigo-200 dark:border-indigo-800">
+                        <div className="text-lg font-bold text-indigo-600">+5</div>
+                        <div>
+                          <div className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">Disc.</div>
+                          <div className="text-xs text-indigo-700 dark:text-indigo-200">Conducta</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
+                        <div className="text-lg font-bold text-orange-600">+5</div>
+                        <div>
+                          <div className="text-sm font-semibold text-orange-900 dark:text-orange-100">Tarea</div>
+                          <div className="text-xs text-orange-700 dark:text-orange-200">Deberes</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-pink-50 dark:bg-pink-900/20 rounded border border-pink-200 dark:border-pink-800">
+                        <div className="text-lg font-bold text-pink-600">+10</div>
+                        <div>
+                          <div className="text-sm font-semibold text-pink-900 dark:text-pink-100">Culto Vie</div>
+                          <div className="text-xs text-pink-700 dark:text-pink-200">Asistencia</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-900/20 rounded border border-rose-200 dark:border-rose-800">
+                        <div className="text-lg font-bold text-rose-600">+10</div>
+                        <div>
+                          <div className="text-sm font-semibold text-rose-900 dark:text-rose-100">Culto Sáb</div>
+                          <div className="text-xs text-rose-700 dark:text-rose-200">Asistencia</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-cyan-50 dark:bg-cyan-900/20 rounded border border-cyan-200 dark:border-cyan-800">
+                        <div className="text-lg font-bold text-cyan-600">+5</div>
+                        <div>
+                          <div className="text-sm font-semibold text-cyan-900 dark:text-cyan-100">Esc. Sabática</div>
+                          <div className="text-xs text-cyan-700 dark:text-cyan-200">Clase</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Saturday Selection */}
+                  {(() => {
+                    const [year, month] = selectedPointsMonth.split('-');
+                    const firstDay = new Date(parseInt(year), parseInt(month) - 1, 1);
+                    const lastDay = new Date(parseInt(year), parseInt(month), 0);
+                    const saturdays = [];
+
+                    for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+                      if (d.getDay() === 6) {
+                        saturdays.push(new Date(d));
+                      }
+                    }
+
+                    // Filter members - exclude directive members
+                    const regularMembers = members.filter(member =>
+                      !member.position || member.position === ''
+                    );
+
+                    if (regularMembers.length === 0) {
+                      return (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+                          <Award className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-500 dark:text-gray-400 text-lg">No hay miembros regulares para rastrear</p>
+                          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Solo los miembros regulares (no directiva) aparecen en el sistema de puntos</p>
+                        </div>
+                      );
+                    }
+
+                    if (saturdays.length === 0) {
+                      return (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+                          <Calendar className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                          <p className="text-gray-500 dark:text-gray-400 text-lg">No hay sábados en el mes seleccionado</p>
+                          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Seleccione un mes diferente</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <>
+                        {/* Saturday Selector */}
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Seleccionar Fecha para Editar</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {saturdays.map((saturday, idx) => {
+                              const dateKey = saturday.toISOString().split('T')[0];
+                              const isLocked = lockedSaturdays.includes(dateKey);
+                              const isSelected = selectedSaturday === dateKey;
+
+                              return (
+                                <button
+                                  key={idx}
+                                  onClick={() => !isLocked && setSelectedSaturday(dateKey)}
+                                  disabled={isLocked}
+                                  className={`p-4 rounded-lg border-2 transition-all ${isSelected
+                                    ? 'border-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 shadow-md'
+                                    : isLocked
+                                      ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
+                                      : 'border-gray-300 dark:border-gray-600 hover:border-yellow-400 dark:hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                                    } `}
+                                >
+                                  <div className="text-center">
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{dayLabel}</div>
+                                    <div className="text-2xl font-bold text-gray-800 dark:text-white">{saturday.getDate()}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {saturday.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                                    </div>
+                                    {isLocked && (
+                                      <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded text-xs font-semibold">
+                                        <span>✓</span> Guardado
+                                      </div>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Points Entry Table - Only if Saturday is selected */}
+                        {selectedSaturday ? (
+                          <>
+                            {(() => {
+                              const isLocked = lockedSaturdays.includes(selectedSaturday);
+                              const selectedDate = new Date(selectedSaturday);
+
+                              return (
+                                <>
+                                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                                        Puntos del Sábado {selectedDate.getDate()} - {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                                      </h3>
+                                      {isLocked ? (
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg font-semibold">
+                                          <span className="text-xl">✓</span>
+                                          <span>Guardado y Bloqueado</span>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            if (window.confirm(`¿Guardar y bloquear puntos del Sábado ${selectedDate.getDate()}? No podrás editarlos después de guardar.`)) {
+                                              setLockedSaturdays(prev => [...prev, selectedSaturday]);
+                                              setSelectedSaturday('');
+                                            }
+                                          }}
+                                          className="flex items-center gap-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-semibold transition-colors"
+                                        >
+                                          <Save className="w-5 h-5" />
+                                          Guardar y Bloquear
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                      {(() => {
+                                        // 1. Sort Units
+                                        const clubTypeOrder = { 'guias': 1, 'conquistadores': 2, 'aventureros': 3 };
+                                        const genderOrder = { 'Female': 1, 'Mixed': 2, 'Male': 3 };
+
+                                        const sortedUnits = [...units].sort((a, b) => {
+                                          const typeA = clubTypeOrder[a.clubType] || 99;
+                                          const typeB = clubTypeOrder[b.clubType] || 99;
+                                          if (typeA !== typeB) return typeA - typeB;
+
+                                          const genderA = genderOrder[a.gender] || 99;
+                                          const genderB = genderOrder[b.gender] || 99;
+                                          if (genderA !== genderB) return genderA - genderB;
+
+                                          return a.name.localeCompare(b.name);
+                                        });
+
+                                        // 2. Group members by Unit
+                                        const membersByUnit = {};
+                                        sortedUnits.forEach(unit => {
+                                          membersByUnit[unit.id] = regularMembers.filter(m => m.unitId === unit.id);
+                                        });
+                                        // Members without unit
+                                        const membersNoUnit = regularMembers.filter(m => !m.unitId);
+
+                                        // 3. Render function for a list of members
+                                        const renderMemberTable = (unitName, unitMembers, unitData = null) => {
+                                          if (unitMembers.length === 0) return null;
+
+                                          // Sort members within unit: Captain -> Secretary -> Alphabetical
+                                          const sortedUnitMembers = [...unitMembers].sort((a, b) => {
+                                            if (unitData) {
+                                              const isCapA = a.id === unitData.captainId;
+                                              const isCapB = b.id === unitData.captainId;
+                                              if (isCapA && !isCapB) return -1;
+                                              if (!isCapA && isCapB) return 1;
+
+                                              const isSecA = a.id === unitData.secretaryId;
+                                              const isSecB = b.id === unitData.secretaryId;
+                                              if (isSecA && !isSecB) return -1;
+                                              if (!isSecA && isSecB) return 1;
+                                            }
+                                            return a.firstName.localeCompare(b.firstName);
+                                          });
+
+                                          return (
+                                            <div key={unitName} className="mb-8">
+                                              <div className="flex items-center gap-2 mb-2 px-2 border-l-4 border-yellow-500">
+                                                <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 uppercase">{unitName}</h4>
+                                                {unitData && (
+                                                  <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                                    {unitData.clubType === 'guias' ? 'Guías Mayores' : unitData.clubType === 'conquistadores' ? 'Conquistadores' : 'Aventureros'}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <table className="w-full border-collapse">
+                                                <thead className="bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-700 dark:to-orange-700 text-white text-sm">
+                                                  <tr>
+                                                    <th className="px-4 py-3 text-left font-semibold rounded-tl-lg">#</th>
+                                                    <th className="px-4 py-3 text-left font-semibold">Nombre</th>
+                                                    <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Asist.<br /><span className="opacity-75 font-normal">Also</span></th>
+
+                                                    {gradesTab === 'club' && (
+                                                      <>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Punt.<br /><span className="opacity-75 font-normal">(+5)</span></th>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Biblia<br /><span className="opacity-75 font-normal">(+5)</span></th>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Unif.<br /><span className="opacity-75 font-normal">(+5)</span></th>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Disc.<br /><span className="opacity-75 font-normal">(+5)</span></th>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Tarea<br /><span className="opacity-75 font-normal">(+5)</span></th>
+                                                      </>
+                                                    )}
+                                                    {gradesTab === 'society' && (
+                                                      <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">C. Vie<br /><span className="opacity-75 font-normal">(+10)</span></th>
+                                                    )}
+                                                    {gradesTab === 'morning' && (
+                                                      <>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">C. Sáb<br /><span className="opacity-75 font-normal">(+10)</span></th>
+                                                        <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">E. Sab<br /><span className="opacity-75 font-normal">(+5)</span></th>
+                                                      </>
+                                                    )}
+
+                                                    <th className="px-2 py-3 text-center font-semibold text-xs md:text-sm">Adic.<br /><span className="opacity-75 font-normal">pts</span></th>
+                                                    <th className="px-4 py-3 text-center font-semibold rounded-tr-lg">Total</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                                                  {sortedUnitMembers.map((member, idx) => {
+                                                    const memberPoints = points.find(p =>
+                                                      p.memberId === member.id &&
+                                                      p.month === selectedPointsMonth
+                                                    ) || { memberId: member.id, month: selectedPointsMonth, saturdays: {} };
+
+                                                    const satPoints = memberPoints.saturdays[selectedSaturday] || {};
+                                                    // Calculate total based on what's visible plus everything stored for accuracy
+                                                    const total = (satPoints.punctuality || 0) +
+                                                      (satPoints.bible || 0) +
+                                                      (satPoints.uniform || 0) +
+                                                      (satPoints.discipline || 0) +
+                                                      (satPoints.homework || 0) +
+                                                      (satPoints.worshipFriday || 0) +
+                                                      (satPoints.worshipSaturday || 0) +
+                                                      (satPoints.sabbathSchool || 0) +
+                                                      (parseFloat(satPoints.additional) || 0);
+
+                                                    const isPresent = satPoints.attendance === true;
+
+                                                    // Determine role label
+                                                    let roleLabel = null;
+                                                    if (unitData) {
+                                                      if (member.id === unitData.captainId) roleLabel = { text: 'Capitán', color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30' };
+                                                      if (member.id === unitData.secretaryId) roleLabel = { text: 'Secretario', color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30' };
+                                                    }
+
+                                                    return (
+                                                      <tr key={member.id} className="hover:bg-yellow-50 dark:hover:bg-yellow-900/10 border-b dark:border-gray-700 transition-colors">
+                                                        <td className="px-4 py-3 font-medium text-gray-900 dark:text-white text-sm">{idx + 1}</td>
+                                                        <td className="px-4 py-3">
+                                                          <div className="font-medium text-gray-900 dark:text-white flex flex-col">
+                                                            <span>{member.firstName} {member.lastName}</span>
+                                                            {roleLabel && (
+                                                              <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded w-fit mt-0.5 ${roleLabel.color}`}>
+                                                                {roleLabel.text}
+                                                              </span>
+                                                            )}
+                                                          </div>
+                                                        </td>
+
+                                                        {/* Attendance Column */}
+                                                        <td className="px-2 py-3 text-center">
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={isPresent}
+                                                            disabled={isLocked}
+                                                            onChange={(e) => {
+                                                              const checked = e.target.checked;
+                                                              setPoints(prev => {
+                                                                const existing = prev.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                                                if (existing) {
+                                                                  return prev.map(p => {
+                                                                    if (p.memberId === member.id && p.month === selectedPointsMonth) {
+                                                                      return {
+                                                                        ...p,
+                                                                        saturdays: {
+                                                                          ...p.saturdays,
+                                                                          [selectedSaturday]: {
+                                                                            ...p.saturdays[selectedSaturday],
+                                                                            attendance: checked
+                                                                          }
+                                                                        }
+                                                                      };
+                                                                    }
+                                                                    return p;
+                                                                  });
+                                                                } else {
+                                                                  return [...prev, {
+                                                                    memberId: member.id,
+                                                                    month: selectedPointsMonth,
+                                                                    saturdays: {
+                                                                      [selectedSaturday]: {
+                                                                        attendance: checked
+                                                                      }
+                                                                    }
+                                                                  }];
+                                                                }
+                                                              });
+                                                            }}
+                                                            className={`w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-yellow-600 focus:ring-yellow-500 bg-white dark:bg-gray-700 ${isLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+                                                          />
+                                                        </td>
+
+                                                        {(() => {
+                                                          let categories = [];
+                                                          if (gradesTab === 'club') categories = ['punctuality', 'bible', 'uniform', 'discipline', 'homework'];
+                                                          else if (gradesTab === 'society') categories = ['worshipFriday'];
+                                                          else if (gradesTab === 'morning') categories = ['worshipSaturday', 'sabbathSchool'];
+
+                                                          return categories.map((category) => {
+                                                            const maxPoints = (category === 'worshipFriday' || category === 'worshipSaturday') ? 10 : 5;
+                                                            const currentPoints = satPoints[category] || 0;
+
+                                                            return (
+                                                              <td key={category} className="px-1 py-2 text-center">
+                                                                {isLocked ? (
+                                                                  <div className={`inline-block w-8 py-1 rounded text-sm font-semibold ${currentPoints > 0
+                                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                                                    } `}>
+                                                                    {currentPoints}
+                                                                  </div>
+                                                                ) : (
+                                                                  <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    max={maxPoints}
+                                                                    value={currentPoints}
+                                                                    onChange={(e) => {
+                                                                      const value = Math.min(maxPoints, Math.max(0, parseInt(e.target.value) || 0));
+                                                                      setPoints(prev => {
+                                                                        const existing = prev.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                                                        if (existing) {
+                                                                          return prev.map(p => {
+                                                                            if (p.memberId === member.id && p.month === selectedPointsMonth) {
+                                                                              return {
+                                                                                ...p,
+                                                                                saturdays: {
+                                                                                  ...p.saturdays,
+                                                                                  [selectedSaturday]: {
+                                                                                    ...p.saturdays[selectedSaturday],
+                                                                                    [category]: value
+                                                                                  }
+                                                                                }
+                                                                              };
+                                                                            }
+                                                                            return p;
+                                                                          });
+                                                                        } else {
+                                                                          return [...prev, {
+                                                                            memberId: member.id,
+                                                                            month: selectedPointsMonth,
+                                                                            saturdays: {
+                                                                              [selectedSaturday]: {
+                                                                                [category]: value
+                                                                              }
+                                                                            }
+                                                                          }];
+                                                                        }
+                                                                      });
+                                                                    }}
+                                                                    className={`w-10 md:w-12 px-1 py-1 text-center text-sm border rounded font-semibold bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${currentPoints > 0
+                                                                      ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300'
+                                                                      : 'border-gray-300 dark:border-gray-600'
+                                                                      } `}
+                                                                  />
+                                                                )}
+                                                              </td>
+                                                            );
+                                                          });
+                                                        })()}
+
+                                                        {/* Additional Points */}
+                                                        <td className="px-1 py-2 text-center">
+                                                          {isLocked ? (
+                                                            <div className={`inline-block w-8 py-1 rounded text-sm font-semibold ${satPoints.additional > 0
+                                                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                                              : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                                              } `}>
+                                                              {satPoints.additional || 0}
+                                                            </div>
+                                                          ) : (
+                                                            <input
+                                                              type="number"
+                                                              min="0"
+                                                              value={satPoints.additional || ''}
+                                                              placeholder="0"
+                                                              onChange={(e) => {
+                                                                const value = e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value));
+                                                                setPoints(prev => {
+                                                                  const existing = prev.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                                                  if (existing) {
+                                                                    return prev.map(p => {
+                                                                      if (p.memberId === member.id && p.month === selectedPointsMonth) {
+                                                                        return {
+                                                                          ...p,
+                                                                          saturdays: {
+                                                                            ...p.saturdays,
+                                                                            [selectedSaturday]: {
+                                                                              ...p.saturdays[selectedSaturday],
+                                                                              additional: value
+                                                                            }
+                                                                          }
+                                                                        };
+                                                                      }
+                                                                      return p;
+                                                                    });
+                                                                  } else {
+                                                                    return [...prev, {
+                                                                      memberId: member.id,
+                                                                      month: selectedPointsMonth,
+                                                                      saturdays: {
+                                                                        [selectedSaturday]: {
+                                                                          additional: value
+                                                                        }
+                                                                      }
+                                                                    }];
+                                                                  }
+                                                                });
+                                                              }}
+                                                              className={`w-10 md:w-12 px-1 py-1 text-center text-sm border rounded font-semibold bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${satPoints.additional > 0
+                                                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
+                                                                : 'border-gray-300 dark:border-gray-600'
+                                                                } `}
+                                                            />
+                                                          )}
+                                                        </td>
+
+                                                        <td className="px-4 py-3 text-center">
+                                                          <div className="inline-block px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded font-bold text-lg">
+                                                            {total}
+                                                          </div>
+                                                        </td>
+                                                      </tr>
+                                                    );
+                                                  })}
+                                                </tbody>
+                                              </table>
+                                            </div>
+                                          );
+                                        };
+
+                                        return (
+                                          <>
+                                            {sortedUnits.map(unit =>
+                                              renderMemberTable(unit.name, membersByUnit[unit.id] || [], unit)
+                                            )}
+                                            {/* Members without unit */}
+                                            {renderMemberTable('Sin Unidad', membersNoUnit)}
+                                          </>
+                                        );
+                                      })()}
+
+                                    </div>
+                                    )
+                }
+                                    {/* Finanzas Module */}
+                                    {
+                                      activeModule === 'finances' && !showFinanceForm && (
+                                        <>
+                                          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                                            <div className="flex items-center justify-between mb-6">
+                                              <div>
+                                                <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                                  <DollarSign className="w-7 h-7 text-green-600 dark:text-green-400" />
+                                                  Finanzas
