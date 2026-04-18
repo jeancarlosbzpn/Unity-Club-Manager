@@ -12749,10 +12749,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
       )
     }
 
-            {/* Members Module */}
-            {/* Discipline Module */}
-            {
-              activeModule === 'discipline' && (
+    {/* Members Module */}
+    {/* Discipline Module */}
+    {
+      activeModule === 'discipline' && (
                 <div className="animate-in fade-in duration-300">
                   <div className="flex justify-between items-center mb-6">
                     <div>
