@@ -49,6 +49,26 @@ const MigrationTool = ({ onComplete }) => {
         });
       }
 
+      if (dataToSync.inventory) {
+        addLog("Removiendo fotos base64 de inventario...");
+        dataToSync.inventory = dataToSync.inventory.map(i => {
+          if (i.photo && i.photo.length > 1000) {
+            return { ...i, photo: null };
+          }
+          return i;
+        });
+      }
+
+      if (dataToSync.tents) {
+        addLog("Removiendo fotos base64 de casetas...");
+        dataToSync.tents = dataToSync.tents.map(t => {
+          if (t.photo && t.photo.length > 1000) {
+            return { ...t, photo: null };
+          }
+          return t;
+        });
+      }
+
       // Sanitizador global para evitar "invalid nested entity" o valores undefined que Firestore rechaza
       const sanitizeForFirestore = (obj) => {
         if (obj === undefined) return null;
