@@ -9183,7 +9183,7 @@ const ClubVencedoresSystem = () => {
 
   // Logout function
   const handleLogout = () => {
-    import('../firebase-config').then(({ auth }) => {
+    import('./firebase-config').then(({ auth }) => {
       auth.signOut();
     });
     setIsAuthenticated(false);
