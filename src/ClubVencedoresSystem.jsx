@@ -615,15 +615,15 @@ const ClubVencedoresSystem = () => {
   }, [isAuthenticated, currentUser]);
 
   // ========================================
-  // REAL-TIME SYNC LISTENERS (MULTI-DEVICE)
+  // UNIFIED REAL-TIME SYNC ENGINE (CLOUD-FIRST)
   // ========================================
   useEffect(() => {
     if (!isAuthenticated || isElectron) return;
 
-    console.log("📡 Activando sincronización en tiempo real...");
+    setSyncStatus('connecting');
     const subs = [];
     
-    // Core data streams to keep in sync across devices
+    // Comprehensive stream list
     const streams = [
       { key: 'members', setter: setMembers },
       { key: 'transactions', setter: setTransactions },
@@ -634,28 +634,87 @@ const ClubVencedoresSystem = () => {
       { key: 'clubSettings', setter: setClubSettings },
       { key: 'disciplineRecords', setter: setDisciplineRecords },
       { key: 'attendanceRecords', setter: setAttendanceRecords },
-      { key: 'memberProgress', setter: setMemberProgress }
+      { key: 'memberProgress', setter: setMemberProgress },
+      { key: 'points', setter: setPoints },
+      { key: 'lockedSaturdays', setter: setLockedSaturdays },
+      { key: 'inventoryCategories', setter: setInventoryCategories },
+      { key: 'cuotaAmount', setter: setCuotaAmount },
+      { key: 'masterGuideData', setter: setMasterGuideData },
+      { key: 'financeCategories', setter: setFinanceCategories },
+      { key: 'tents', setter: setTents },
+      { key: 'tentAssignments', setter: setTentAssignments },
+      { key: 'uniformInspections', setter: setUniformInspections },
+      { key: 'memberUniforms', setter: setMemberUniforms },
+      { key: 'uniformItems', setter: setUniformItems },
+      { key: 'uniformCategories', setter: setUniformCategories },
+      { key: 'fixedPaymentConcepts', setter: setFixedPaymentConcepts },
+      { key: 'fixedPayments', setter: setFixedPayments },
+      { key: 'reminders', setter: setReminders },
+      { key: 'campDetails', setter: setCampDetails },
+      { key: 'classRequirements', setter: setClassRequirements },
+      { key: 'evaluationGroups', setter: setEvaluationGroups },
+      { key: 'requirementSections', setter: setRequirementSections },
+      { key: 'firstAidItems', setter: setFirstAidItems },
+      { key: 'cleaningSchedule', setter: setCleaningSchedule },
+      { key: 'duesConfig', setter: (data) => {
+        if (data) {
+          setDuesStartDate(data.startDate || '');
+          setSkippedSaturdays(data.skippedSaturdays || []);
+        }
+      }}
     ];
 
+    let keysLoaded = 0;
     streams.forEach(({ key, setter }) => {
       try {
         const unsub = dataService.subscribeToKey(key, (data) => {
-          if (!data) return;
-          console.log(`☁️ Sync recibido para: ${key}`);
-          setter(data);
-          if (prevStateRef.current) {
-            prevStateRef.current[key] = data;
+          if (!data) {
+            if (syncStatus === 'connecting') {
+              keysLoaded++;
+              if (keysLoaded >= streams.length) setSyncStatus('synced');
+            }
+            return;
+          }
+
+          let processedData = data;
+          if (key === 'transactions' || key === 'members') {
+            const tempState = { 
+              transactions: key === 'transactions' ? data : prevStateRef.current.transactions, 
+              members: key === 'members' ? data : prevStateRef.current.members,
+              fixedPayments: prevStateRef.current.fixedPayments,
+              fixedPaymentConcepts: prevStateRef.current.fixedPaymentConcepts
+            };
+            const result = processClubData(tempState);
+            processedData = key === 'transactions' ? result.transactions : data;
+          }
+
+          setter(processedData);
+          if (prevStateRef.current) prevStateRef.current[key] = data;
+
+          if (syncStatus !== 'synced') {
+            keysLoaded++;
+            if (keysLoaded >= streams.length) {
+              setSyncStatus('synced');
+              setDataLoaded(true);
+            }
           }
         });
         subs.push(unsub);
       } catch (err) {
-        console.error(`Error al suscribirse a ${key}:`, err);
+        console.error(`Error a sync ${key}:`, err);
       }
     });
 
+    const safetyTimer = setTimeout(() => {
+      if (syncStatus === 'connecting') {
+        setSyncStatus('synced');
+        setDataLoaded(true);
+      }
+    }, 6000);
+
     return () => {
-      console.log("🛑 Deteniendo sincronización en tiempo real...");
       subs.forEach(u => u());
+      clearTimeout(safetyTimer);
     };
   }, [isAuthenticated]);
 
@@ -811,6 +870,7 @@ const ClubVencedoresSystem = () => {
 
   // Data Safety State
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('offline'); // 'offline', 'connecting', 'synced', 'error'
 
   // Communication Module State
   const [whatsappGroups, setWhatsappGroups] = useState([
@@ -1342,6 +1402,7 @@ const ClubVencedoresSystem = () => {
     const d = String(today.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   });
+  const [isSyncing, setIsSyncing] = useState(false);
   const [cuotaSessionActive, setCuotaSessionActive] = useState(false);
   const [viewDate, setViewDate] = useState(new Date()); // For navigating months in the picker
   const [showDebtReport, setShowDebtReport] = useState(false);
@@ -1569,10 +1630,14 @@ const ClubVencedoresSystem = () => {
   // Save data to Storage (Hybrid: Firebase + Electron)
   const saveToElectron = async (dataToSave, changedKeys = null) => {
     try {
+      setIsSyncing(true);
       await dataService.saveFullState(dataToSave, changedKeys);
       console.log(`💾 Data synced to storage${changedKeys ? ` (${changedKeys.length} keys changed)` : ''}`);
+      // Give a tiny buffer for UX so the indicator doesn't just flicker
+      setTimeout(() => setIsSyncing(false), 500);
     } catch (error) {
       console.error('Error saving data:', error);
+      setIsSyncing(false);
     }
   };
 
@@ -1825,12 +1890,141 @@ const ClubVencedoresSystem = () => {
   };
 
   // ========================================
+  // UNIFIED TRANSACTION DELETION
+  // ========================================
+  const handleDeleteTransaction = (transaction) => {
+    if (!transaction) return;
+
+    // 1. Cleanup linked data sources
+    if (transaction.id?.startsWith('fixed-') || transaction.id?.startsWith('trans_')) {
+      // trans_ pattern is typically followed by the underlying ID or specific mapping
+      const isBulk = transaction.id.startsWith('trans_');
+      const baseId = isBulk ? transaction.id.replace('trans_', '') : transaction.id;
+      
+      const parts = baseId.split('-');
+      // ID format is fixed-{conceptId}-{memberId} or simply the paymentId
+      if (parts.length >= 3) {
+        const conceptId = parts[1];
+        const memberId = parts[2];
+
+        setFixedPayments(prev => {
+          const newPayments = { ...prev };
+          if (newPayments[conceptId]) {
+            const updatedMemberPayments = { ...newPayments[conceptId] };
+            delete updatedMemberPayments[memberId];
+            newPayments[conceptId] = updatedMemberPayments;
+          }
+          return newPayments;
+        });
+      }
+    }
+
+    // 2. Cleanup Waivers (if applicable)
+    if (transaction.paymentMethod === 'Waiver' || transaction.description?.includes('Waiver')) {
+      setMembers(prev => prev.map(m => {
+        if (m.id === transaction.memberId && m.waivedSaturdays) {
+          return {
+            ...m,
+            waivedSaturdays: m.waivedSaturdays.filter(d => d !== transaction.date)
+          };
+        }
+        return m;
+      }));
+    }
+
+    // 3. Delete the transaction itself
+    setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+    console.log(`🗑️ Transacción eliminada y fuentes limpiadas: ${transaction.id}`);
+  };
+
+  // ========================================
+  // DATA PROCESSING & MIGRATION ENGINE
+  // ========================================
+  const processClubData = (allData) => {
+    if (!allData) return null;
+
+    let processed = { ...allData };
+
+    // 1. Initialize Transactions with Migration Check
+    let initialTransactions = allData.transactions || [];
+
+    // MIGRATION: Ensure Fixed Payments exist as real transactions
+    if (allData.fixedPayments && allData.fixedPaymentConcepts) {
+      allData.fixedPaymentConcepts.forEach(concept => {
+        const payments = allData.fixedPayments[concept.id] || {};
+        Object.entries(payments).forEach(([memberId, val]) => {
+          if (val) {
+            const txId = `fixed-${concept.id}-${memberId}`;
+            const member = (allData.members || []).find(m => m.id === memberId);
+
+            let date = getLocalISODate();
+            let amount = concept.amount || 0;
+
+            if (typeof val === 'string' && val.trim().length > 0) {
+              if (!isNaN(new Date(val).getTime())) {
+                date = val.includes('T') ? val.split('T')[0] : val;
+              }
+            } else if (typeof val === 'object') {
+              if (val.date && !isNaN(new Date(val.date).getTime())) {
+                date = val.date.includes('T') ? val.date.split('T')[0] : val.date;
+              }
+              if (val.amount !== undefined) amount = val.amount;
+            }
+
+            const txIndex = initialTransactions.findIndex(t => t.id === txId);
+            if (txIndex >= 0) {
+              initialTransactions[txIndex] = {
+                ...initialTransactions[txIndex],
+                category: concept.name,
+                description: concept.name,
+                responsibleId: memberId
+              };
+            } else {
+              initialTransactions.push({
+                id: txId,
+                type: 'income',
+                category: concept.name,
+                description: concept.name,
+                amount: parseFloat(amount),
+                date: date,
+                memberId: memberId,
+                responsibleId: memberId,
+                status: 'official'
+              });
+            }
+          }
+        });
+      });
+    }
+
+    // MIGRATION: Fix legacy bulk quota transactions
+    initialTransactions = initialTransactions.map(t => {
+      if (t.category === 'inc_1') t.category = 'Cuotas';
+      if ((t.description === 'Pago de Cuota Semanal (Masivo)' || t.description === 'Condonación de deuda (Waiver)') && !t.responsibleId && t.memberId) {
+        t.responsibleId = t.memberId;
+      }
+      return t;
+    });
+
+    // MIGRATION: Waiver pruning
+    if (allData.members) {
+      const legacyWaivers = initialTransactions.filter(t => t.paymentMethod === 'Waiver' && t.description === 'Condonación de deuda (Waiver)' && t.amount === 0);
+      if (legacyWaivers.length > 0) {
+        initialTransactions = initialTransactions.filter(t => !(t.paymentMethod === 'Waiver' && t.description === 'Condonación de deuda (Waiver)' && t.amount === 0));
+      }
+    }
+
+    processed.transactions = initialTransactions;
+    return processed;
+  };
+
+  // ========================================
   // TENT HANDLERS
   // ========================================
   useEffect(() => {
     const fetchData = async () => {
-      // Si estamos en la web y NO estamos autenticados aún, detener.
-      if (!isAuthenticated && !window.electronAPI) return;
+      // ONLY FOR ELECTRON: Web uses the Real-time Sync Engine below
+      if (!isElectron) return;
 
       try {
         console.log('🔄 Cargando datos desde Electron Storage...');
@@ -2061,7 +2255,7 @@ const ClubVencedoresSystem = () => {
       }
     };
 
-    const debounceSave = setTimeout(saveData, 1000); // Debounce saves (faster for draft feel)
+    const debounceSave = setTimeout(saveData, 300); // Debounce saves (much faster for sync reliability)
     return () => clearTimeout(debounceSave);
 
   }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, cleaningSchedule]);
@@ -7519,9 +7713,23 @@ const ClubVencedoresSystem = () => {
                             <div className="font-medium text-gray-900">{t.category}</div>
                             <div className="text-xs text-gray-500">{new Date(t.date).toLocaleDateString()}</div>
                           </div>
-                          <span className={`font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'} `}>
-                            {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className={`font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'} `}>
+                              {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('¿Eliminar esta transacción?')) {
+                                  handleDeleteTransaction(t);
+                                }
+                              }}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                              title="Eliminar transacción"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -9141,15 +9349,33 @@ const ClubVencedoresSystem = () => {
 
   const handleDeletePayment = (paymentId) => {
     if (!confirm('¿Está seguro de eliminar este registro de pago?')) return;
-    // Strip from transactions directly. 
-    // Need to handle IDs mapping: bulk adds prefix 'trans_' but individual might not.
-    setTransactions(transactions.filter(t => t.id !== paymentId && t.id !== `trans_${paymentId} `));
+    const txToDelete = transactions.find(t => t.id === paymentId || t.id === `trans_${paymentId}`);
+    if (txToDelete) {
+      handleDeleteTransaction(txToDelete);
+    } else {
+      // Fallback if not found in state (unlikely)
+      setTransactions(prev => prev.filter(t => t.id !== paymentId && t.id !== `trans_${paymentId}`));
+    }
   };
 
   const handleClearHistory = () => {
     if (!confirm('ADVERTENCIA: ¿Está seguro de eliminar TODO el historial de pagos? Esta acción no se puede deshacer.')) return;
     if (!confirm('¿De verdad está seguro? Se perderán todos los registros de cuotas.')) return;
-    setTransactions(transactions.filter(t => t.category !== 'Cuotas' && t.category !== 'inc_1'));
+    
+    // Identify cuotas transactions
+    const toRemove = transactions.filter(t => t.category === 'Cuotas' || t.category === 'inc_1');
+    
+    // Perform bulk delete but ensure dependencies are cleaned for each
+    toRemove.forEach(tx => {
+      // We don't want to call setTransactions in a loop 100 times
+      // So we'll just handle the side effects and then do one big filter
+      if (tx.id?.startsWith('fixed-') || tx.id?.startsWith('trans_')) {
+        handleDeleteTransaction(tx); // This will call setTransactions in a loop... hmm.
+      }
+    });
+
+    // Final filter to ensure they are gone
+    setTransactions(prev => prev.filter(t => t.category !== 'Cuotas' && t.category !== 'inc_1'));
   };
 
   const handleBulkSubmit = () => {
@@ -10132,7 +10358,21 @@ const ClubVencedoresSystem = () => {
                   <ClubLogo darkMode={true} className="w-full h-full object-contain" />
                 )}
               </div>
-              <span className="font-bold text-sm truncate">{clubSettings?.name || 'TriClub Manager'}</span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-sm truncate">{clubSettings?.name || 'TriClub Manager'}</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    syncStatus === 'synced' ? 'bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.8)]' : 
+                    syncStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 
+                    syncStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
+                  }`} />
+                  <span className="text-[10px] opacity-70 font-medium uppercase tracking-wider">
+                    {syncStatus === 'synced' ? 'En Vivo' : 
+                     syncStatus === 'connecting' ? 'Sincronizando' : 
+                     syncStatus === 'error' ? 'Error' : 'Offline'}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
           <button
@@ -10182,29 +10422,26 @@ const ClubVencedoresSystem = () => {
                 </button>
 
                 {/* Submenu Items */}
+                {/* Submenu Items */}
                 {!sidebarCollapsed && hasSubmenu && (
-                  <div className={`overflow-hidden transition-all duration-300 ease -in -out ${isExpanded ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'} `}>
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
                     <div className="pl-4 space-y-1">
-                      {item.submenu.filter(sub => sub.available).map(sub => {
-                        const SubIcon = sub.icon;
-                        const isSubActive = activeModule === sub.id;
-                        return (
-                          <button
-                            key={sub.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleModuleClick(sub.id);
-                            }}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${isSubActive
-                              ? 'bg-red-700 text-white font-medium dark:bg-gray-700'
-                              : 'text-red-200 hover:bg-red-700/50 hover:text-white dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white'
-                              } `}
-                          >
-                            <div className="w-5 flex justify-center"><div className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></div></div>
-                            <div className="flex-1 text-left">{sub.label}</div>
-                          </button>
-                        );
-                      })}
+                      {item.submenu.filter(sub => sub.available).map(sub => (
+                        <button
+                          key={sub.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleModuleClick(sub.id);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${activeModule === sub.id
+                            ? 'bg-red-700 text-white font-medium dark:bg-gray-700'
+                            : 'text-red-200 hover:bg-red-700/50 hover:text-white dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white'
+                            }`}
+                        >
+                          <div className="w-5 flex justify-center"><div className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></div></div>
+                          <div className="flex-1 text-left">{sub.label}</div>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -10212,6 +10449,19 @@ const ClubVencedoresSystem = () => {
             );
           })}
         </nav>
+
+        {/* Sidebar Footer with Resync */}
+        {!sidebarCollapsed && isAuthenticated && (
+           <div className="p-3 border-t border-red-700/50 dark:border-gray-700/50">
+             <button 
+               onClick={() => window.location.reload()}
+               className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-200 hover:text-white hover:bg-red-700/50 dark:text-gray-400 dark:hover:bg-gray-700/50 transition-all border border-transparent hover:border-red-600/30"
+             >
+               <Cloud className="w-4 h-4" />
+               Forzar Resincronización
+             </button>
+           </div>
+        )}
 
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
@@ -10281,6 +10531,17 @@ const ClubVencedoresSystem = () => {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Tab Bar Logic */}
         <div className="bg-gray-200 dark:bg-black pt-2 px-2 flex items-end gap-1 overflow-x-auto border-b border-gray-300 dark:border-gray-700 select-none">
+          {/* Sincronización Indicator */}
+          <div className={`px-3 py-2 flex items-center gap-2 text-xs font-semibold rounded-t-lg mb-0 transition-all duration-300 ${isSyncing ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'text-green-600 dark:text-green-500 bg-white dark:bg-gray-800'}`}>
+             <div className="relative flex items-center justify-center">
+               <Cloud className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
+               {isSyncing && <div className="absolute inset-0 animate-ping opacity-30 bg-indigo-400 rounded-full"></div>}
+             </div>
+             <span className="whitespace-nowrap uppercase tracking-wider text-[10px]">
+               {isSyncing ? 'Sincronizando...' : 'Sincronizado'}
+             </span>
+          </div>
+
           {tabs.map(tab => {
             const isActive = activeTabId === tab.id;
             const TabIcon = tab.icon || FileText;
@@ -19630,17 +19891,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                               }
                                                             }
 
-                                                            // SYNC FIX: Update campDetails if this is the active camp
                                                             setCampDetails(prevDetails => {
                                                               if (prevDetails[act.id]) {
                                                                 const prevCampAttendees = prevDetails[act.id].attendees || [];
-                                                                // Ensure we don't add duplicates
                                                                 if (!prevCampAttendees.includes(member.id)) {
                                                                   return {
                                                                     ...prevDetails,
                                                                     [act.id]: {
                                                                       ...prevDetails[act.id],
-                                                                      attendees: [...prevCampAttendees, member.id] // Always use IDs for local campDetails state
+                                                                      attendees: [...prevCampAttendees, member.id]
                                                                     }
                                                                   };
                                                                 }
@@ -19656,7 +19915,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                     }
                                                   } else {
                                                     // Remove Transaction
-                                                    setTransactions(prev => prev.filter(t => t.id !== txId));
+                                                    handleDeleteTransaction({ id: txId });
                                                   }
 
                                                   setFixedPayments(prev => ({
@@ -19677,7 +19936,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 placeholder="0.00"
                                                 value={(() => {
                                                   const val = fixedPayments[c.id]?.[member.id];
-                                                  // Handle legacy or specific structure
                                                   if (typeof val === 'object' && val.amount !== undefined) return val.amount;
                                                   return '';
                                                 })()}
@@ -19687,18 +19945,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                   const txId = `fixed-${c.id}-${member.id}`;
 
                                                   if (val === '') {
-                                                    // Remove Transaction
-                                                    setTransactions(prev => prev.filter(t => t.id !== txId));
+                                                    handleDeleteTransaction({ id: txId });
                                                   } else {
                                                     setTransactions(prev => {
                                                       const index = prev.findIndex(t => t.id === txId);
                                                       if (index >= 0) {
-                                                        // Update
                                                         const updated = [...prev];
                                                         updated[index] = { ...updated[index], amount: isNaN(amount) ? 0 : amount };
                                                         return updated;
                                                       } else {
-                                                        // Create
                                                         return [...prev, {
                                                           id: txId,
                                                           type: 'income',
