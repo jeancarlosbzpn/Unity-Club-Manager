@@ -1783,6 +1783,9 @@ const ClubVencedoresSystem = () => {
   // ========================================
   useEffect(() => {
     const fetchData = async () => {
+      // Si estamos en la web y NO estamos autenticados aún, detener.
+      if (!isAuthenticated && !window.electronAPI) return;
+
       try {
         console.log('🔄 Cargando datos desde Electron Storage...');
         const allData = await loadFromStorage();
@@ -1933,7 +1936,7 @@ const ClubVencedoresSystem = () => {
     };
 
     fetchData();
-  }, []); // Only run once on mount
+  }, [isAuthenticated]); // Run whenever authentication status changes
 
   // ========================================
   // AUTO-SAVE DATA ON CHANGES
