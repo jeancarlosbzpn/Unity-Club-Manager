@@ -9641,11 +9641,6 @@ const ClubVencedoresSystem = () => {
   if (!isAuthenticated) {
     return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Calendar functions
   const getDaysInMonth = (date) => {
