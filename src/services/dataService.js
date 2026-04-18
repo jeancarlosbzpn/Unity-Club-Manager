@@ -2,6 +2,36 @@ import { db, saveCollectionToFirestore, loadCollectionFromFirestore, doc, setDoc
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 
+/**
+ * Internal utility to clean data before Firebase
+ * Removes 'undefined' and strips large base64 images that clog Firestore
+ */
+const sanitizeData = (obj) => {
+  if (obj === undefined) return null;
+  if (obj === null) return null;
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeData(item)).filter(item => item !== undefined);
+  }
+  if (typeof obj === 'object') {
+    const newObj = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const val = obj[key];
+        // Strip large base64 from Firestore to prevent 1MB limit issues
+        if (typeof val === 'string' && val.length > 5000 && val.startsWith('data:image')) {
+          newObj[key] = null;
+          continue;
+        }
+        if (val !== undefined) {
+          newObj[key] = sanitizeData(val);
+        }
+      }
+    }
+    return newObj;
+  }
+  return obj;
+};
+
 export const dataService = {
   /**
    * Reads a full data key. 
@@ -24,6 +54,19 @@ export const dataService = {
           const colRef = collection(db, 'members');
           const querySnapshot = await getDocs(colRef);
           return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        }
+
+        // Transactions might be a collection now
+        if (key === 'transactions') {
+          // Check metadata first
+          const docRef = doc(db, 'club_vencedores_data', 'transactions');
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists() && docSnap.data().isCollection) {
+            console.log('📂 Fetching transactions collection...');
+            const colRef = collection(db, 'transactions');
+            const querySnapshot = await getDocs(colRef);
+            return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+          }
         }
 
         // First check the metadata document in the common collection
@@ -61,41 +104,55 @@ export const dataService = {
       fullData[key] = data;
       return await window.electronAPI.writeData(fullData);
     } else {
-      // Special handling for members
+      // 1. Members handling (Collection)
       if (key === 'members' && Array.isArray(data)) {
-        // Use batch to update multiple members if needed, 
-        // but typically the app saves the whole array.
-        // For efficiency in a web app, we'd ideally save only one member, 
-        // but to keep the 23k lines of code working with minimal changes,
-        // we'll implement a "sync" approach for the array.
         const batch = writeBatch(db);
-        
-        // This is a heavy operation if members > 100. 
-        // In the future, we should refactor the UI to save individual members.
         for (const member of data) {
           if (!member.id) member.id = crypto.randomUUID();
           const memberRef = doc(db, 'members', member.id);
-          batch.set(memberRef, member);
+          batch.set(memberRef, sanitizeData(member));
         }
         await batch.commit();
         return { success: true };
       }
 
-      // Generic handling
-      await saveCollectionToFirestore(key, data);
+      // 2. Transactions handling (NEW: Collection Migration)
+      if (key === 'transactions' && Array.isArray(data)) {
+        // Only migrate if it looks like it might hit limits or if we want to enforce it
+        if (data.length > 50) {
+          const batch = writeBatch(db);
+          // Mark as collection
+          await setDoc(doc(db, 'club_vencedores_data', 'transactions'), { isCollection: true, updatedAt: new Date().toISOString() });
+          
+          for (const tx of data) {
+            if (!tx.id) tx.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+            const txRef = doc(db, 'transactions', tx.id);
+            batch.set(txRef, sanitizeData(tx));
+          }
+          await batch.commit();
+          return { success: true };
+        }
+      }
+
+      // Generic handling with sanitization
+      await saveCollectionToFirestore(key, sanitizeData(data));
       return { success: true };
     }
   },
 
   /**
    * Batch save for migration or full state updates
+   * Optimized: now can take optional list of changed keys
    */
-  saveFullState: async (allData) => {
+  saveFullState: async (allData, changedKeys = null) => {
     if (isElectron) {
       return await window.electronAPI.writeData(allData);
     } else {
-      for (const [key, value] of Object.entries(allData)) {
-        await dataService.writeData(key, value);
+      const keysToSync = changedKeys || Object.keys(allData);
+      for (const key of keysToSync) {
+        if (allData[key] !== undefined) {
+          await dataService.writeData(key, allData[key]);
+        }
       }
       return { success: true };
     }

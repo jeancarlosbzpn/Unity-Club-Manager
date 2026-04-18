@@ -562,6 +562,7 @@ const ClubVencedoresSystem = () => {
     members: [], // { id, name, grade, merits: [] }
     selectedMemberIds: [] // New: For mass selection
   });
+  const prevStateRef = useRef({});
   const [transactions, setTransactions] = useState([]);
   const [isVerifyingReceipt, setIsVerifyingReceipt] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({}); // { menuId: boolean }
@@ -1521,10 +1522,10 @@ const ClubVencedoresSystem = () => {
   };
 
   // Save data to Storage (Hybrid: Firebase + Electron)
-  const saveToElectron = async (dataToSave) => {
+  const saveToElectron = async (dataToSave, changedKeys = null) => {
     try {
-      await dataService.saveFullState(dataToSave);
-      console.log('💾 Data synced to storage (Cloud/Local)');
+      await dataService.saveFullState(dataToSave, changedKeys);
+      console.log(`💾 Data synced to storage${changedKeys ? ` (${changedKeys.length} keys changed)` : ''}`);
     } catch (error) {
       console.error('Error saving data:', error);
     }
@@ -1961,7 +1962,6 @@ const ClubVencedoresSystem = () => {
         cuotaAmount,
         masterGuideData,
         financeCategories,
-        // paymentConcepts, concepts, achievements removed as they are undefined
         reminders,
         inventoryCategories,
         tents,
@@ -1971,10 +1971,6 @@ const ClubVencedoresSystem = () => {
         uniformItems,
         uniformCategories,
         clubSettings,
-        duesConfig: {
-          startDate: duesStartDate,
-          skippedSaturdays
-        },
         qualifications,
         disciplineRecords,
         fixedPaymentConcepts,
@@ -1986,19 +1982,41 @@ const ClubVencedoresSystem = () => {
         memberProgress,
         requirementSections,
         firstAidItems,
-        cleaningSchedule
+        cleaningSchedule,
+        duesConfig: {
+          startDate: duesStartDate,
+          skippedSaturdays
+        }
       };
 
       try {
-        // SANITIZATION STEP:
-        const cleanData = JSON.parse(JSON.stringify(dataToSave));
-        await saveToElectron(cleanData);
+        // DETECCIÓN DE CAMBIOS: Solo guardamos las llaves que han mutado
+        const changedKeys = [];
+        const prev = prevStateRef.current;
+        
+        Object.keys(dataToSave).forEach(key => {
+          if (key === 'duesConfig') {
+            if (!prev[key] || prev[key].startDate !== duesStartDate || prev[key].skippedSaturdays !== skippedSaturdays) {
+              changedKeys.push(key);
+            }
+          } else if (prev[key] !== dataToSave[key]) {
+            changedKeys.push(key);
+          }
+        });
+
+        if (changedKeys.length > 0) {
+          // Sync selective keys to cloud (Cloud-sync optimized)
+          await saveToElectron(dataToSave, changedKeys);
+          
+          // Update ref for next comparison cycle
+          prevStateRef.current = { ...dataToSave };
+        }
       } catch (err) {
-        console.error("Error sanitizing/saving data:", err);
+        console.error("Error en auto-guardado optimizado:", err);
       }
     };
 
-    const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
+    const debounceSave = setTimeout(saveData, 1000); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
   }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, cleaningSchedule]);
