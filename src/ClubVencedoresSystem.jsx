@@ -12294,16 +12294,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       Panel Principal
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400 mt-1">Resumen General de {clubSettings?.name || 'su Club'}</p>
-                    
-                    {/* INJECTED FIREBASE DEBUGGER */}
-                    <div className="mt-4 p-4 bg-yellow-100 border-2 border-yellow-500 rounded-lg text-yellow-900 font-mono text-sm">
-                      <strong>🔍 Diagnosticador en vivo:</strong><br/>
-                      - Estado de Sesión (isAuthenticated): {isAuthenticated ? '👍 Autenticado' : '⏳ Falso'}<br/>
-                      - Total de Miembros en memoria: {members ? members.length : 'NULL'}<br/>
-                      - Total Transacciones en memoria: {transactions ? transactions.length : 'NULL'}<br/>
-                      - Si los números arriba dicen "0", significa que Firebase regresó arreglos vacíos o "null" debido a Reglas de Seguridad (o porque subiste un JSON vacío).<br/>
-                      <strong>👉 Por favor, abre la base de datos de Firestore en Google y revisa si dentro de la colección "members" y "club_vencedores_data" hay información.</strong>
-                    </div>
                   </div>
 
                   <div className="mb-6">
