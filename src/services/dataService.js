@@ -19,14 +19,20 @@ export const dataService = {
       }
     } else {
       try {
+        if (key === 'members') {
+          console.log('📂 Fetching members collection directly...');
+          const colRef = collection(db, 'members');
+          const querySnapshot = await getDocs(colRef);
+          return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        }
+
         // First check the metadata document in the common collection
-        const docRef = doc(db, COLLECTION_NAME, key);
+        const docRef = doc(db, 'club_vencedores_data', key);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           const content = docSnap.data();
           
-          // Case 1: The data was split into a sub-collection (due to 1MB limit)
           if (content.isCollection) {
             console.log(`📂 ${key} is stored as a collection. Loading items...`);
             const colRef = collection(db, key);
@@ -34,7 +40,6 @@ export const dataService = {
             return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           }
           
-          // Case 2: Standard single-document data
           return content.data;
         }
         return null;
