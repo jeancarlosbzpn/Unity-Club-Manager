@@ -56,4 +56,4 @@ export const loadCollectionFromFirestore = async (key) => {
 };
 
 // Export Firestore primitives for the dataService
-export { doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc, writeBatch };
+export { doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc, writeBatch, onSnapshot };

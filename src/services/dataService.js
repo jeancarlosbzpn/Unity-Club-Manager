@@ -1,4 +1,4 @@
-import { db, saveCollectionToFirestore, loadCollectionFromFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch, deleteDoc } from '../firebase-config';
+import { db, saveCollectionToFirestore, loadCollectionFromFirestore, doc, setDoc, getDoc, collection, getDocs, writeBatch, deleteDoc, onSnapshot } from '../firebase-config';
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 
@@ -104,9 +104,21 @@ export const dataService = {
       fullData[key] = data;
       return await window.electronAPI.writeData(fullData);
     } else {
-      // 1. Members handling (Collection)
+      // 1. Members handling (Collection + Deletions)
       if (key === 'members' && Array.isArray(data)) {
         const batch = writeBatch(db);
+        
+        // Sync deletions: find docs in cloud that are not in incoming array
+        const colRef = collection(db, 'members');
+        const currentSnap = await getDocs(colRef);
+        const incomingIds = data.map(m => m.id);
+        
+        currentSnap.docs.forEach(docSnap => {
+          if (!incomingIds.includes(docSnap.id)) {
+            batch.delete(docSnap.ref);
+          }
+        });
+
         for (const member of data) {
           if (!member.id) member.id = crypto.randomUUID();
           const memberRef = doc(db, 'members', member.id);
@@ -116,22 +128,30 @@ export const dataService = {
         return { success: true };
       }
 
-      // 2. Transactions handling (NEW: Collection Migration)
+      // 2. Transactions handling (Collection + Deletions)
       if (key === 'transactions' && Array.isArray(data)) {
-        // Only migrate if it looks like it might hit limits or if we want to enforce it
-        if (data.length > 50) {
-          const batch = writeBatch(db);
-          // Mark as collection
-          await setDoc(doc(db, 'club_vencedores_data', 'transactions'), { isCollection: true, updatedAt: new Date().toISOString() });
-          
-          for (const tx of data) {
-            if (!tx.id) tx.id = Date.now().toString() + Math.random().toString(36).substr(2, 5);
-            const txRef = doc(db, 'transactions', tx.id);
-            batch.set(txRef, sanitizeData(tx));
+        const batch = writeBatch(db);
+        // Mark as collection
+        await setDoc(doc(db, 'club_vencedores_data', 'transactions'), { isCollection: true, updatedAt: new Date().toISOString() });
+        
+        // Sync deletions
+        const colRef = collection(db, 'transactions');
+        const currentSnap = await getDocs(colRef);
+        const incomingIds = data.map(t => t.id);
+        
+        currentSnap.docs.forEach(docSnap => {
+          if (!incomingIds.includes(docSnap.id)) {
+            batch.delete(docSnap.ref);
           }
-          await batch.commit();
-          return { success: true };
+        });
+
+        for (const tx of data) {
+          if (!tx.id) tx.id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+          const txRef = doc(db, 'transactions', tx.id);
+          batch.set(txRef, sanitizeData(tx));
         }
+        await batch.commit();
+        return { success: true };
       }
 
       // Generic handling with sanitization
@@ -141,8 +161,35 @@ export const dataService = {
   },
 
   /**
+   * Real-time subscription to a data key
+   */
+  subscribeToKey: (key, callback) => {
+    if (isElectron) return () => {}; // Browser only
+    
+    // Subscribe logic for specific keys
+    if (key === 'members' || key === 'transactions') {
+      const colRef = collection(db, key);
+      return onSnapshot(colRef, (snapshot) => {
+        // Skip updates initiated by THIS client to avoid echo/loops
+        if (snapshot.metadata.hasPendingWrites) return;
+        
+        const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        callback(data);
+      });
+    }
+
+    // Default document-based subscription
+    const docRef = doc(db, 'club_vencedores_data', key);
+    return onSnapshot(docRef, (snapshot) => {
+      if (snapshot.metadata.hasPendingWrites) return;
+      if (snapshot.exists()) {
+        callback(snapshot.data().data);
+      }
+    });
+  },
+
+  /**
    * Batch save for migration or full state updates
-   * Optimized: now can take optional list of changed keys
    */
   saveFullState: async (allData, changedKeys = null) => {
     if (isElectron) {

@@ -614,6 +614,51 @@ const ClubVencedoresSystem = () => {
     }
   }, [isAuthenticated, currentUser]);
 
+  // ========================================
+  // REAL-TIME SYNC LISTENERS (MULTI-DEVICE)
+  // ========================================
+  useEffect(() => {
+    if (!isAuthenticated || isElectron) return;
+
+    console.log("📡 Activando sincronización en tiempo real...");
+    const subs = [];
+    
+    // Core data streams to keep in sync across devices
+    const streams = [
+      { key: 'members', setter: setMembers },
+      { key: 'transactions', setter: setTransactions },
+      { key: 'activities', setter: setActivities },
+      { key: 'units', setter: setUnits },
+      { key: 'inventory', setter: setInventory },
+      { key: 'users', setter: setUsers },
+      { key: 'clubSettings', setter: setClubSettings },
+      { key: 'disciplineRecords', setter: setDisciplineRecords },
+      { key: 'attendanceRecords', setter: setAttendanceRecords },
+      { key: 'memberProgress', setter: setMemberProgress }
+    ];
+
+    streams.forEach(({ key, setter }) => {
+      try {
+        const unsub = dataService.subscribeToKey(key, (data) => {
+          if (!data) return;
+          console.log(`☁️ Sync recibido para: ${key}`);
+          setter(data);
+          if (prevStateRef.current) {
+            prevStateRef.current[key] = data;
+          }
+        });
+        subs.push(unsub);
+      } catch (err) {
+        console.error(`Error al suscribirse a ${key}:`, err);
+      }
+    });
+
+    return () => {
+      console.log("🛑 Deteniendo sincronización en tiempo real...");
+      subs.forEach(u => u());
+    };
+  }, [isAuthenticated]);
+
   const [resolvingTransaction, setResolvingTransaction] = useState(null); // Transaction being resolved (debt)
   const [showFinanceForm, setShowFinanceForm] = useState(false);
   const [showMonthlyReport, setShowMonthlyReport] = useState(false);
