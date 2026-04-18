@@ -38,10 +38,40 @@ const MigrationTool = ({ onComplete }) => {
           return m;
         });
       }
+      
+      if (dataToSync.units) {
+        addLog("Removiendo logos base64 pesados de unidades...");
+        dataToSync.units = dataToSync.units.map(u => {
+          if (u.logo && u.logo.length > 1000) {
+            return { ...u, logo: null };
+          }
+          return u;
+        });
+      }
+
+      // Sanitizador global para evitar "invalid nested entity" o valores undefined que Firestore rechaza
+      const sanitizeForFirestore = (obj) => {
+        if (obj === undefined) return null;
+        if (obj === null) return null;
+        if (Array.isArray(obj)) {
+          return obj.map(item => sanitizeForFirestore(item)).filter(item => item !== undefined);
+        }
+        if (typeof obj === 'object') {
+          const newObj = {};
+          for (const key in obj) {
+            if (obj[key] !== undefined) {
+              newObj[key] = sanitizeForFirestore(obj[key]);
+            }
+          }
+          return newObj;
+        }
+        return obj;
+      };
 
       for (const key of keys) {
         addLog(`Subiendo: ${key}...`);
-        await dataService.writeData(key, dataToSync[key]);
+        const cleanData = sanitizeForFirestore(dataToSync[key]);
+        await dataService.writeData(key, cleanData);
       }
 
       setStatus('success');
