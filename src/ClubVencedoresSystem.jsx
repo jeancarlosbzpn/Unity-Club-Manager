@@ -14640,7 +14640,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('directive');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -15081,7 +15081,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </>
                         )}
                       </div>
-                    );
+                    </>);
                   })()}
                 );
               })()
@@ -15093,7 +15093,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('parents');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -15275,9 +15275,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </>
-                  )}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
 
 
@@ -15289,7 +15289,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('units');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -15802,9 +15802,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         );
                       })}
                     </div>
-                  )}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
 
 
@@ -15815,7 +15815,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('achievements');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -16189,9 +16189,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         );
                       })}
                     </div>
-                  )}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
 
             {/* Qualifications Module */}
@@ -16200,7 +16200,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('qualifications');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -16689,9 +16689,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                </div>
-              )
+                   </>);
+                })()
+              }
             }
             {/* Medical Records Module */}
             {
@@ -16699,7 +16699,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('medical');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -16874,9 +16874,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
             {/* Classes Module */}
             {
@@ -16884,7 +16884,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('classes');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -17415,16 +17415,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     );
                   })()}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
             {/* Points System Module */}
             {
                activeModule === 'points' && (() => {
                  const accessLevel = getModuleAccessLevel('points');
                  const isReadOnly = accessLevel === ACCESS_READ;
-                 return (
-                   <div>
+                 return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -18892,9 +18892,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </>
                     );
                   })()}
-                </div>
-              );
-            })()
+                  </>);
+                })()
+              }
           }
             {/* Finanzas Module */}
             {
@@ -21100,9 +21100,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       member={selectedBirthdayMember}
                       onClose={() => setSelectedBirthdayMember(null)}
                     />
-                  )}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
 
             {
@@ -21486,7 +21486,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('cleaning');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cronograma: Miércoles y Viernes</h3>
@@ -22858,9 +22858,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     );
-                  })()}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
 
             {/* Master Guide Program Module */}
@@ -22868,7 +22868,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 const accessLevel = getModuleAccessLevel('master_guide');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
-                return (
+                return (<>
                   <div>
                     {/* Navigation / Header */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
@@ -23291,14 +23291,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              )
+                  </>);
+                })()
+              }
             }
 
             {
-              activeModule === 'settings' && (
-                <div>
+              activeModule === 'settings' && (<>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
@@ -24076,7 +24075,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   </div>
-                </div>
+                </>
               )
             }
           </div>
