@@ -15082,9 +15082,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         )}
                       </div>
                     </>);
-                  })()}
-                );
-              })()
+                })()
             }
 
             {/* Parents Module */}
@@ -18891,7 +18889,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         )}
                       </>
                     );
-                  })()}
                   </>);
                 })()
               }
@@ -20401,8 +20398,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </button>
                     </div>
                   </div>
-                );
-              })()}
+                </>);
+              })()
+            }
 
             {/* Cuotas (Fees) Module */}
 
@@ -21836,8 +21834,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     ))}
                   </div>
                 </div>
-              )
-            }
+              </>);
+            })()
+          }
 
 
 
