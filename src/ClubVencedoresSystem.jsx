@@ -15081,10 +15081,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </>
                         )}
                       </div>
-                    </>);
-                })()
+                    );
+                  })()}
+                </>);
+              })()
             }
-
             {/* Parents Module */}
             {
               activeModule === 'parents' && (() => {
@@ -15276,7 +15277,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </>);
                 })()
               }
-            }
 
 
 
@@ -18889,10 +18889,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         )}
                       </>
                     );
-                  </>);
-                })()
-              }
-          }
+                  })()}
+                </>);
+              })()
+            }
             {/* Finanzas Module */}
             {
               activeModule === 'finances' && !showFinanceForm && (() => {
@@ -21818,8 +21818,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     })}
                   </div>
                 </div>
-              )
-            }
+              </>);
+            })()}
 
             {
               activeModule === 'activities' && (
@@ -21834,9 +21834,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     ))}
                   </div>
                 </div>
-              </>);
-            })()
-          }
+              )
+            }
 
 
 
