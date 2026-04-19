@@ -15801,9 +15801,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         );
                       })}
                     </div>
-                  </>);
-                })()
-              }
+                  )}
+                </>);
+              })()
+            }
             }
 
 
@@ -16188,9 +16189,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         );
                       })}
                     </div>
-                  </>);
-                })()
-              }
+                  )}
+                </>);
+              })()
+            }
             }
 
             {/* Qualifications Module */}
@@ -16873,9 +16875,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       ))}
                     </div>
-                  </>);
-                })()
-              }
+                  )}
+                </>);
+              })()
+            }
             }
             {/* Classes Module */}
             {
@@ -21099,7 +21102,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       member={selectedBirthdayMember}
                       onClose={() => setSelectedBirthdayMember(null)}
                     />
-                  </>);
+                  )}
+                </>);
                 })()
               }
             }
@@ -22857,13 +22861,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     );
-                  </>);
-                })()
+                  )
               }
-            }
 
             {/* Master Guide Program Module */}
             {
+              activeModule === 'master_guide' && (() => {
                 const accessLevel = getModuleAccessLevel('master_guide');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
