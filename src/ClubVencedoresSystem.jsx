@@ -16182,15 +16182,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 </details>
                                 )}
                               </div>
-                           </div>
-                         );
-                       })
-                     }
-                   </div>
-                 )}
-               </>);
-             })()
-           }
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  }
+
 
             {/* Qualifications Module */}
             {
@@ -16691,9 +16689,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 </>);
               })()
             }
+
             {/* Medical Records Module */}
             {
-              activeModule === 'medical' && (() => {
+              activeModule === "medical" && (() => {
                 const accessLevel = getModuleAccessLevel('medical');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
@@ -18888,8 +18887,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         )}
                       </>
                     );
-                  })()
-                }
+                   })()}
+                 </>);
+               })()
+             }
             {/* Finanzas Module */}
             {
               activeModule === 'finances' && !showFinanceForm && (() => {
@@ -21951,13 +21952,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
                           </div>
                         )}
-                      </>
-                    )}
-                  </div>
-                </div>
+                    </div>
                 </>);
-                })()
-              }
+              })()
+            }
 
             {/* Activity Form (Modal) */}
             {
@@ -24074,14 +24072,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 </>
               )
             }
+            }
           </div>
         </div>
       </div>
     </div>
+    }
+    }
+    }
+    }
   );
 };
-
-// Render the application
 
 const ClubVencedoresApp = () => (
   <ErrorBoundary>
