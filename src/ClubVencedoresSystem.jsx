@@ -16189,10 +16189,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         );
                       })}
                     </div>
-                  )}
                 </>);
               })()
-            }
             }
 
             {/* Qualifications Module */}
@@ -16235,7 +16233,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
-                  </div>
+
 
                   {/* Statistics Cards */}
                   {(() => {
@@ -16690,9 +16688,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </tbody>
                       </table>
                     </div>
-                   </>);
-                })()
-              }
+                  </div>
+                </>);
+              })()
             }
             {/* Medical Records Module */}
             {
@@ -16878,7 +16876,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   )}
                 </>);
               })()
-            }
             }
             {/* Classes Module */}
             {
@@ -17417,9 +17414,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     );
                   })()}
-                  </>);
-                })()
-              }
+                </>);
+              })()
             }
             {/* Points System Module */}
             {
@@ -18893,10 +18889,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         )}
                       </>
                     );
-                  })()}
-                </>);
-              })()
-            }
+                  })()
+                }
             {/* Finanzas Module */}
             {
               activeModule === 'finances' && !showFinanceForm && (() => {
@@ -20402,7 +20396,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </button>
                     </div>
                   </div>
-                </>);
+                </div>
+                );
               })()
             }
 
@@ -21102,10 +21097,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       member={selectedBirthdayMember}
                       onClose={() => setSelectedBirthdayMember(null)}
                     />
+                    </div>
                   )}
-                </>);
-                })()
-              }
+                </div>
+              )
             }
 
             {
@@ -21961,8 +21956,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     )}
                   </div>
                 </div>
-              )
-            }
+                </>);
+                })()
+              }
 
             {/* Activity Form (Modal) */}
             {
@@ -22857,12 +22853,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   })}
                               </div>
                             )}
-                          </div>
-                        </div>
                       </div>
-                    );
-                  )
-              }
+                    </div>
+                  </div>
+                </div>
+              )
+            }
 
             {/* Master Guide Program Module */}
             {
@@ -23296,7 +23292,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </>);
                 })()
               }
-            }
 
             {
               activeModule === 'settings' && (<>
