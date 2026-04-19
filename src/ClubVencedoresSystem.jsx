@@ -14610,10 +14610,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
-
-                    {/* Grid closed before buttons */}
                   </div>
 
+                  <div className="flex gap-4 mt-8">
                     {!isReadOnly && (
                       <button
                         onClick={handleSubmit}
@@ -14625,7 +14624,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     )}
                     <button
                       onClick={handleCancel}
-                      className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 flex-1"
+                      className={`px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 ${!isReadOnly ? 'flex-1' : 'w-full'}`}
                     >
                       {isReadOnly ? 'Volver' : 'Cancelar'}
                     </button>
