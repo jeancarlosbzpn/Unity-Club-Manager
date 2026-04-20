@@ -189,6 +189,33 @@ export const dataService = {
         return { success: true };
       }
 
+      // 3. User profiles handling (Collection)
+      if (key === 'users' && Array.isArray(data)) {
+        const STORAGE_PREFIX = 'clubvencedores_';
+        const batch = writeBatch(db);
+        
+        // Sync deletions
+        const colRef = collection(db, STORAGE_PREFIX + 'users');
+        const currentSnap = await getDocs(colRef);
+        const incomingIds = data.map(u => u.username || u.id); // Use username as ID if present
+        
+        currentSnap.docs.forEach(docSnap => {
+          if (!incomingIds.includes(docSnap.id)) {
+            batch.delete(docSnap.ref);
+          }
+        });
+
+        for (const user of data) {
+          const userId = user.username || user.id || Date.now().toString();
+          const userRef = doc(db, STORAGE_PREFIX + 'users', userId);
+          batch.set(userRef, sanitizeData(user));
+        }
+        await batch.commit();
+        
+        await saveCollectionToFirestore(key, sanitizeData(data));
+        return { success: true };
+      }
+
       // Generic handling with sanitization
       await saveCollectionToFirestore(key, sanitizeData(data));
       return { success: true };
