@@ -5244,7 +5244,7 @@ const ClubVencedoresSystem = () => {
                     </div>
                   </div>
                 </div>
-              );
+                        );
             })()}
 
             {campsTab === 'attendees' && (() => {
@@ -5611,9 +5611,9 @@ const ClubVencedoresSystem = () => {
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              );
+              )}
+            </div>
+  );
             })()}
           </div>
         </div>
@@ -5902,7 +5902,6 @@ const ClubVencedoresSystem = () => {
                     </table>
                   </div>
                 </div>
-              </div>
             )}
 
             {/* SELECTION MODE */}
@@ -6356,11 +6355,10 @@ const ClubVencedoresSystem = () => {
                     </>
                   );
                 })()}
-              </div>
-            </div>
-          </div>
-        )
-        }
+		              </div>
+		                    </div>
+		                  </div>
+		              )}
 
         {/* INVENTORY VIEW */}
         {
@@ -6726,10 +6724,10 @@ const ClubVencedoresSystem = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          )
-        }
-      </div >
+          </div>
+          )}
+      </div>
+    </div>
     );
   };
 
@@ -13612,9 +13610,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     )}
                   </div>
-                );
-              })()
-            }
+                )}
 
             {/* Member Form */}
             {
@@ -15028,8 +15024,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     </div>
                                   </div>
                                 </div>
-                              );
-                            })}
+                        );
+                      })}
 
                             {/* Summary Card */}
                             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6">
@@ -15829,69 +15825,53 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   </div>
-
-                  {/* Statistics Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-purple-600 dark:text-purple-300 text-sm font-semibold">Guías Mayores</p>
-                          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'master-guide')).length}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-purple-400" />
+        {/* Guías Mayores */}
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-600 dark:text-purple-300 text-sm font-semibold">Guías Mayores</p>
+              <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{members.filter(m => m.achievements?.some(a => a.achievementId === "master-guide")).length}</p>
+            </div>
+            <Award className="w-10 h-10 text-purple-400" />
           </div>
-                      </div>
-                    </div>
-
-                    </div>
-                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-yellow-600 dark:text-yellow-300 text-sm font-semibold">Medallas de Oro</p>
-                          <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'medal-gold')).length}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-yellow-400" />
+        </div>
+        {/* Oro */}
+        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-yellow-600 dark:text-yellow-300 text-sm font-semibold">Medallas de Oro</p>
+              <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{members.filter(m => m.achievements?.some(a => a.achievementId === "medal-gold")).length}</p>
+            </div>
+            <Award className="w-10 h-10 text-yellow-400" />
           </div>
-                      </div>
-                    </div>
-
-                    </div>
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold">Medallas de Plata</p>
-                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'medal-silver')).length}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-gray-400" />
-                      </div>
-                    </div>
-
-                    </div>
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40 rounded-lg p-4 border-2 border-indigo-200 dark:border-indigo-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-indigo-600 dark:text-indigo-300 text-sm font-semibold">Total Logros</p>
-                          <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
-                            {members.reduce((sum, m) => sum + (m.achievements?.length || 0), 0)}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-indigo-400" />
-                      </div>
-                    </div>
+        </div>
+        {/* Plata */}
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-600">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold">Medallas de Plata</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{members.filter(m => m.achievements?.some(a => a.achievementId === "medal-silver")).length}</p>
+            </div>
+            <Award className="w-10 h-10 text-gray-400" />
+          </div>
+        </div>
+        {/* Total */}
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40 rounded-lg p-4 border-2 border-indigo-200 dark:border-indigo-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-600 dark:text-indigo-300 text-sm font-semibold">Total Logros</p>
+              <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{members.reduce((sum, m) => sum + (m.achievements?.length || 0), 0)}</p>
+            </div>
+            <Award className="w-10 h-10 text-indigo-400" />
+          </div>
+        </div>
                   </div>
-                    </div>
 
-                  {/* Members Grid */}
                   {members.length === 0 ? (
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
                       <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg">No hay miembros registrados aún</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">No hay miembros registrados aún</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -16183,14 +16163,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                             );
                                           })}
                                       </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </details>
+                                </details>
                             )}
                           </div>
+                        </div>
+                      </div>
                         );
                       })}
                     </div>
+                  )}
                   </>
                 );
               })()}
@@ -16234,7 +16217,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
-
+                  </div>
 
                   {/* Statistics Cards */}
                   {(() => {
@@ -16690,8 +16673,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </table>
                     </div>
                   </div>
-                </>);
-              })()}
+                )}
 
 
             {/* Medical Records Module */}
@@ -20400,7 +20382,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </button>
                     </div>
                   </div>
-                </div>
                 );
               })()
             }
@@ -21101,17 +21082,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       member={selectedBirthdayMember}
                       onClose={() => setSelectedBirthdayMember(null)}
                     />
-                    </div>
                   )}
                 </div>
-            }
+              )}
 
             {
               (activeModule === 'activities' || activeModule === 'ranking') && !showActivityForm && (() => {
                 const accessLevel = getModuleAccessLevel(activeModule);
                 const isReadOnly = accessLevel === ACCESS_READ;
                 return (
-                  <>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     {activeModule === 'activities' ? (
                       <div className="flex items-center justify-between">
@@ -21208,7 +21187,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     )}
                   </div>
-                  </>
                 );
               })()
             }
@@ -21417,8 +21395,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     )}
                   </div>
                 );
-              })()
-            }
+              })()}
 
             {/* ITINERARY MODULE */}
             {
@@ -21721,7 +21698,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       ))}
                     </div>
                   </div>
-                );
+                )}
               })()
             }
 
@@ -21821,7 +21798,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     })}
                   </div>
                 </div>
-              </>);
+              )
             })()}
 
             {
@@ -21955,8 +21932,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
                           </div>
                         )}
-                    </div>
-              })()
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
             }
 
             {/* Activity Form (Modal) */}
@@ -22852,12 +22832,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   })}
                               </div>
                             )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
+                    );
+                  })()}
 
             {/* Master Guide Program Module */}
             {
@@ -23189,6 +23168,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       >
                                         <Edit2 className="w-4 h-4" />
                                       </button>
+                                      <button
                                         onClick={() => {
                                           if (confirm('¿Eliminar requisito?')) {
                                             setMasterGuideData(prev => ({
@@ -23288,12 +23268,14 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
+                  )}
+                </div>
                   </>);
-                })()
-              }
+                })()}
 
             {
-              activeModule === 'settings' && (<>
+              activeModule === 'settings' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
@@ -24071,18 +24053,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   </div>
-                </>);
-              })()}
-          </main>
-        </div>
-      </div>
-    );
-  };
+                </div>
+              </div>
+            )}
+          </div>
+  );
+};
 
 const ClubVencedoresApp = () => (
   <ErrorBoundary>
     <ClubVencedoresSystem />
   </ErrorBoundary>
 );
-}
 export default ClubVencedoresApp;
