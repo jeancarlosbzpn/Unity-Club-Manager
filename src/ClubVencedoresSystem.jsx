@@ -1819,11 +1819,19 @@ const ClubVencedoresSystem = () => {
   // ========================================
   useEffect(() => {
     const fetchData = async () => {
-      // Si estamos en la web y NO estamos autenticados aún, detener.
-      if (!isAuthenticated && !window.electronAPI) return;
-
       try {
-        console.log('🔄 Cargando datos desde Electron Storage...');
+        // En la web, si NO estamos autenticados, solo permitimos cargar la lista de usuarios
+        // para que el login pueda funcionar con perfiles creados en otros equipos.
+        if (!isAuthenticated && !window.electronAPI) {
+          console.log('📡 Sincronizando lista de usuarios para inicio de sesión...');
+          const cloudUsers = await dataService.readData('users');
+          if (cloudUsers && Array.isArray(cloudUsers) && cloudUsers.length > 0) {
+            setUsers(cloudUsers);
+          }
+          return;
+        }
+
+        console.log('🔄 Cargando datos completos desde el almacenamiento...');
         const allData = await loadFromStorage();
 
         if (allData.members) setMembers(allData.members);
@@ -1972,7 +1980,7 @@ const ClubVencedoresSystem = () => {
     };
 
     fetchData();
-  }, [isAuthenticated]); // Run whenever authentication status changes
+  }, [isAuthenticated]); // Se ejecuta al cargar por primera vez y cuando cambia el estado de autenticación
 
   // ========================================
   // AUTO-SAVE DATA ON CHANGES
