@@ -2045,7 +2045,7 @@ const ClubVencedoresSystem = () => {
     const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
-  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, cleaningSchedule]);
+  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, cleaningSchedule, memberUniforms, uniformInspections, reminders]);
 
   // ========================================
 
