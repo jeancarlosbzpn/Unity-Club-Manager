@@ -368,30 +368,6 @@ const ClubVencedoresSystem = () => {
     });
     return () => unsubscribe();
   }, []);
-
-  // NEW: Identity Sync Effect - Link Firebase Auth user to internal profile roles/positions
-  useEffect(() => {
-    if (isAuthenticated && currentUser && users.length > 0) {
-      // 1. HARDCODED BYPASS FOR OWNER
-      if (currentUser.email === 'jeancarlosbzpn@gmail.com' && currentUser.position !== 'Director') {
-        console.log('👑 Owner detected, assigning Director role automatically');
-        setCurrentUser(prev => ({ ...prev, role: 'administrator', position: 'Director', name: 'Director General' }));
-        return;
-      }
-
-      // 2. SEARCH IN INTERNAL USERS LIST
-      // Find internal profile by email (case-insensitive) or username
-      const profile = users.find(u =>
-        (u.email && u.email.toLowerCase() === (currentUser.email?.toLowerCase())) ||
-        (u.username && currentUser.email && u.username.toLowerCase() === currentUser.email.split('@')[0].toLowerCase())
-      );
-
-      if (profile && (profile.position !== currentUser.position || profile.role !== currentUser.role)) {
-        console.log('🔗 Linking Firebase user to internal profile found in DB:', profile.position);
-        setCurrentUser(prev => ({ ...prev, ...profile }));
-      }
-    }
-  }, [users, isAuthenticated, currentUser?.email]);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [showMigration, setShowMigration] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(false);
@@ -428,6 +404,31 @@ const ClubVencedoresSystem = () => {
       position: 'Director'
     }
   ]);
+
+  // NEW: Identity Sync Effect - Link Firebase Auth user to internal profile roles/positions
+  // Positioned here AFTER 'users' and 'currentUser' state are defined
+  useEffect(() => {
+    if (isAuthenticated && currentUser && users.length > 0) {
+      // 1. HARDCODED BYPASS FOR OWNER
+      if (currentUser.email === 'jeancarlosbzpn@gmail.com' && currentUser.position !== 'Director') {
+        console.log('👑 Owner detected, assigning Director role automatically');
+        setCurrentUser(prev => ({ ...prev, role: 'administrator', position: 'Director', name: 'Director General' }));
+        return;
+      }
+
+      // 2. SEARCH IN INTERNAL USERS LIST
+      // Find internal profile by email (case-insensitive) or username
+      const profile = users.find(u =>
+        (u.email && u.email.toLowerCase() === (currentUser.email?.toLowerCase())) ||
+        (u.username && currentUser.email && u.username.toLowerCase() === currentUser.email.split('@')[0].toLowerCase())
+      );
+
+      if (profile && (profile.position !== currentUser.position || profile.role !== currentUser.role)) {
+        console.log('🔗 Linking Firebase user to internal profile found in DB:', profile.position);
+        setCurrentUser(prev => ({ ...prev, ...profile }));
+      }
+    }
+  }, [users, isAuthenticated, currentUser?.email]);
 
   // Admin credentials (reference to main admin)
   const [adminUser, setAdminUser] = useState(users[0]);
