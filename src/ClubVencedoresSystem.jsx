@@ -15844,6 +15844,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
 
+                    </div>
                     <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
                       <div className="flex items-center justify-between">
                         <div>
@@ -15856,6 +15857,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
 
+                    </div>
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-600">
                       <div className="flex items-center justify-between">
                         <div>
@@ -15868,6 +15870,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
 
+                    </div>
                     <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40 rounded-lg p-4 border-2 border-indigo-200 dark:border-indigo-800">
                       <div className="flex items-center justify-between">
                         <div>
@@ -15880,6 +15883,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   </div>
+                    </div>
 
                   {/* Members Grid */}
                   {members.length === 0 ? (
@@ -16177,21 +16181,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                             );
                                           })}
                                       </div>
-                                    </div>
                                   </div>
-                                </details>
-                                )}
-                              </div>
-                            </div>
+                                </div>
+                              </details>
+                            )}
                           </div>
-                            </div>
-                          );
-                        })}
-                    </>
-                  );
-                })()}
-            {
-              activeModule === 'qualifications' && (() => {
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+                    })()}
                 const accessLevel = getModuleAccessLevel('qualifications');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
@@ -16685,7 +16686,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </table>
                     </div>
                   </div>
-                    </div>
                 </>);
               })()
             }
@@ -24080,5 +24080,5 @@ const ClubVencedoresApp = () => (
     <ClubVencedoresSystem />
   </ErrorBoundary>
 );
-
+}
 export default ClubVencedoresApp;
