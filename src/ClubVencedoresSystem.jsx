@@ -3643,11 +3643,16 @@ const ClubVencedoresSystem = () => {
             const ownedItems = applicable.filter(item => !missingIds.includes(item.id)).map(i => i.label);
             const missingItems = applicable.filter(item => missingIds.includes(item.id)).map(i => i.label);
             
+            // Calculate total cost of missing items
+            const totalCost = applicable
+              .filter(item => missingIds.includes(item.id))
+              .reduce((sum, item) => sum + (item.price || 0), 0);
+
             const totalCount = applicable.length;
             const ownedCount = ownedItems.length;
             const percent = totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0;
 
-            return { name: `${m.firstName} ${m.lastName}`, ownedItems, missingItems, percent };
+            return { name: `${m.firstName} ${m.lastName}`, ownedItems, missingItems, percent, totalCost };
           }).filter(Boolean);
 
           if (inspectedMembers.length === 0) return '';
@@ -3658,10 +3663,11 @@ const ClubVencedoresSystem = () => {
               <table>
                 <thead>
                   <tr>
-                    <th style="width: 25%;">Miembro</th>
+                    <th style="width: 20%;">Miembro</th>
                     <th style="width: 15%;">Progreso</th>
-                    <th style="width: 30%;">En Uniforme (Tiene)</th>
-                    <th style="width: 30%;">Faltantes</th>
+                    <th style="width: 25%;">En Uniforme (Tiene)</th>
+                    <th style="width: 28%;">Faltantes</th>
+                    <th style="width: 12%; text-align: right;">Monto Faltante</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3687,6 +3693,9 @@ const ClubVencedoresSystem = () => {
                           ${m.missingItems.map(i => `<span class="badge badge-red">${i}</span>`).join('')}
                           ${m.missingItems.length === 0 ? '<span style="color: #10b981; font-weight: bold; font-size: 11px;">✓ Todo completo</span>' : ''}
                         </div>
+                      </td>
+                      <td style="text-align: right; font-weight: 700; color: ${m.totalCost > 0 ? '#b91c1c' : '#10b981'};">
+                        ${m.totalCost > 0 ? `$${m.totalCost.toFixed(2)}` : '—'}
                       </td>
                     </tr>
                   `).join('')}
@@ -6313,11 +6322,16 @@ const ClubVencedoresSystem = () => {
                                 const ownedItems = applicable.filter(item => !missingIds.includes(item.id)).map(i => i.label);
                                 const missingItems = applicable.filter(item => missingIds.includes(item.id)).map(i => i.label);
                                 
+                                // Calculate total cost of missing items
+                                const totalCost = applicable
+                                  .filter(item => missingIds.includes(item.id))
+                                  .reduce((sum, item) => sum + (item.price || 0), 0);
+
                                 const totalCount = applicable.length;
                                 const ownedCount = ownedItems.length;
                                 const percent = totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0;
 
-                                return { name: `${m.firstName} ${m.lastName}`, ownedItems, missingItems, percent };
+                                return { name: `${m.firstName} ${m.lastName}`, ownedItems, missingItems, percent, totalCost };
                               }).filter(Boolean);
 
                               const printContent = `
@@ -6360,10 +6374,11 @@ const ClubVencedoresSystem = () => {
                                         <table>
                                           <thead>
                                             <tr>
-                                              <th style="width: 25%;">Miembro</th>
+                                              <th style="width: 20%;">Miembro</th>
                                               <th style="width: 15%;">Progreso</th>
-                                              <th style="width: 30%;">En Uniforme (Tiene)</th>
-                                              <th style="width: 30%;">Faltantes</th>
+                                              <th style="width: 25%;">En Uniforme (Tiene)</th>
+                                              <th style="width: 28%;">Faltantes</th>
+                                              <th style="width: 12%; text-align: right;">Monto Faltante</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -6385,6 +6400,9 @@ const ClubVencedoresSystem = () => {
                                                     ${m.missingItems.map(i => `<span class="badge badge-red">${i}</span>`).join('')}
                                                     ${m.missingItems.length === 0 ? '<span style="color: #10b981; font-weight: bold; font-size: 11px;">✓ Todo completo</span>' : ''}
                                                   </div>
+                                                </td>
+                                                <td style="text-align: right; font-weight: 700; color: ${m.totalCost > 0 ? '#b91c1c' : '#10b981'};">
+                                                  ${m.totalCost > 0 ? `$${m.totalCost.toFixed(2)}` : '—'}
                                                 </td>
                                               </tr>
                                             `).join('')}
