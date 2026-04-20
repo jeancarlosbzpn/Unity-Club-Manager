@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit, Edit2, Save, X, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, CheckCircle2, Circle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud } from 'lucide-react';
+import { Search, Plus, Edit, Edit2, Save, X, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import ReactQuill, { Quill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -6182,7 +6182,13 @@ const ClubVencedoresSystem = () => {
                                           className={`p-2 rounded-full transition-all ${inspection.isInspected ? 'text-indigo-600 bg-indigo-100' : 'text-gray-300 hover:text-indigo-400 hover:bg-gray-100'} `}
                                           title={inspection.isInspected ? "Marcado como Inspeccionado" : "Marcar como Inspeccionado"}
                                         >
-                                          {inspection.isInspected ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                                          {inspection.isInspected ? (
+                                            <CheckCircle className="w-5 h-5" />
+                                          ) : (
+                                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <circle cx="12" cy="12" r="10" />
+                                            </svg>
+                                          )}
                                         </button>
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap">
