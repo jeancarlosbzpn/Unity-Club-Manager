@@ -2005,30 +2005,65 @@ const ClubVencedoresSystem = () => {
 
   // ========================================
 
-  // Check if user has access to a module
-  const hasModuleAccess = (moduleId) => {
-    if (!currentUser) return false;
-    
-    // Bypás de seguridad para el dueño de la nube primaria
-    if (currentUser.email === 'jeancarlosbzpn@gmail.com') return true;
+  // === RBAC: Get module access level for current user ===
+  // Returns: 'write' (full access), 'read' (view only), 'none' (hidden/no access)
+  const getModuleAccessLevel = (moduleId) => {
+    if (!currentUser) return 'none';
+    // Cloud owner always has full access
+    if (currentUser.email === 'jeancarlosbzpn@gmail.com') return 'write';
+    // Administrator role always has full access
+    if (currentUser.role === 'administrator') return 'write';
 
-    if (currentUser.role === 'administrator' || currentUser.position === 'Director') return true;
+    const pos = currentUser.position || '';
 
-    // Check for explicit allowedModules
-    if (currentUser.allowedModules && Array.isArray(currentUser.allowedModules) && currentUser.allowedModules.length > 0) {
-      return currentUser.allowedModules.includes(moduleId);
-    }
-
-    // Fallback to legacy position-based permissions
-    const permissions = {
-      'Subdirector': ['dashboard', 'members', 'directive', 'activities', 'inventory', 'idcards', 'ranking', 'communication', 'discipline'],
-      'Secretary': ['dashboard', 'members', 'directive', 'parents', 'medical', 'classes', 'units', 'activities', 'ranking', 'inventory', 'settings', 'communication', 'discipline'],
-      'Secretario': ['dashboard', 'members', 'directive', 'parents', 'medical', 'classes', 'units', 'activities', 'ranking', 'inventory', 'settings', 'communication', 'discipline'],
-      'Treasurer': ['dashboard', 'finances', 'cuotas', 'inventory']
+    // Positions with WRITE access per module
+    const writeAccess = {
+      'dashboard':    ['Director','Subdirector','Secretario','Secretary','DUMC','Tesorera','Treasurer','Consejero','Instructor','Capitan'],
+      'discipline':   ['Director','Subdirector','Secretario','Secretary','DUMC'],
+      'activities':   ['Director','Subdirector','Secretario','Secretary'],
+      'ranking':      ['Director','Subdirector','Secretario','Secretary'],
+      'master_guide': ['Director','Subdirector','Secretario','Secretary'],
+      'birthdays':    ['Director','Subdirector','Secretario','Secretary'],
+      'programs':     ['Director','Subdirector','Secretario','Secretary'],
+      'itinerary':    ['Director','Subdirector','Secretario','Secretary'],
+      'cleaning':     ['Director','Subdirector','Secretario','Secretary'],
+      'directive':    ['Director','Subdirector'],
+      'members':      ['Director','Subdirector','Secretario','Secretary'],
+      'classes':      ['Director','Subdirector','Secretario','Secretary'],
+      'units':        ['Director','Subdirector','Secretario','Secretary'],
+      'medical':      ['Director','Subdirector','Secretario','Secretary'],
+      'parents':      ['Director','Subdirector','Secretario','Secretary'],
+      'achievements': ['Director','Subdirector','Secretario','Secretary'],
+      'qualifications':['Director','Subdirector','Secretario','Secretary'],
+      'finances':     ['Director','Tesorera','Treasurer'],
+      'cuotas':       ['Director','Tesorera','Treasurer'],
+      'inventory':    ['Director','Subdirector','Secretario','Secretary'],
+      'camps':        ['Director','Subdirector','Secretario','Secretary','DUMC'],
+      'uniformity':   ['Director','Subdirector','Secretario','Secretary','DUMC'],
+      'reports':      ['Director','Subdirector','Secretario','Secretary','DUMC'],
+      'idcards':      ['Director','Subdirector','Secretario','Secretary','DUMC'],
+      'points':       ['Director','Subdirector','Secretario','Secretary','DUMC'],
+      'attendance':   ['Director','Subdirector','Secretario','Secretary'],
+      'reminders':    ['Director','Subdirector','Secretario','Secretary'],
+      'settings':     ['Director'],
+      'communication':['Director','Subdirector','Secretario','Secretary'],
+      'comm_groups':  ['Director','Subdirector','Secretario','Secretary'],
+      'comm_messaging':['Director','Subdirector','Secretario','Secretary'],
+      'comm_whatsapp':['Director','Subdirector','Secretario','Secretary'],
     };
 
-    const userPermissions = permissions[currentUser.position] || [];
-    return userPermissions.includes(moduleId);
+    // Modules that are HIDDEN (not visible at all) for unauthorized users
+    const hiddenModules = new Set(['finances','cuotas','points','reminders','settings']);
+
+    const allowed = writeAccess[moduleId] || [];
+    if (allowed.includes(pos)) return 'write';
+    if (hiddenModules.has(moduleId)) return 'none';
+    return 'read';
+  };
+
+  // Check if user has access to a module (used by sidebar filter)
+  const hasModuleAccess = (moduleId) => {
+    return getModuleAccessLevel(moduleId) !== 'none';
   };
 
   // Navigation menu items
@@ -4353,6 +4388,7 @@ const ClubVencedoresSystem = () => {
   // CAMPS MODULE RENDERER
   // ===================================
   const renderCampsModule = () => {
+    const isReadOnly = getModuleAccessLevel('camps') === 'read';
     // If activeModule is 'camps_tents', show assignments view (similar to old inventory_tents)
     if (activeModule === 'camps_tents') {
       return (
@@ -5338,6 +5374,7 @@ const ClubVencedoresSystem = () => {
   };
 
   const renderUniformityModule = () => {
+    const isReadOnly = getModuleAccessLevel('uniformity') === 'read';
     // Helper to get inspection for a member on a specific date
     const getInspection = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
@@ -6432,6 +6469,7 @@ const ClubVencedoresSystem = () => {
   // ATTENDANCE MODULE RENDERER
   // ===================================
   const renderAttendanceModule = () => {
+    const isReadOnly = getModuleAccessLevel('attendance') === 'read';
     // Calculate all Saturdays in the selected month
     // Get dates based on view
     const getEventDatesInMonth = (monthStr, viewMode) => {
@@ -6766,6 +6804,7 @@ const ClubVencedoresSystem = () => {
   };
 
   const renderRemindersModule = () => {
+    const isReadOnly = getModuleAccessLevel('reminders') === 'read';
     // Sort reminders: Scheduled (future notice) last, then by date/time
     const sortedReminders = [...reminders].sort((a, b) => {
       const now = new Date();
@@ -10048,8 +10087,31 @@ const ClubVencedoresSystem = () => {
     return phoneNumber;
   };
 
-  // Main app render-authenticated
-  console.log('Rendering main app, isAuthenticated:', isAuthenticated, 'currentUser:', currentUser);
+  // Pre-computed access levels for all inline modules (used in JSX below)
+  const accessLevels = {
+    discipline:     getModuleAccessLevel('discipline'),
+    members:        getModuleAccessLevel('members'),
+    directive:      getModuleAccessLevel('directive'),
+    parents:        getModuleAccessLevel('parents'),
+    units:          getModuleAccessLevel('units'),
+    achievements:   getModuleAccessLevel('achievements'),
+    qualifications: getModuleAccessLevel('qualifications'),
+    medical:        getModuleAccessLevel('medical'),
+    classes:        getModuleAccessLevel('classes'),
+    points:         getModuleAccessLevel('points'),
+    finances:       getModuleAccessLevel('finances'),
+    cuotas:         getModuleAccessLevel('cuotas'),
+    activities:     getModuleAccessLevel('activities'),
+    ranking:        getModuleAccessLevel('ranking'),
+    birthdays:      getModuleAccessLevel('birthdays'),
+    programs:       getModuleAccessLevel('programs'),
+    itinerary:      getModuleAccessLevel('itinerary'),
+    cleaning:       getModuleAccessLevel('cleaning'),
+    inventory:      getModuleAccessLevel('inventory'),
+    reports:        getModuleAccessLevel('reports'),
+    idcards:        getModuleAccessLevel('idcards'),
+    settings:       getModuleAccessLevel('settings'),
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
@@ -10460,9 +10522,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.position ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                           >
                             <option value="">Seleccionar Posición</option>
-                            <option value="Assistant Director">Assistant Director</option>
-                            <option value="Secretary">Secretary</option>
-                            <option value="Treasurer">Treasurer</option>
+                            <option value="Subdirector">Subdirector</option>
+                            <option value="Secretario">Secretario</option>
+                            <option value="Tesorera">Tesorera / Tesorero</option>
+                            <option value="DUMC">DUMC</option>
+                            <option value="Consejero">Consejero</option>
+                            <option value="Instructor">Instructor</option>
+                            <option value="Capitan">Capitán de Unidad</option>
                           </select>
                           {newUserErrors.position && <p className="text-red-500 text-sm mt-1">{newUserErrors.position}</p>}
                         </div>
@@ -10661,9 +10727,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 bg-gray-100 dark:bg-gray-700 cursor-not-allowed dark:text-gray-400"
                             >
                               <option value="">Seleccionar Posición</option>
-                              <option value="Assistant Director">Subdirector</option>
-                              <option value="Secretary">Secretario</option>
-                              <option value="Treasurer">Tesorero</option>
+                              <option value="Subdirector">Subdirector</option>
+                              <option value="Secretario">Secretario</option>
+                              <option value="Tesorera">Tesorera / Tesorero</option>
+                              <option value="DUMC">DUMC</option>
+                              <option value="Consejero">Consejero</option>
+                              <option value="Instructor">Instructor</option>
+                              <option value="Capitan">Capitán de Unidad</option>
                             </select>
                             <p className="text-xs text-gray-500 mt-1">Solo el administrador puede cambiar posiciones</p>
                           </>
@@ -12771,6 +12841,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </h2>
                       <p className="text-gray-500 dark:text-gray-400">Registro de incidencias y deducción de puntos</p>
                     </div>
+                    {accessLevels.discipline === 'write' && (
                     <button
                       onClick={() => {
                         setEditingDiscipline(null);
@@ -12788,6 +12859,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       <PlusCircle className="w-5 h-5" />
                       Registrar Falta
                     </button>
+                    )}
                   </div>
 
                   {/* Stats Cards */}
