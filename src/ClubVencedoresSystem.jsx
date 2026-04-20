@@ -885,7 +885,16 @@ const ClubVencedoresSystem = () => {
   const [newUniformCategory, setNewUniformCategory] = useState('');
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [itemFormData, setItemFormData] = useState({ label: '', category: 'Gala', price: 0, gender: 'Unisex', hasVariants: false, variants: [], sizeType: 'none' });
+  const [itemFormData, setItemFormData] = useState({ 
+    label: '', 
+    category: 'Gala', 
+    price: 0, 
+    gender: 'Unisex', 
+    hasVariants: false, 
+    variants: [], 
+    sizeType: 'none',
+    applicableClass: '' // New: 'friend', 'companion', etc.
+  });
 
 
   // ID Cards State
@@ -1439,6 +1448,9 @@ const ClubVencedoresSystem = () => {
     { value: 'master_guide_candidate', label: 'Aspirante a Guía Mayor', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800', minAge: 16 },
     { value: 'master_guide_invested', label: 'Guía Mayor Investido', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-800', minAge: 18 }
   ];
+
+  // Helper for cumulative uniform logic
+  const PATHFINDER_HIERARCHY = ['friend', 'companion', 'explorer', 'ranger', 'voyager', 'guide', 'master_guide_candidate', 'master_guide_invested'];
 
   const aventurerosClasses = [
     { value: 'Corderitos', label: 'Corderitos (4 años)', minAge: 4, maxAge: 4, color: 'bg-white border-gray-300' },
@@ -5501,7 +5513,7 @@ const ClubVencedoresSystem = () => {
     // CRUD Handlers for Uniform Items
     const openNewItemForm = () => {
       const defaultCategory = uniformCategories.length > 0 ? uniformCategories[0] : '';
-      setItemFormData({ label: '', category: defaultCategory, price: 0, gender: 'Unisex', onlyForDirective: false, hasVariants: false, variants: [], sizeType: 'none' });
+      setItemFormData({ label: '', category: defaultCategory, price: 0, gender: 'Unisex', onlyForDirective: false, hasVariants: false, variants: [], sizeType: 'none', applicableClass: '' });
       setEditingItem(null);
       setShowItemForm(true);
     };
@@ -5513,7 +5525,8 @@ const ClubVencedoresSystem = () => {
         onlyForDirective: item.onlyForDirective || false,
         hasVariants: !!item.variants && item.variants.length > 0,
         variants: item.variants || [],
-        sizeType: item.sizeType || 'none'
+        sizeType: item.sizeType || 'none',
+        applicableClass: item.applicableClass || ''
       });
       setEditingItem(item);
       setShowItemForm(true);
@@ -6415,6 +6428,21 @@ const ClubVencedoresSystem = () => {
                       <option value="M">Masculino</option>
                       <option value="F">Femenino</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Clase Requerida (Opcional)</label>
+                    <select
+                      value={itemFormData.applicableClass || ''}
+                      onChange={(e) => setItemFormData({ ...itemFormData, applicableClass: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">Cualquier Clase (General)</option>
+                      {pathfinderClasses.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Si seleccionas una clase, este elemento será acumulativo (se mostrará para esa clase y todas las superiores).</p>
                   </div>
 
                   <div className="flex items-center mb-4">
