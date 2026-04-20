@@ -5573,7 +5573,7 @@ const ClubVencedoresSystem = () => {
     // Helper to get inspection for a member on a specific date
     const getInspection = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
-      return uniformInspections.find(i => i.memberId === memberId && i.date === dateStr) || { itemsMissing: [], isComplete: true };
+      return uniformInspections.find(i => i.memberId === memberId && i.date === dateStr) || { itemsMissing: [], isComplete: true, isInspected: false };
     };
 
     // Helper to toggle a missing item in inspection
@@ -5591,7 +5591,7 @@ const ClubVencedoresSystem = () => {
       const isComplete = newItemsMissing.length === 0;
 
       // Update state
-      const newInspection = { ...existingInspection, memberId, date: dateStr, itemsMissing: newItemsMissing, isComplete };
+      const newInspection = { ...existingInspection, memberId, date: dateStr, itemsMissing: newItemsMissing, isComplete, isInspected: true };
       const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
       setUniformInspections([...otherInspections, newInspection]);
     };
@@ -5600,7 +5600,17 @@ const ClubVencedoresSystem = () => {
     const markInspectionComplete = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
       const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
-      setUniformInspections([...otherInspections, { memberId, date: dateStr, itemsMissing: [], isComplete: true }]);
+      setUniformInspections([...otherInspections, { memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }]);
+    };
+
+    const toggleInspectedManual = (memberId, date) => {
+      const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
+      const existingInspection = getInspection(memberId, dateStr);
+      const isInspected = !existingInspection.isInspected;
+
+      const newInspection = { ...existingInspection, memberId, date: dateStr, isInspected };
+      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
+      setUniformInspections([...otherInspections, newInspection]);
     };
 
     // Helper to update inventory size/possession
@@ -6124,6 +6134,7 @@ const ClubVencedoresSystem = () => {
                           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead className="bg-gray-50 dark:bg-gray-900/50">
                               <tr>
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rev.</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-64">Miembro</th>
                                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">Estado</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Elementos (Clic para marcar faltante)</th>
@@ -6145,9 +6156,18 @@ const ClubVencedoresSystem = () => {
                                 }, 0);
 
 
-                                return (
-                                  <tr key={member.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${isComplete ? '' : 'bg-red-50/30 dark:bg-red-900/10'} `}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                  return (
+                                    <tr key={member.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${inspection.isInspected ? 'bg-indigo-50/20 dark:bg-indigo-900/10' : ''} ${isComplete ? '' : 'bg-red-50/30 dark:bg-red-900/10'} `}>
+                                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <button 
+                                          onClick={() => toggleInspectedManual(member.id, bgDate)}
+                                          className={`p-2 rounded-full transition-all ${inspection.isInspected ? 'text-indigo-600 bg-indigo-100' : 'text-gray-300 hover:text-indigo-400 hover:bg-gray-100'} `}
+                                          title={inspection.isInspected ? "Marcado como Inspeccionado" : "Marcar como Inspeccionado"}
+                                        >
+                                          {inspection.isInspected ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
+                                        </button>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
                                       <div className="flex items-center">
                                         <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                                           {member.photo ? (
@@ -6260,127 +6280,110 @@ const ClubVencedoresSystem = () => {
                         <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                           <button
                             onClick={() => {
-                              // Generate Report Data
-                              const report = {
-                                title: `Reporte de Uniformidad-${title} `,
-                                date: bgDate,
-                                group: title,
-                                itemsMissingSummary: {}, // { 'Pañoleta': 5, 'Camisa': 2 }
-                                individualMissing: [] // [{ name: 'Juan', missing: ['Camisa'] }]
-                              };
-
-                              groupMembers.forEach(m => {
+                              const inspectedMembers = groupMembers.map(m => {
                                 const inspection = getInspection(m.id, bgDate);
-                                if (inspection.itemsMissing && inspection.itemsMissing.length > 0) {
-                                  const missingNames = [];
-                                  inspection.itemsMissing.forEach(itemId => {
-                                    const item = uniformItems.find(i => i.id === itemId);
-                                    if (item) {
-                                      missingNames.push(item.label);
-                                      report.itemsMissingSummary[item.label] = (report.itemsMissingSummary[item.label] || 0) + 1;
-                                    }
-                                  });
-                                  report.individualMissing.push({
-                                    name: `${m.firstName} ${m.lastName} `,
-                                    missing: missingNames
-                                  });
-                                }
-                              });
+                                if (!inspection.isInspected) return null;
 
-                              // PRINT REPORT FUNCTION
+                                const applicable = getApplicableUniformItems(m);
+                                const missingIds = inspection.itemsMissing || [];
+                                const ownedItems = applicable.filter(item => !missingIds.includes(item.id)).map(i => i.label);
+                                const missingItems = applicable.filter(item => missingIds.includes(item.id)).map(i => i.label);
+                                
+                                const totalCount = applicable.length;
+                                const ownedCount = ownedItems.length;
+                                const percent = totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0;
+
+                                return { name: `${m.firstName} ${m.lastName}`, ownedItems, missingItems, percent };
+                              }).filter(Boolean);
+
                               const printContent = `
-  < html >
-                                    <head>
-                                      <title>${report.title}</title>
-                                      <style>
-                                        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
-                                        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-                                        .header h1 { margin: 0; font-size: 24px; color: #1a1a1a; }
-                                        .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
-                                        .section { margin-bottom: 30px; }
-                                        .section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #4f46e5; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-                                        table { w-full; border-collapse: collapse; width: 100%; font-size: 14px; }
-                                        th { text-align: left; border-bottom: 1px solid #ccc; padding: 10px; background-color: #f9fafb; font-weight: 600; }
-                                        td { border-bottom: 1px solid #eee; padding: 10px; }
-                                        .total-row td { font-weight: bold; border-top: 2px solid #ccc; }
-                                        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-                                        .badge-red { background-color: #fef2f2; color: #991b1b; }
-                                        .empty-state { color: #6b7280; font-style: italic; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; }
-                                      </style>
-                                    </head>
-                                    <body>
-                                      <div class="header">
-                                        <h1>TriClub Manager</h1>
-                                        <p>${report.title}</p>
-                                        <p>Fecha de Inspección: ${new Date(bgDate + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                      </div>
+                                <html>
+                                  <head>
+                                    <title>Reporte de Uniformidad - ${title}</title>
+                                    <style>
+                                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; line-height: 1.4; }
+                                      .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4f46e5; padding-bottom: 15px; }
+                                      .header h1 { margin: 0; font-size: 26px; color: #1e1b4b; }
+                                      .header p { margin: 5px 0 0; color: #4b5563; font-size: 15px; font-weight: 500; }
+                                      .section { margin-bottom: 40px; page-break-inside: avoid; }
+                                      .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; color: #4f46e5; background: #f5f3ff; padding: 8px 12px; border-radius: 6px; }
+                                      table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 13px; }
+                                      th { text-align: left; background-color: #f9fafb; padding: 12px 10px; border-bottom: 2px solid #e5e7eb; color: #374151; }
+                                      td { padding: 10px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+                                      .progress-container { width: 100px; height: 12px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin-top: 4px; border: 1px solid #d1d5db; }
+                                      .progress-bar { height: 100%; background: linear-gradient(90deg, #10b981, #059669); }
+                                      .percent-text { font-size: 11px; font-weight: bold; color: #065f46; margin-top: 2px; }
+                                      .item-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+                                      .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+                                      .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+                                      .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+                                    </style>
+                                  </head>
+                                  <body>
+                                    <div class="header">
+                                      <h1>Club Vencedores</h1>
+                                      <p>Reporte de Uniformidad - ${title}</p>
+                                      <p>Fecha: ${new Date(bgDate + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                    </div>
 
-                                      <div class="section">
-                                        <div class="section-title">Resumen de Faltantes (Totales)</div>
-                                        ${Object.keys(report.itemsMissingSummary).length > 0 ? `
-                                          <table>
-                                            <thead>
+                                    <div class="section">
+                                      <div class="section-title">Detalle por Miembro (${inspectedMembers.length} Inspeccionados)</div>
+                                      ${inspectedMembers.length > 0 ? `
+                                        <table>
+                                          <thead>
+                                            <tr>
+                                              <th style="width: 25%;">Miembro</th>
+                                              <th style="width: 15%;">Progreso</th>
+                                              <th style="width: 30%;">En Uniforme (Tiene)</th>
+                                              <th style="width: 30%;">Faltantes</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            ${inspectedMembers.map(m => `
                                               <tr>
-                                                <th>Artículo</th>
-                                                <th style="text-align: right;">Cantidad Necesaria</th>
+                                                <td><div style="font-weight: 700; color: #1e293b;">${m.name}</div></td>
+                                                <td>
+                                                  <div class="progress-container"><div class="progress-bar" style="width: ${m.percent}%"></div></div>
+                                                  <div class="percent-text">${m.percent}% Completo</div>
+                                                </td>
+                                                <td><div class="item-list">${m.ownedItems.map(i => `<span class="badge badge-green">${i}</span>`).join('')}</div></td>
+                                                <td>
+                                                  <div class="item-list">
+                                                    ${m.missingItems.map(i => `<span class="badge badge-red">${i}</span>`).join('')}
+                                                    ${m.missingItems.length === 0 ? '<span style="color: #10b981; font-weight: bold; font-size: 11px;">✓ Todo completo</span>' : ''}
+                                                  </div>
+                                                </td>
                                               </tr>
-                                            </thead>
-                                            <tbody>
-                                              ${Object.entries(report.itemsMissingSummary).map(([item, count]) => `
-                                                <tr>
-                                                  <td>${item}</td>
-                                                  <td style="text-align: right; font-weight: bold;">${count}</td>
-                                                </tr>
-                                              `).join('')}
-                                            </tbody>
-                                          </table>
-                                        ` : '<div class="empty-state">¡Felicitaciones! No hay elementos faltantes en este grupo.</div>'}
-                                      </div>
+                                            `).join('')}
+                                          </tbody>
+                                        </table>
+                                      ` : '<p style="text-align: center; color: #64748b; padding: 20px;">No se marcaron miembros como inspeccionados en este grupo.</p>'}
+                                    </div>
+                                    <div style="margin-top: 50px; text-align: right; font-size: 11px; color: #94a3b8;">
+                                      Generado automáticamente el ${new Date().toLocaleString()}
+                                    </div>
+                                  </body>
+                                </html>
+                              `;
 
-                                      <div class="section">
-                                        <div class="section-title">Detalle por Miembro</div>
-                                        ${report.individualMissing.length > 0 ? `
-                                          <table>
-                                            <thead>
-                                              <tr>
-                                                <th>Nombre</th>
-                                                <th>Elementos Faltantes</th>
-                                              </tr>
-                                            </thead>
-                                            <tbody>
-                                              ${report.individualMissing.map(m => `
-                                                <tr>
-                                                  <td style="font-weight: 500;">${m.name}</td>
-                                                  <td>
-                                                    ${m.missing.map(item => `<span class="badge badge-red">${item}</span>`).join(' ')}
-                                                  </td>
-                                                </tr>
-                                              `).join('')}
-                                            </tbody>
-                                          </table>
-                                        ` : '<div class="empty-state">Todos los miembros de este grupo tienen su uniforme completo.</div>'}
-                                      </div>
-                                      
-                                      <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af;">
-                                        Generado automáticamente por TriClub Manager
-                                      </div>
-                                    </body>
-                                  </html >
-  `;
-
-                              const printWindow = window.open('', '', 'width=800,height=800');
-                              printWindow.document.write(printContent);
-                              printWindow.document.close();
-                              printWindow.focus();
-                              setTimeout(() => {
-                                printWindow.print();
-                                printWindow.close();
-                              }, 500);
+                              const printWindow = window.open('', '', 'width=950,height=850');
+                              if (printWindow) {
+                                printWindow.document.write(printContent);
+                                printWindow.document.close();
+                                printWindow.focus();
+                                setTimeout(() => {
+                                  printWindow.print();
+                                  printWindow.close();
+                                  setInspectionViewMode('selection');
+                                }, 700);
+                              } else {
+                                setInspectionViewMode('selection');
+                              }
                             }}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
                           >
-                            <Save className="w-4 h-4" />
-                            Guardar y Salir
+                            <Printer className="w-4 h-4" />
+                            Finalizar e Imprimir Reporte
                           </button>
                         </div>
                       </div>
