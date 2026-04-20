@@ -349,23 +349,49 @@ const ClubVencedoresSystem = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        console.log('🔥 Firebase Auth State Changed: User logged in', user.email);
+        // Set basic user info first
         setCurrentUser(user);
         setIsAuthenticated(true);
       } else {
         // Fallback to local session if it exists (for Electron/Development)
         const savedUser = localStorage.getItem('clubvencedores_current_user');
         if (savedUser) {
-           setCurrentUser(JSON.parse(savedUser));
-           setIsAuthenticated(true);
+          setCurrentUser(JSON.parse(savedUser));
+          setIsAuthenticated(true);
         } else {
-           setCurrentUser(null);
-           setIsAuthenticated(false);
+          setCurrentUser(null);
+          setIsAuthenticated(false);
         }
       }
       setIsAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  // NEW: Identity Sync Effect - Link Firebase Auth user to internal profile roles/positions
+  useEffect(() => {
+    if (isAuthenticated && currentUser && users.length > 0) {
+      // 1. HARDCODED BYPASS FOR OWNER
+      if (currentUser.email === 'jeancarlosbzpn@gmail.com' && currentUser.position !== 'Director') {
+        console.log('👑 Owner detected, assigning Director role automatically');
+        setCurrentUser(prev => ({ ...prev, role: 'administrator', position: 'Director', name: 'Director General' }));
+        return;
+      }
+
+      // 2. SEARCH IN INTERNAL USERS LIST
+      // Find internal profile by email (case-insensitive) or username
+      const profile = users.find(u =>
+        (u.email && u.email.toLowerCase() === (currentUser.email?.toLowerCase())) ||
+        (u.username && currentUser.email && u.username.toLowerCase() === currentUser.email.split('@')[0].toLowerCase())
+      );
+
+      if (profile && (profile.position !== currentUser.position || profile.role !== currentUser.role)) {
+        console.log('🔗 Linking Firebase user to internal profile found in DB:', profile.position);
+        setCurrentUser(prev => ({ ...prev, ...profile }));
+      }
+    }
+  }, [users, isAuthenticated, currentUser?.email]);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [showMigration, setShowMigration] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(false);
@@ -2013,6 +2039,9 @@ const ClubVencedoresSystem = () => {
     if (currentUser.email === 'jeancarlosbzpn@gmail.com') return 'write';
     // Administrator role always has full access
     if (currentUser.role === 'administrator') return 'write';
+
+    // If it's the master admin username
+    if (currentUser.username === 'soybaex') return 'write';
 
     const pos = currentUser.position || '';
 
