@@ -3573,7 +3573,25 @@ const ClubVencedoresSystem = () => {
               </div>
             </div>
             
-            <div style="margin-top: 30px; font-size: 10pt;   const printGlobalReport = (dateToPrint, targetGroup = 'all') => {
+            <div style="margin-top: 30px; font-size: 10pt; color: #666;">
+              * Por favor, corte y devuelva esta parte con el pago (si aplica) para la próxima reunión del club.
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const calculateAge = (dob) => {
+    if (!dob) return 0;
+    const diff = Date.now() - new Date(dob).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  };
+
+  const printGlobalReport = (dateToPrint, targetGroup = 'all') => {
     let reportTitle = "Reporte Detallado de Uniformidad";
     if (targetGroup === 'directive') reportTitle = "Reporte de Uniformidad-Directiva";
     if (targetGroup === 'juniors') reportTitle = "Reporte de Uniformidad-Club de Menores";
