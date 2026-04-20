@@ -59,60 +59,62 @@ export const dataService = {
         const STORAGE_PREFIX = 'clubvencedores_';
         const snakeKey = toSnakeCase(key);
         
-        // 1. Determine priority collection names to check
-        const collectionCandidates = [
-           STORAGE_PREFIX + snakeKey, // clubvencedores_locked_saturdays
-           STORAGE_PREFIX + key,      // clubvencedores_lockedSaturdays
-           snakeKey,                  // locked_saturdays
-           key                        // lockedSaturdays (raw)
-        ];
+        const uniqueCandidates = [...new Set([
+           STORAGE_PREFIX + snakeKey,
+           STORAGE_PREFIX + key,
+           snakeKey,
+           key
+        ])];
 
-        // Unique candidates only
-        const uniqueCandidates = [...new Set(collectionCandidates)];
-
-        // LAYER 1: Try collections in order of likelihood
-        console.log(`🔍 Searching for '${key}' in Cloud Collections...`);
+        // LAYER 1: Collections
+        console.log(`🔍 Intentando cargar '${key}' desde colecciones Cloud...`);
         for (const colName of uniqueCandidates) {
           try {
             const colRef = collection(db, colName);
             const querySnapshot = await getDocs(colRef);
             if (!querySnapshot.empty) {
-              console.log(`✅ SUCCESS: Found ${querySnapshot.size} items in collection: ${colName}`);
+              console.log(`✅ ÉXITO: ${querySnapshot.size} elementos de '${key}' cargados desde colección: ${colName}`);
               return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             }
           } catch (e) {
-            // Silently try next or fallback
-          }
-        }
-
-        // LAYER 2: Try central document fallback (Original format)
-        // Check both camelCase and snake_case documents in 'club_vencedores_data'
-        const docCandidates = [key, snakeKey];
-        for (const docId of [...new Set(docCandidates)]) {
-          console.log(`🔍 Checking document fallback for: ${docId}...`);
-          const docRef = doc(db, 'club_vencedores_data', docId);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const content = docSnap.data();
-            
-            // If the document itself points to a collection
-            if (content.isCollection) {
-              console.log(`📂 ${docId} metadata indicates collection. Retrying load...`);
-              const colRef = collection(db, STORAGE_PREFIX + (content.colName || docId));
-              const querySnapshot = await getDocs(colRef);
-              return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            if (e.code === 'permission-denied') {
+              console.warn(`⚠️ Aviso: Permiso denegado para la colección '${colName}'. Puede que las reglas de Firebase necesiten actualización.`);
             }
-            
-            console.log(`✅ SUCCESS: Found data in central document: ${docId}`);
-            return content.data;
+            // Sigue intentando con otras fuentes
           }
         }
 
-        console.warn(`❌ FAIL: No cloud data found for key: ${key} (tried all naming patterns)`);
+        // LAYER 2: Central Document
+        const docCandidates = [...new Set([key, snakeKey])];
+        for (const docId of docCandidates) {
+          try {
+            console.log(`🔍 Buscando '${key}' en documento central: ${docId}...`);
+            const docRef = doc(db, 'club_vencedores_data', docId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+              const content = docSnap.data();
+              if (content.isCollection) {
+                console.log(`📂 Metadatos de '${docId}' indican colección. Consultando...`);
+                const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : key;
+                const colRef = collection(db, targetCol);
+                const querySnapshot = await getDocs(colRef);
+                return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+              }
+              console.log(`✅ ÉXITO: '${key}' cargado desde documento central: ${docId}`);
+              return content.data;
+            }
+          } catch (e) {
+            if (e.code === 'permission-denied') {
+              console.warn(`⚠️ Aviso: Permiso denegado para el documento central '${docId}'.`);
+            }
+          }
+        }
+
+        console.warn(`❌ FIN: No se encontraron datos para '${key}' tras agotar todas las rutas.`);
         return null;
       } catch (err) {
-        console.error(`Error reading ${key} from Firestore:`, err);
+        console.error(`Error crítico leyendo ${key} de Firestore:`, err);
         return null;
       }
     }
