@@ -6052,9 +6052,9 @@ const ClubVencedoresSystem = () => {
                                           const itemGender = item.gender === 'Unisex' ? 'Unisex' : normalizeSex(item.gender);
                                           const memberSex = normalizeSex(member.sex || member.gender);
                                           if (itemGender !== 'Unisex' && itemGender !== memberSex) return null;
-                                          const isDirective = member.position && member.position.trim() !== '' && member.position !== 'Ninguno';
+                                          const isMemberDirective = isDirective(member);
                                           if (item.onlyForDirective) {
-                                            if (!isDirective) return null;
+                                            if (!isMemberDirective) return null;
 
                                             // Sub-filter: Specific roles
                                             if (item.applicablePositions && item.applicablePositions.length > 0) {
