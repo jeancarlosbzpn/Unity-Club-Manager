@@ -16184,13 +16184,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })()
-                  }
-
-
-            {/* Qualifications Module */}
+                            </div>
+                          );
+                        })}
+                    </>
+                  );
+                })()}
             {
               activeModule === 'qualifications' && (() => {
                 const accessLevel = getModuleAccessLevel('qualifications');
@@ -16686,6 +16685,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </table>
                     </div>
                   </div>
+                    </div>
                 </>);
               })()
             }
@@ -21100,7 +21100,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   )}
                 </div>
-              )
             }
 
             {
@@ -21953,7 +21952,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </div>
                         )}
                     </div>
-                </>);
               })()
             }
 
@@ -24069,20 +24067,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   </div>
-                </>
-              )
-            }
-            }
-          </div>
+                </>);
+              })()}
+          </main>
         </div>
       </div>
-    </div>
-    }
-    }
-    }
-    }
-  );
-};
+    );
+  };
 
 const ClubVencedoresApp = () => (
   <ErrorBoundary>
