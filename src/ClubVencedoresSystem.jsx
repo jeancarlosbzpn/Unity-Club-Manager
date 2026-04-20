@@ -893,7 +893,8 @@ const ClubVencedoresSystem = () => {
     hasVariants: false, 
     variants: [], 
     sizeType: 'none',
-    applicableClass: '' // New: 'friend', 'companion', etc.
+    applicableClass: '', // New: 'friend', 'companion', etc.
+    showInCurrentClass: true // New: if false, only shows for superior classes (next levels)
   });
 
 
@@ -5513,7 +5514,7 @@ const ClubVencedoresSystem = () => {
     // CRUD Handlers for Uniform Items
     const openNewItemForm = () => {
       const defaultCategory = uniformCategories.length > 0 ? uniformCategories[0] : '';
-      setItemFormData({ label: '', category: defaultCategory, price: 0, gender: 'Unisex', onlyForDirective: false, hasVariants: false, variants: [], sizeType: 'none', applicableClass: '' });
+      setItemFormData({ label: '', category: defaultCategory, price: 0, gender: 'Unisex', onlyForDirective: false, hasVariants: false, variants: [], sizeType: 'none', applicableClass: '', showInCurrentClass: true });
       setEditingItem(null);
       setShowItemForm(true);
     };
@@ -5526,7 +5527,8 @@ const ClubVencedoresSystem = () => {
         hasVariants: !!item.variants && item.variants.length > 0,
         variants: item.variants || [],
         sizeType: item.sizeType || 'none',
-        applicableClass: item.applicableClass || ''
+        applicableClass: item.applicableClass || '',
+        showInCurrentClass: item.showInCurrentClass !== undefined ? item.showInCurrentClass : true
       });
       setEditingItem(item);
       setShowItemForm(true);
@@ -6013,6 +6015,23 @@ const ClubVencedoresSystem = () => {
                                           const isDirective = member.position && member.position.trim() !== '' && member.position !== 'Ninguno';
                                           if (item.onlyForDirective && !isDirective) return null;
 
+                                          // Cumulative Class Logic (Refined)
+                                          if (item.applicableClass) {
+                                            const memberClassValue = member.membershipClass || member.pathfinderClass;
+                                            const memberClassIndex = PATHFINDER_HIERARCHY.indexOf(memberClassValue);
+                                            const itemClassIndex = PATHFINDER_HIERARCHY.indexOf(item.applicableClass);
+                                            
+                                            if (memberClassIndex === -1) return null;
+
+                                            if (item.showInCurrentClass === false) {
+                                              // Earned after completion (e.g. Buttons)
+                                              if (memberClassIndex <= itemClassIndex) return null;
+                                            } else {
+                                              // Earned during class (e.g. Patches)
+                                              if (memberClassIndex < itemClassIndex) return null;
+                                            }
+                                          }
+
 
                                           return (
                                             <button
@@ -6444,6 +6463,22 @@ const ClubVencedoresSystem = () => {
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Si seleccionas una clase, este elemento será acumulativo (se mostrará para esa clase y todas las superiores).</p>
                   </div>
+
+                  {itemFormData.applicableClass && (
+                    <div className="flex items-center mb-4 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <input
+                        type="checkbox"
+                        id="earnedOnCompletion"
+                        checked={!itemFormData.showInCurrentClass}
+                        onChange={(e) => setItemFormData({ ...itemFormData, showInCurrentClass: !e.target.checked })}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="earnedOnCompletion" className="ml-2 block text-sm text-gray-900 dark:text-gray-200">
+                        ¿Se obtiene <strong>al completar</strong> la clase?
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">Ej: Botones, barras. Solo se pedirá en el nivel siguiente.</span>
+                      </label>
+                    </div>
+                  )}
 
                   <div className="flex items-center mb-4">
                     <input
