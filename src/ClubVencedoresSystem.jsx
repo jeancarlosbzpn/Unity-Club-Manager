@@ -9490,13 +9490,19 @@ const ClubVencedoresSystem = () => {
       
       // Update internal users array
       const updatedUsers = users.map(u => {
-        if (u.username === currentUser.username || (u.email && u.email === currentUser.email)) {
+        // Match by username OR established email link
+        const isMatch = (u.username === currentUser.username) || 
+                       (u.email && u.email === currentUser.email) ||
+                       (!u.email && u.username === currentUser.email?.split('@')[0]);
+
+        if (isMatch) {
           return {
             ...u,
             name: accountFormData.name,
             username: accountFormData.username,
             password: accountFormData.newPassword || u.password,
-            position: accountFormData.position
+            position: accountFormData.position,
+            email: currentUser.email // PERMANENT LINK: Store the email to prevent future sync breakage
           };
         }
         return u;
