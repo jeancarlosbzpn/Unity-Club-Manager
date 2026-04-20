@@ -412,32 +412,53 @@ const ClubVencedoresSystem = () => {
       const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
       const isMaster = masterEmails.includes(currentUser.email);
 
-      // 1. HARDCODED BYPASS FOR OWNER AND MASTER ADMIN
-      if (isMaster) {
-        if (currentUser.position !== 'Director' || currentUser.role !== 'administrator') {
-          console.log('👑 Master Admin detected, forcing Director role & stopping sync');
-          setCurrentUser(prev => ({ 
-            ...prev, 
-            role: 'administrator', 
-            position: 'Director', 
-            name: prev.name || 'Director General' 
-          }));
-        }
-        return; // CRITICAL: Stop here for master accounts so DB profile doesn't overwrite permissions
-      }
-
-      // 2. SEARCH IN INTERNAL USERS LIST FOR REGULAR USERS
+      // 1. SEARCH IN INTERNAL USERS LIST FOR PROFILE DATA
       const profile = users.find(u =>
         (u.email && u.email.toLowerCase() === (currentUser.email?.toLowerCase())) ||
         (u.username && currentUser.email && u.username.toLowerCase() === currentUser.email.split('@')[0].toLowerCase())
       );
 
-      if (profile && (profile.position !== currentUser.position || profile.role !== currentUser.role)) {
-        console.log('🔗 Linking Firebase user to internal profile found in DB:', profile.position);
-        setCurrentUser(prev => ({ ...prev, ...profile }));
+      // 2. APPLY PROFILE DATA IF FOUND
+      let updatedUser = { ...currentUser };
+      let changed = false;
+
+      if (profile) {
+        // Only update if data is actually different to avoid infinite loops
+        if (profile.name && profile.name !== currentUser.name) {
+          updatedUser.name = profile.name;
+          changed = true;
+        }
+        if (profile.position && profile.position !== currentUser.position) {
+          updatedUser.position = profile.position;
+          changed = true;
+        }
+        // Force role from DB for non-masters, or keep for masters
+        if (!isMaster && profile.role && profile.role !== currentUser.role) {
+          updatedUser.role = profile.role;
+          changed = true;
+        }
+      }
+
+      // 3. HARDCODED SAFETY BYPASS FOR MASTER ADMINS
+      if (isMaster) {
+        if (updatedUser.role !== 'administrator') {
+          console.log('👑 Master Admin security check: Forcing administrator role');
+          updatedUser.role = 'administrator';
+          changed = true;
+        }
+        // Fallback name if nothing found
+        if (!updatedUser.name) {
+          updatedUser.name = 'Director General';
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        console.log('🔗 Syncing identity state with DB profile data...');
+        setCurrentUser(updatedUser);
       }
     }
-  }, [users, isAuthenticated, currentUser?.email]);
+  }, [users, isAuthenticated, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.role]);
 
   // Admin credentials (reference to main admin)
   const [adminUser, setAdminUser] = useState(users[0]);
