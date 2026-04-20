@@ -2045,15 +2045,20 @@ const ClubVencedoresSystem = () => {
   // Returns: 'write' (full access), 'read' (view only), 'none' (hidden/no access)
   const getModuleAccessLevel = (moduleId) => {
     if (!currentUser) return 'none';
-    // Cloud owner and Master Admin always have full access
+    
+    // 1. MASTER BYPASS: Cloud owner and Master Admin always have full access
     const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
     if (masterEmails.includes(currentUser.email)) return 'write';
-    
-    // Administrator role always has full access
     if (currentUser.role === 'administrator') return 'write';
-
-    // If it's the master admin username
     if (currentUser.username === 'soybaex') return 'write';
+
+    // 2. GRANULAR PERMISSIONS: Check allowedModules if defined and not empty
+    const explicitModules = currentUser.allowedModules || [];
+    if (explicitModules.length > 0) {
+      if (!explicitModules.includes(moduleId)) {
+        return 'none'; // Not in the explicitly allowed list
+      }
+    }
 
     const pos = currentUser.position || '';
 
@@ -2093,12 +2098,16 @@ const ClubVencedoresSystem = () => {
       'comm_whatsapp':['Director','Subdirector','Secretario','Secretary'],
     };
 
-    // Modules that are HIDDEN (not visible at all) for unauthorized users
-    const hiddenModules = new Set(['finances','cuotas','points','reminders','settings']);
+    // Check for write access
+    const writers = writeAccess[moduleId] || [];
+    if (writers.includes(pos)) return 'write';
 
-    const allowed = writeAccess[moduleId] || [];
-    if (allowed.includes(pos)) return 'write';
+    // Modules that are HIDDEN (not visible at all) for unauthorized users
+    const hiddenModules = new Set(['finances','cuotas','points','reminders','settings','directive']);
+
     if (hiddenModules.has(moduleId)) return 'none';
+
+    // Default to read access only for safe modules if not filtered by allowedModules
     return 'read';
   };
 
