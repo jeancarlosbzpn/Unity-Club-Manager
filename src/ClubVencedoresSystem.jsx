@@ -894,7 +894,8 @@ const ClubVencedoresSystem = () => {
     variants: [], 
     sizeType: 'none',
     applicableClass: '', // New: 'friend', 'companion', etc.
-    showInCurrentClass: true // New: if false, only shows for superior classes (next levels)
+    showInCurrentClass: true, // New: if false, only shows for superior classes (next levels)
+    applicablePositions: [] // New: Specific directive roles like 'Director', 'Secretary', etc.
   });
 
 
@@ -1452,6 +1453,17 @@ const ClubVencedoresSystem = () => {
 
   // Helper for cumulative uniform logic
   const PATHFINDER_HIERARCHY = ['friend', 'companion', 'explorer', 'ranger', 'voyager', 'guide', 'master_guide_candidate', 'master_guide_invested'];
+
+  const DIRECTIVE_POSITIONS = [
+    'Director',
+    'Assistant Director',
+    'Secretary',
+    'Chaplain',
+    'Counselor',
+    'Treasurer',
+    'DUMC',
+    'Class Instructor'
+  ];
 
   const aventurerosClasses = [
     { value: 'Corderitos', label: 'Corderitos (4 años)', minAge: 4, maxAge: 4, color: 'bg-white border-gray-300' },
@@ -5514,7 +5526,19 @@ const ClubVencedoresSystem = () => {
     // CRUD Handlers for Uniform Items
     const openNewItemForm = () => {
       const defaultCategory = uniformCategories.length > 0 ? uniformCategories[0] : '';
-      setItemFormData({ label: '', category: defaultCategory, price: 0, gender: 'Unisex', onlyForDirective: false, hasVariants: false, variants: [], sizeType: 'none', applicableClass: '', showInCurrentClass: true });
+      setItemFormData({
+        label: '',
+        category: defaultCategory,
+        price: 0,
+        gender: 'Unisex',
+        onlyForDirective: false,
+        hasVariants: false,
+        variants: [],
+        sizeType: 'none',
+        applicableClass: '',
+        showInCurrentClass: true,
+        applicablePositions: []
+      });
       setEditingItem(null);
       setShowItemForm(true);
     };
@@ -5528,7 +5552,8 @@ const ClubVencedoresSystem = () => {
         variants: item.variants || [],
         sizeType: item.sizeType || 'none',
         applicableClass: item.applicableClass || '',
-        showInCurrentClass: item.showInCurrentClass !== undefined ? item.showInCurrentClass : true
+        showInCurrentClass: item.showInCurrentClass !== undefined ? item.showInCurrentClass : true,
+        applicablePositions: item.applicablePositions || []
       });
       setEditingItem(item);
       setShowItemForm(true);
@@ -6013,7 +6038,26 @@ const ClubVencedoresSystem = () => {
                                           const memberSex = normalizeSex(member.sex || member.gender);
                                           if (itemGender !== 'Unisex' && itemGender !== memberSex) return null;
                                           const isDirective = member.position && member.position.trim() !== '' && member.position !== 'Ninguno';
-                                          if (item.onlyForDirective && !isDirective) return null;
+                                          if (item.onlyForDirective) {
+                                            if (!isDirective) return null;
+
+                                            // Sub-filter: Specific roles
+                                            if (item.applicablePositions && item.applicablePositions.length > 0) {
+                                              const memberRoles = [];
+                                              if (member.directiveRoles) {
+                                                Object.values(member.directiveRoles).forEach(clubRoles => {
+                                                  if (Array.isArray(clubRoles)) {
+                                                    clubRoles.forEach(r => memberRoles.push(r.position));
+                                                  }
+                                                });
+                                              }
+                                              // Also check primary position field
+                                              if (member.position) memberRoles.push(member.position);
+
+                                              const hasRequiredRole = item.applicablePositions.some(pos => memberRoles.includes(pos));
+                                              if (!hasRequiredRole) return null;
+                                            }
+                                          }
 
                                           // Cumulative Class Logic (Refined)
                                           if (item.applicableClass) {
@@ -6480,17 +6524,46 @@ const ClubVencedoresSystem = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center mb-4">
-                    <input
-                      type="checkbox"
-                      id="onlyForDirective"
-                      checked={itemFormData.onlyForDirective}
-                      onChange={(e) => setItemFormData({ ...itemFormData, onlyForDirective: e.target.checked })}
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="onlyForDirective" className="ml-2 block text-sm text-gray-900">
-                      Solo para Directivos (ej: Cordones, Insignias de Cargo)
-                    </label>
+                  <div className="bg-purple-50 dark:bg-purple-900/10 p-3 rounded-lg border border-purple-200 dark:border-purple-800 mb-4">
+                    <div className="flex items-center mb-2">
+                      <input
+                        type="checkbox"
+                        id="onlyForDirective"
+                        checked={itemFormData.onlyForDirective}
+                        onChange={(e) => setItemFormData({ ...itemFormData, onlyForDirective: e.target.checked, applicablePositions: [] })}
+                        className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="onlyForDirective" className="ml-2 block text-sm font-bold text-purple-900 dark:text-purple-300">
+                        Solo para Directivos (ej: Cordones, Insignias de Cargo)
+                      </label>
+                    </div>
+                    
+                    {itemFormData.onlyForDirective && (
+                      <div className="ml-6 space-y-2">
+                        <label className="block text-xs font-medium text-purple-700 dark:text-purple-400 mb-1">Cargos Específicos (Opcional - dejar vacío para todos):</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {DIRECTIVE_POSITIONS.map(pos => {
+                            const isChecked = itemFormData.applicablePositions.includes(pos);
+                            return (
+                              <label key={pos} className="flex items-center gap-2 cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 p-1 rounded transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    const newPositions = isChecked
+                                      ? itemFormData.applicablePositions.filter(p => p !== pos)
+                                      : [...itemFormData.applicablePositions, pos];
+                                    setItemFormData({ ...itemFormData, applicablePositions: newPositions });
+                                  }}
+                                  className="w-3 h-3 text-purple-600 rounded"
+                                />
+                                <span className="text-xs text-gray-700 dark:text-gray-300">{translatePosition(pos, 'M')}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center mb-4">
