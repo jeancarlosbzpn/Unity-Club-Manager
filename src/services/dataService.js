@@ -32,6 +32,13 @@ const sanitizeData = (obj) => {
   return obj;
 };
 
+/**
+ * Helper to convert camelCase to snake_case for DB collection names
+ */
+const toSnakeCase = (str) => {
+  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+};
+
 export const dataService = {
   /**
    * Reads a full data key. 
@@ -50,52 +57,59 @@ export const dataService = {
     } else {
       try {
         const STORAGE_PREFIX = 'clubvencedores_';
+        const snakeKey = toSnakeCase(key);
         
-        // 1. Try Collection (New format)
-        if (key === 'members' || key === 'transactions') {
-          const colName = STORAGE_PREFIX + key;
-          console.log(`📂 Checking cloud collection: ${colName}...`);
-          const colRef = collection(db, colName);
-          const querySnapshot = await getDocs(colRef);
-          
-          if (!querySnapshot.empty) {
-            console.log(`✅ Loaded ${querySnapshot.size} items from collection: ${colName}`);
-            return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-          }
-          console.log(`⚠️ Collection ${colName} is empty. Trying fallback...`);
-        }
+        // 1. Determine priority collection names to check
+        const collectionCandidates = [
+           STORAGE_PREFIX + snakeKey, // clubvencedores_locked_saturdays
+           STORAGE_PREFIX + key,      // clubvencedores_lockedSaturdays
+           snakeKey,                  // locked_saturdays
+           key                        // lockedSaturdays (raw)
+        ];
 
-        // 2. Fallback: Try central document (Original format)
-        // This handles cases where data is stored inside 'club_vencedores_data' collection
-        const docRef = doc(db, 'club_vencedores_data', key);
-        const docSnap = await getDoc(docRef);
+        // Unique candidates only
+        const uniqueCandidates = [...new Set(collectionCandidates)];
 
-        if (docSnap.exists()) {
-          const content = docSnap.data();
-          
-          if (content.isCollection) {
-            console.log(`📂 ${key} marked as collection in metadata. Loading from collection...`);
-            const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : key;
-            const colRef = collection(db, targetCol);
+        // LAYER 1: Try collections in order of likelihood
+        console.log(`🔍 Searching for '${key}' in Cloud Collections...`);
+        for (const colName of uniqueCandidates) {
+          try {
+            const colRef = collection(db, colName);
             const querySnapshot = await getDocs(colRef);
-            return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            if (!querySnapshot.empty) {
+              console.log(`✅ SUCCESS: Found ${querySnapshot.size} items in collection: ${colName}`);
+              return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            }
+          } catch (e) {
+            // Silently try next or fallback
           }
-          
-          console.log(`✅ Loaded ${key} from central document.`);
-          return content.data;
         }
 
-        // 3. Last chance: Try generic collection with raw key name
-        if (key === 'members' || key === 'transactions') {
-           const rawColRef = collection(db, key);
-           const rawSnap = await getDocs(rawColRef);
-           if (!rawSnap.empty) {
-             console.log(`✅ Found data in raw collection name: ${key}`);
-             return rawSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-           }
+        // LAYER 2: Try central document fallback (Original format)
+        // Check both camelCase and snake_case documents in 'club_vencedores_data'
+        const docCandidates = [key, snakeKey];
+        for (const docId of [...new Set(docCandidates)]) {
+          console.log(`🔍 Checking document fallback for: ${docId}...`);
+          const docRef = doc(db, 'club_vencedores_data', docId);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const content = docSnap.data();
+            
+            // If the document itself points to a collection
+            if (content.isCollection) {
+              console.log(`📂 ${docId} metadata indicates collection. Retrying load...`);
+              const colRef = collection(db, STORAGE_PREFIX + (content.colName || docId));
+              const querySnapshot = await getDocs(colRef);
+              return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            }
+            
+            console.log(`✅ SUCCESS: Found data in central document: ${docId}`);
+            return content.data;
+          }
         }
 
-        console.warn(`❌ No cloud data found for key: ${key}`);
+        console.warn(`❌ FAIL: No cloud data found for key: ${key} (tried all naming patterns)`);
         return null;
       } catch (err) {
         console.error(`Error reading ${key} from Firestore:`, err);

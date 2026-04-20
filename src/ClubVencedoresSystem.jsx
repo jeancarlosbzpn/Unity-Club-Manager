@@ -409,9 +409,10 @@ const ClubVencedoresSystem = () => {
   // Positioned here AFTER 'users' and 'currentUser' state are defined
   useEffect(() => {
     if (isAuthenticated && currentUser && users.length > 0) {
-      // 1. HARDCODED BYPASS FOR OWNER
-      if (currentUser.email === 'jeancarlosbzpn@gmail.com' && currentUser.position !== 'Director') {
-        console.log('👑 Owner detected, assigning Director role automatically');
+      // 1. HARDCODED BYPASS FOR OWNER AND MASTER ADMIN
+      const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
+      if (masterEmails.includes(currentUser.email) && currentUser.position !== 'Director') {
+        console.log('👑 Master Admin detected, assigning Director role automatically');
         setCurrentUser(prev => ({ ...prev, role: 'administrator', position: 'Director', name: 'Director General' }));
         return;
       }
@@ -2036,8 +2037,10 @@ const ClubVencedoresSystem = () => {
   // Returns: 'write' (full access), 'read' (view only), 'none' (hidden/no access)
   const getModuleAccessLevel = (moduleId) => {
     if (!currentUser) return 'none';
-    // Cloud owner always has full access
-    if (currentUser.email === 'jeancarlosbzpn@gmail.com') return 'write';
+    // Cloud owner and Master Admin always have full access
+    const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
+    if (masterEmails.includes(currentUser.email)) return 'write';
+    
     // Administrator role always has full access
     if (currentUser.role === 'administrator') return 'write';
 
