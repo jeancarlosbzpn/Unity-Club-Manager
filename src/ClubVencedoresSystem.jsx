@@ -9439,6 +9439,60 @@ const ClubVencedoresSystem = () => {
     return Object.keys(errors).length === 0;
   };
 
+  // Save Personal Account Settings
+  const handleSaveAccountSettings = () => {
+    const errors = {};
+    if (!accountFormData.name.trim()) errors.name = 'El nombre es obligatorio';
+    if (!accountFormData.username.trim()) errors.username = 'El nombre de usuario es obligatorio';
+    
+    // Password validation for internal users
+    const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
+    const isMaster = masterEmails.includes(currentUser.email);
+    
+    if (!isMaster) {
+      if (accountFormData.newPassword) {
+        if (!accountFormData.currentPassword) errors.currentPassword = 'Debes ingresar tu contraseña actual';
+        else if (accountFormData.currentPassword !== currentUser.password) errors.currentPassword = 'La contraseña actual es incorrecta';
+        
+        if (accountFormData.newPassword.length < 6) errors.newPassword = 'La nueva contraseña debe tener al menos 6 caracteres';
+        if (accountFormData.newPassword !== accountFormData.confirmPassword) errors.confirmPassword = 'Las contraseñas no coinciden';
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setAccountErrors(errors);
+      return;
+    }
+
+    // Update internal users array
+    const updatedUsers = users.map(u => {
+      if (u.username === currentUser.username || (u.email && u.email === currentUser.email)) {
+        return {
+          ...u,
+          name: accountFormData.name,
+          username: accountFormData.username,
+          password: accountFormData.newPassword || u.password,
+          position: accountFormData.position
+        };
+      }
+      return u;
+    });
+
+    setUsers(updatedUsers);
+    
+    // Update active currentUser
+    setCurrentUser(prev => ({
+      ...prev,
+      name: accountFormData.name,
+      username: accountFormData.username,
+      password: accountFormData.newPassword || prev.password,
+      position: accountFormData.position
+    }));
+
+    setShowAccountSettings(false);
+    alert('✅ Perfil actualizado correctamente');
+  };
+
   const handleAddUser = () => {
     if (!validateNewUserForm()) return;
 
@@ -10325,7 +10379,7 @@ const ClubVencedoresSystem = () => {
               )}
 
               <button
-                onClick={() => setActiveModule('settings')}
+                onClick={openAccountSettings}
                 className="w-full bg-red-800/80 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 dark:bg-gray-700 dark:hover:bg-gray-600"
               >
                 <Settings className="w-3.5 h-3.5" />
