@@ -5896,6 +5896,15 @@ const ClubVencedoresSystem = () => {
               <div>
                 {/* Filter / Sort logic reuse */}
                 {(() => {
+                  // Helper logic
+                  const isDirective = (m) => {
+                    if (m.position && m.position.trim() !== '' && m.position !== 'Ninguno') return true;
+                    if (m.directiveRoles) {
+                      return Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+                    }
+                    return false;
+                  };
+
                   // 1. Separate Directive vs Regular
                   const directiveMembers = members
                     .filter(isDirective)
