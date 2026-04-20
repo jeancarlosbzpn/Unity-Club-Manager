@@ -10249,10 +10249,10 @@ const ClubVencedoresSystem = () => {
               {currentUser?.role === 'administrator' && (
                 <button
                   onClick={() => setActiveModule('user-management')}
-                  className="w-full bg-red-800/80 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 dark:bg-gray-700 dark:hover:bg-gray-600"
+                  className="w-full bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 border border-white/30"
                 >
-                  <Users className="w-3.5 h-3.5" />
-                  Manage Users
+                  <Shield className="w-3.5 h-3.5" />
+                  Gestionar Usuarios
                 </button>
               )}
 
@@ -10261,7 +10261,7 @@ const ClubVencedoresSystem = () => {
                 className="w-full bg-red-800/80 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 dark:bg-gray-700 dark:hover:bg-gray-600"
               >
                 <Settings className="w-3.5 h-3.5" />
-                Account Settings
+                Mi Cuenta
               </button>
 
               <button
@@ -10269,7 +10269,7 @@ const ClubVencedoresSystem = () => {
                 className="w-full bg-red-900 hover:bg-red-800 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2 dark:bg-red-900/30 dark:hover:bg-red-900 border border-transparent dark:border-red-900/50"
               >
                 <X className="w-3.5 h-3.5" />
-                Logout
+                Cerrar Sesión
               </button>
             </div>
           </div>
