@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Edit, Edit2, Save, X, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -5999,7 +6002,6 @@ const ClubVencedoresSystem = () => {
                                       return false;
                                     }).map(m => m.id);
 
-                                    setUniformInspections(prev => prev.filter(i => !(i.date === bgDate && groupMemberIds.includes(i.memberId))));
                                   }
                                 }}
                                 className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 text-sm font-medium px-2 py-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
@@ -6354,7 +6356,11 @@ const ClubVencedoresSystem = () => {
                       {(selectedInspectionGroup === 'all' || selectedInspectionGroup === 'guias_mayores') && renderInspectionTable(sortedGuiasMayores, "Guías Mayores (16+)", <GuiasIcon className="w-5 h-5" />, "text-yellow-700 dark:text-yellow-300", "bg-yellow-50 dark:bg-yellow-900/20")}
                     </>
                   );
-                )}
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* INVENTORY VIEW */}
         {
@@ -6723,7 +6729,7 @@ const ClubVencedoresSystem = () => {
                 )
               }
             )
-          }
+         }
         </div>
       );
     };
@@ -13607,7 +13613,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     )}
                   </div>
-                )}
+                })() }
+
 
             {/* Member Form */}
             {
@@ -16175,7 +16182,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 );
               })()}
 
-            })()
+
   
             {
               activeModule === 'qualifications' && (() => {
@@ -16674,7 +16681,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </div>
                 )}
   
-            })()}
+            )}
 
             {/* Medical Records Module */}
             {
@@ -20157,7 +20164,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     )
                   }
                 </>
-              )
+            })()}
             })()}
 
             {/* Finance Form */}
@@ -22832,11 +22839,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   })}
                               </div>
                             )}
-                          </div>
-                        </div>
+
+                  )}
                       </div>
-                    );
-                  })()}
+                  )}
+                  }
 
             {/* Master Guide Program Module */}
             {
@@ -23267,8 +23274,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             )}
                         </div>
                       </div>
-                    </div>
-                  )}
+
+                })()}
                 </div>
                   </>);
                 })()}
@@ -24050,20 +24057,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         >
                           Cerrar
                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ));
-      };
-    };
+                  )}
 
-const ClubVencedoresApp = () => (
-  <ErrorBoundary>
-    <ClubVencedoresSystem />
-  </ErrorBoundary>
-);
-export default ClubVencedoresApp;
+          )})})})}
+
+        );
+
+      };
+
