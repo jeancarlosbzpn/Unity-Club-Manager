@@ -49,27 +49,24 @@ export const dataService = {
       }
     } else {
       try {
-        if (key === 'members') {
-          console.log('📂 Fetching members collection directly...');
-          const colRef = collection(db, 'members');
+        const STORAGE_PREFIX = 'clubvencedores_';
+        
+        // 1. Try Collection (New format)
+        if (key === 'members' || key === 'transactions') {
+          const colName = STORAGE_PREFIX + key;
+          console.log(`📂 Checking cloud collection: ${colName}...`);
+          const colRef = collection(db, colName);
           const querySnapshot = await getDocs(colRef);
-          return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        }
-
-        // Transactions might be a collection now
-        if (key === 'transactions') {
-          // Check metadata first
-          const docRef = doc(db, 'club_vencedores_data', 'transactions');
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists() && docSnap.data().isCollection) {
-            console.log('📂 Fetching transactions collection...');
-            const colRef = collection(db, 'transactions');
-            const querySnapshot = await getDocs(colRef);
+          
+          if (!querySnapshot.empty) {
+            console.log(`✅ Loaded ${querySnapshot.size} items from collection: ${colName}`);
             return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           }
+          console.log(`⚠️ Collection ${colName} is empty. Trying fallback...`);
         }
 
-        // First check the metadata document in the common collection
+        // 2. Fallback: Try central document (Original format)
+        // This handles cases where data is stored inside 'club_vencedores_data' collection
         const docRef = doc(db, 'club_vencedores_data', key);
         const docSnap = await getDoc(docRef);
 
@@ -77,14 +74,28 @@ export const dataService = {
           const content = docSnap.data();
           
           if (content.isCollection) {
-            console.log(`📂 ${key} is stored as a collection. Loading items...`);
-            const colRef = collection(db, key);
+            console.log(`📂 ${key} marked as collection in metadata. Loading from collection...`);
+            const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : key;
+            const colRef = collection(db, targetCol);
             const querySnapshot = await getDocs(colRef);
             return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           }
           
+          console.log(`✅ Loaded ${key} from central document.`);
           return content.data;
         }
+
+        // 3. Last chance: Try generic collection with raw key name
+        if (key === 'members' || key === 'transactions') {
+           const rawColRef = collection(db, key);
+           const rawSnap = await getDocs(rawColRef);
+           if (!rawSnap.empty) {
+             console.log(`✅ Found data in raw collection name: ${key}`);
+             return rawSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+           }
+        }
+
+        console.warn(`❌ No cloud data found for key: ${key}`);
         return null;
       } catch (err) {
         console.error(`Error reading ${key} from Firestore:`, err);
@@ -106,10 +117,11 @@ export const dataService = {
     } else {
       // 1. Members handling (Collection + Deletions)
       if (key === 'members' && Array.isArray(data)) {
+        const STORAGE_PREFIX = 'clubvencedores_';
         const batch = writeBatch(db);
         
         // Sync deletions: find docs in cloud that are not in incoming array
-        const colRef = collection(db, 'members');
+        const colRef = collection(db, STORAGE_PREFIX + 'members');
         const currentSnap = await getDocs(colRef);
         const incomingIds = data.map(m => m.id);
         
@@ -121,21 +133,25 @@ export const dataService = {
 
         for (const member of data) {
           if (!member.id) member.id = crypto.randomUUID();
-          const memberRef = doc(db, 'members', member.id);
+          const memberRef = doc(db, STORAGE_PREFIX + 'members', member.id);
           batch.set(memberRef, sanitizeData(member));
         }
         await batch.commit();
+        
+        // Also save to central doc for redundancy/backup during migration
+        await saveCollectionToFirestore(key, sanitizeData(data));
         return { success: true };
       }
 
       // 2. Transactions handling (Collection + Deletions)
       if (key === 'transactions' && Array.isArray(data)) {
+        const STORAGE_PREFIX = 'clubvencedores_';
         const batch = writeBatch(db);
         // Mark as collection
         await setDoc(doc(db, 'club_vencedores_data', 'transactions'), { isCollection: true, updatedAt: new Date().toISOString() });
         
         // Sync deletions
-        const colRef = collection(db, 'transactions');
+        const colRef = collection(db, STORAGE_PREFIX + 'transactions');
         const currentSnap = await getDocs(colRef);
         const incomingIds = data.map(t => t.id);
         
@@ -147,10 +163,13 @@ export const dataService = {
 
         for (const tx of data) {
           if (!tx.id) tx.id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
-          const txRef = doc(db, 'transactions', tx.id);
+          const txRef = doc(db, STORAGE_PREFIX + 'transactions', tx.id);
           batch.set(txRef, sanitizeData(tx));
         }
         await batch.commit();
+        
+        // Also save to central doc for redundancy
+        await saveCollectionToFirestore(key, sanitizeData(data));
         return { success: true };
       }
 
