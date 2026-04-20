@@ -1465,6 +1465,69 @@ const ClubVencedoresSystem = () => {
     'Class Instructor'
   ];
 
+  const getApplicableUniformItems = (member) => {
+    return uniformItems.filter(item => {
+      // 1. Gender Filter
+      const normalizeSex = (s) => {
+        if (!s) return '';
+        const lower = s.toLowerCase();
+        if (lower === 'male' || lower === 'm' || lower === 'masculino') return 'M';
+        if (lower === 'female' || lower === 'f' || lower === 'femenino') return 'F';
+        return 'Unisex';
+      };
+      
+      const itemGender = item.gender === 'Unisex' ? 'Unisex' : normalizeSex(item.gender);
+      const memberSex = normalizeSex(member.sex || member.gender);
+      if (itemGender !== 'Unisex' && itemGender !== memberSex) return false;
+
+      // 2. Directive Filter
+      const isMemberDirective = (m) => {
+        if (m.position && m.position.trim() !== '' && m.position !== 'Ninguno') return true;
+        if (m.directiveRoles) {
+          return Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+        }
+        return false;
+      };
+
+      if (item.onlyForDirective) {
+        if (!isMemberDirective(member)) return false;
+
+        // Sub-filter: Specific roles
+        if (item.applicablePositions && item.applicablePositions.length > 0) {
+          const memberRoles = [];
+          if (member.directiveRoles) {
+            Object.values(member.directiveRoles).forEach(clubRoles => {
+              if (Array.isArray(clubRoles)) {
+                clubRoles.forEach(r => memberRoles.push(r.position));
+              }
+            });
+          }
+          if (member.position) memberRoles.push(member.position);
+          
+          const hasRequiredRole = item.applicablePositions.some(pos => memberRoles.includes(pos));
+          if (!hasRequiredRole) return false;
+        }
+      }
+
+      // 3. Cumulative Class Logic
+      if (item.applicableClass) {
+        const memberClassValue = member.membershipClass || member.pathfinderClass;
+        const memberClassIndex = PATHFINDER_HIERARCHY.indexOf(memberClassValue);
+        const itemClassIndex = PATHFINDER_HIERARCHY.indexOf(item.applicableClass);
+        
+        if (memberClassIndex === -1) return false;
+
+        if (item.showInCurrentClass === false) {
+          if (memberClassIndex <= itemClassIndex) return false;
+        } else {
+          if (memberClassIndex < itemClassIndex) return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
   const aventurerosClasses = [
     { value: 'Corderitos', label: 'Corderitos (4 años)', minAge: 4, maxAge: 4, color: 'bg-white border-gray-300' },
     { value: 'Aves Madrugadoras', label: 'Aves Madrugadoras (5 años)', minAge: 5, maxAge: 5, color: 'bg-blue-50 border-blue-200' },
@@ -3510,123 +3573,149 @@ const ClubVencedoresSystem = () => {
               </div>
             </div>
             
-            <div style="margin-top: 30px; font-size: 10pt; color: #666;">
-              * Please cut and return this portion with payment (if applicable) by the next club meeting.
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-  };
-
-  const calculateAge = (dob) => {
-    if (!dob) return 0;
-    const diff = Date.now() - new Date(dob).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  };
-
-  // --- HELPER: GLOBAL/GROUP REPORT PRINTER ---
-  const printGlobalReport = (dateToPrint, targetGroup = 'all') => {
-    // targetGroup: 'all', 'directive', 'juniors', 'masters'
-
-    // Calculate Group Title
-    let reportTitle = "Reporte Global de Uniformidad";
+            <div style="margin-top: 30px; font-size: 10pt;   const printGlobalReport = (dateToPrint, targetGroup = 'all') => {
+    let reportTitle = "Reporte Detallado de Uniformidad";
     if (targetGroup === 'directive') reportTitle = "Reporte de Uniformidad-Directiva";
-    if (targetGroup === 'juniors') reportTitle = "Reporte de Uniformidad-TriClub Manager";
-    if (targetGroup === 'masters') reportTitle = "Reporte de Uniformidad-TriClub Manager Master";
+    if (targetGroup === 'juniors') reportTitle = "Reporte de Uniformidad-Club de Menores";
+    if (targetGroup === 'masters') reportTitle = "Reporte de Uniformidad-Club de Guías Mayores";
 
     const printContent = `
       <html>
         <head>
           <title>${reportTitle}</title>
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
-            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-            .header h1 { margin: 0; font-size: 24px; color: #1a1a1a; }
-            .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
-            .section { margin-bottom: 30px; page-break-inside: avoid; }
-            .section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #4f46e5; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-            table { w-full; border-collapse: collapse; width: 100%; font-size: 14px; margin-bottom: 10px; }
-            th { text-align: left; border-bottom: 1px solid #ccc; padding: 10px; background-color: #f9fafb; font-weight: 600; }
-            td { border-bottom: 1px solid #eee; padding: 10px; }
-            .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-            .badge-red { background-color: #fef2f2; color: #991b1b; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; line-height: 1.4; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4f46e5; padding-bottom: 15px; }
+            .header h1 { margin: 0; font-size: 26px; color: #1e1b4b; }
+            .header p { margin: 5px 0 0; color: #4b5563; font-size: 15px; font-weight: 500; }
+            .section { margin-bottom: 40px; page-break-inside: avoid; }
+            .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; color: #4f46e5; background: #f5f3ff; padding: 8px 12px; border-radius: 6px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 13px; }
+            th { text-align: left; background-color: #f9fafb; padding: 12px 10px; border-bottom: 2px solid #e5e7eb; color: #374151; }
+            td { padding: 10px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+            .progress-container { width: 100px; height: 12px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin-top: 4px; border: 1px solid #d1d5db; }
+            .progress-bar { height: 100%; background: linear-gradient(90deg, #10b981, #059669); }
+            .percent-text { font-size: 11px; font-weight: bold; color: #065f46; margin-top: 2px; }
+            .item-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+            .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+            .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+            .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+            .member-row:nth-child(even) { background-color: #fafafa; }
+            .summary-box { display: flex; justify-content: space-around; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
+            .stat { text-align: center; }
+            .stat-val { font-size: 20px; font-weight: bold; color: #1e293b; }
+            .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>TriClub Manager</h1>
+            <h1>Club Vencedores</h1>
             <p>${reportTitle}</p>
             <p>Fecha de Inspección: ${new Date(dateToPrint + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
 
           ${(() => {
         const generateSection = (title, memberList) => {
-          const missingList = memberList.map(m => {
-            const inspection = uniformInspections.find(i => i.memberId === m.id && i.date === dateToPrint) || {};
-            if (!inspection.itemsMissing || inspection.itemsMissing.length === 0) return null;
-            const items = inspection.itemsMissing.map(id => uniformItems.find(i => i.id === id)?.label).filter(Boolean);
-            return { name: m.firstName + ' ' + m.lastName, items };
+          const inspectedMembers = memberList.map(m => {
+            const inspection = uniformInspections.find(i => i.memberId === m.id && i.date === dateToPrint);
+            if (!inspection) return null;
+
+            const applicable = getApplicableUniformItems(m);
+            const missingIds = inspection.itemsMissing || [];
+            const ownedItems = applicable.filter(item => !missingIds.includes(item.id)).map(i => i.label);
+            const missingItems = applicable.filter(item => missingIds.includes(item.id)).map(i => i.label);
+            
+            const totalCount = applicable.length;
+            const ownedCount = ownedItems.length;
+            const percent = totalCount > 0 ? Math.round((ownedCount / totalCount) * 100) : 0;
+
+            return { name: `${m.firstName} ${m.lastName}`, ownedItems, missingItems, percent };
           }).filter(Boolean);
 
-          if (missingList.length === 0) return '';
+          if (inspectedMembers.length === 0) return '';
 
           return `
-                   <div class="section">
-                     <div class="section-title">${title} (${missingList.length} Incompletos)</div>
-                     <table>
-                       <thead><tr><th>Nombre</th><th>Faltantes</th></tr></thead>
-                       <tbody>
-                         ${missingList.map(m => `
-                           <tr>
-                             <td style="font-weight: 500;">${m.name}</td>
-                             <td>${m.items.map(i => `<span class="badge badge-red">${i}</span>`).join(' ')}</td>
-                           </tr>
-                         `).join('')}
-                       </tbody>
-                     </table>
-                   </div>
-                 `;
+            <div class="section">
+              <div class="section-title">${title} (${inspectedMembers.length} Inspeccionados)</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 25%;">Miembro</th>
+                    <th style="width: 15%;">Progreso</th>
+                    <th style="width: 30%;">En Uniforme (Tiene)</th>
+                    <th style="width: 30%;">Faltantes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${inspectedMembers.map(m => `
+                    <tr class="member-row">
+                      <td>
+                        <div style="font-weight: 700; color: #1e293b;">${m.name}</div>
+                      </td>
+                      <td>
+                        <div class="progress-container">
+                          <div class="progress-bar" style="width: ${m.percent}%"></div>
+                        </div>
+                        <div class="percent-text">${m.percent}% Completo</div>
+                      </td>
+                      <td>
+                        <div class="item-list">
+                          ${m.ownedItems.map(i => `<span class="badge badge-green">${i}</span>`).join('')}
+                          ${m.ownedItems.length === 0 ? '<span style="color: #94a3b8; font-style: italic; font-size: 11px;">Ninguno</span>' : ''}
+                        </div>
+                      </td>
+                      <td>
+                        <div class="item-list">
+                          ${m.missingItems.map(i => `<span class="badge badge-red">${i}</span>`).join('')}
+                          ${m.missingItems.length === 0 ? '<span style="color: #10b981; font-weight: bold; font-size: 11px;">✓ Todo completo</span>' : ''}
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
         };
 
-        const directiveMembers = members.filter(m => m.position && m.position.trim() !== '' && m.position !== 'Ninguno');
-        const allRegular = members.filter(m => !m.position || m.position.trim() === '' || m.position === 'Ninguno');
+        const directiveMembers = members.filter(m => {
+          if (m.position && m.position.trim() !== '' && m.position !== 'Ninguno') return true;
+          if (m.directiveRoles) return Object.values(m.directiveRoles).some(roles => roles.length > 0);
+          return false;
+        });
+        const allRegular = members.filter(m => {
+           const hasPos = m.position && m.position.trim() !== '' && m.position !== 'Ninguno';
+           const hasRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => roles.length > 0);
+           return !hasPos && !hasRoles;
+        });
 
-        // Helper for age (reused)
-        const getMemberAge = (m) => {
+        const getAge = (m) => {
           if (!m.dateOfBirth) return 0;
-          const dob = new Date(m.dateOfBirth);
-          if (isNaN(dob.getTime())) return 0;
-          return Math.abs(new Date(Date.now() - dob.getTime()).getUTCFullYear() - 1970);
+          return Math.abs(new Date(Date.now() - new Date(m.dateOfBirth).getTime()).getUTCFullYear() - 1970);
         };
 
-        const aventureros = allRegular.filter(m => getMemberAge(m) < 10);
-        const conquistadores = allRegular.filter(m => getMemberAge(m) >= 10 && getMemberAge(m) < 16);
-        const masters = allRegular.filter(m => getMemberAge(m) >= 16);
+        const aventureros = allRegular.filter(m => getAge(m) < 10);
+        const conquistadores = allRegular.filter(m => getAge(m) >= 10 && getAge(m) < 16);
+        const masters = allRegular.filter(m => getAge(m) >= 16);
 
         let content = '';
         if (targetGroup === 'all' || targetGroup === 'directive') content += generateSection('Directiva', directiveMembers);
         if (targetGroup === 'all' || targetGroup === 'juniors') {
-          // Keep 'juniors' key for backward compatibility or change logic if needed. 
-          // The user considers them separate. Let's output both if 'all' or specific.
-          content += generateSection(clubSettings?.aventurerosName || 'Aventureros', aventureros);
-          content += generateSection(clubSettings?.conquistadoresName || 'Conquistadores', conquistadores);
+          content += generateSection('Aventureros', aventureros);
+          content += generateSection('Conquistadores', conquistadores);
         }
-        if (targetGroup === 'all' || targetGroup === 'masters') content += generateSection(clubSettings?.guiasName || 'Guías Mayores', masters);
+        if (targetGroup === 'all' || targetGroup === 'masters') content += generateSection('Guías Mayores', masters);
 
-        return content || '<p style="text-align: center; color: #666;">No hay datos de inspección faltantes para esta fecha en el grupo seleccionado.</p>';
+        return content || '<p style="text-align: center; color: #64748b; padding: 40px; border: 2px dashed #e2e8f0; border-radius: 12px;">No se encontraron registros de inspección para esta fecha en los grupos seleccionados.</p>';
       })()}
 
-          <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af;">
-            Generado el ${new Date().toLocaleDateString()}
+          <div style="margin-top: 50px; text-align: right; font-size: 11px; color: #94a3b8; border-top: 1px solid #eee; padding-top: 10px;">
+            Documento Oficial de Registro de Uniformidad - Generado el ${new Date().toLocaleString()}
           </div>
         </body>
       </html>
     `;
-    const printWindow = window.open('', '', 'width=800,height=800');
+    const printWindow = window.open('', '', 'width=950,height=850');
     if (printWindow) {
       printWindow.document.write(printContent);
       printWindow.document.close();
@@ -3634,9 +3723,9 @@ const ClubVencedoresSystem = () => {
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
-      }, 500);
+      }, 700);
     } else {
-      alert('Permite las ventanas emergentes para imprimir.');
+      alert('Permite las ventanas emergentes para imprimir el reporte.');
     }
   };
 
@@ -5778,35 +5867,77 @@ const ClubVencedoresSystem = () => {
                   <p className="text-gray-500 dark:text-gray-400 mt-2">¿Qué grupo deseas inspeccionar hoy?</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <button onClick={() => { setSelectedInspectionGroup('directive'); setInspectionViewMode('list'); }}
-                    className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-purple-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
-                    <Award className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Directiva</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">Oficiales</p>
-                  </button>
+                {(() => {
+                  const isDir = (m) => {
+                    if (m.position && m.position.trim() !== '' && m.position !== 'Ninguno') return true;
+                    if (m.directiveRoles) return Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+                    return false;
+                  };
+                  const getAge = (m) => {
+                    if (!m.dateOfBirth) return 0;
+                    return Math.abs(new Date(Date.now() - new Date(m.dateOfBirth).getTime()).getUTCFullYear() - 1970);
+                  };
+                  const hasRecord = (m) => uniformInspections.some(i => i.memberId === m.id && i.date === bgDate);
 
-                  <button onClick={() => { setSelectedInspectionGroup('aventureros'); setInspectionViewMode('list'); }}
-                    className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-orange-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
-                    <Sun className="w-10 h-10 text-orange-600 mb-4 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Aventureros</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">4-9 años</p>
-                  </button>
+                  const stats = {
+                    directive: { total: members.filter(isDir).length, inspected: members.filter(m => isDir(m) && hasRecord(m)).length },
+                    aventureros: { total: members.filter(m => !isDir(m) && getAge(m) < 10).length, inspected: members.filter(m => !isDir(m) && getAge(m) < 10 && hasRecord(m)).length },
+                    conquistadores: { total: members.filter(m => !isDir(m) && getAge(m) >= 10 && getAge(m) < 16).length, inspected: members.filter(m => !isDir(m) && getAge(m) >= 10 && getAge(m) < 16 && hasRecord(m)).length },
+                    guias_mayores: { total: members.filter(m => !isDir(m) && getAge(m) >= 16).length, inspected: members.filter(m => !isDir(m) && getAge(m) >= 16 && hasRecord(m)).length },
+                  };
 
-                  <button onClick={() => { setSelectedInspectionGroup('conquistadores'); setInspectionViewMode('list'); }}
-                    className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-blue-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
-                    <MapPin className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Conquistadores</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">10-15 años</p>
-                  </button>
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <button onClick={() => { setSelectedInspectionGroup('directive'); setInspectionViewMode('list'); }}
+                        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-purple-500 hover:shadow-xl transition-all hover:-translate-y-1 group relative">
+                        <Award className="w-10 h-10 text-purple-600 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Directiva</h3>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-700">
+                          <span className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">Oficiales</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${stats.directive.inspected === stats.directive.total ? 'bg-green-100 text-green-700' : 'bg-indigo-50 text-indigo-600'} font-bold`}>
+                            {stats.directive.inspected}/{stats.directive.total}
+                          </span>
+                        </div>
+                      </button>
 
-                  <button onClick={() => { setSelectedInspectionGroup('guias_mayores'); setInspectionViewMode('list'); }}
-                    className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-yellow-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
-                    <Crown className="w-10 h-10 text-yellow-600 mb-4 group-hover:scale-110 transition-transform" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Guías Mayores</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">16+ años</p>
-                  </button>
-                </div>
+                      <button onClick={() => { setSelectedInspectionGroup('aventureros'); setInspectionViewMode('list'); }}
+                        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-orange-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
+                        <Sun className="w-10 h-10 text-orange-600 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Aventureros</h3>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-700">
+                          <span className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">4-9 años</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${stats.aventureros.inspected === stats.aventureros.total ? 'bg-green-100 text-green-700' : 'bg-orange-50 text-orange-600'} font-bold`}>
+                            {stats.aventureros.inspected}/{stats.aventureros.total}
+                          </span>
+                        </div>
+                      </button>
+
+                      <button onClick={() => { setSelectedInspectionGroup('conquistadores'); setInspectionViewMode('list'); }}
+                        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-blue-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
+                        <MapPin className="w-10 h-10 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Conquistadores</h3>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-700">
+                          <span className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">10-15 años</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${stats.conquistadores.inspected === stats.conquistadores.total ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-600'} font-bold`}>
+                            {stats.conquistadores.inspected}/{stats.conquistadores.total}
+                          </span>
+                        </div>
+                      </button>
+
+                      <button onClick={() => { setSelectedInspectionGroup('guias_mayores'); setInspectionViewMode('list'); }}
+                        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-t-4 border-yellow-500 hover:shadow-xl transition-all hover:-translate-y-1 group">
+                        <Crown className="w-10 h-10 text-yellow-600 mb-4 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Guías Mayores</h3>
+                        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-gray-700">
+                          <span className="text-gray-500 dark:text-gray-400 text-xs font-bold uppercase tracking-wider">16+ años</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${stats.guias_mayores.inspected === stats.guias_mayores.total ? 'bg-green-100 text-green-700' : 'bg-yellow-50 text-yellow-600'} font-bold`}>
+                            {stats.guias_mayores.inspected}/{stats.guias_mayores.total}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {/* SAVED REPORTS SECTION */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mt-12">
