@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Edit, Edit2, Save, X, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -17,8 +14,6 @@ import MigrationTool from './components/MigrationTool';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import CarnetFront from './assets/Carnet/frontal.svg';
-
-const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 import CarnetBack from './assets/Carnet/trasero.svg';
 import MedalIcon from './assets/certificate-medal.svg';
 // Certificate Backgrounds-Conquistadores (10-15)
@@ -292,7 +287,7 @@ class ErrorBoundary extends React.Component {
 
 const ClubVencedoresSystem = () => {
   // Authentication state
-  // Authentication state
+  const dataclubesWebviewRef = useRef(null);
   const [activityViewMode, setActivityViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [attendanceTypeMarking, setAttendanceTypeMarking] = useState('satPM'); // 'friday', 'satAM', 'satPM'
   const [attendanceReportView, setAttendanceReportView] = useState('satPM'); // 'friday', 'satAM', 'satPM'
@@ -317,6 +312,34 @@ const ClubVencedoresSystem = () => {
     };
   }, []);
 
+  const handleAutoFillDataClubes = () => {
+    const webview = dataclubesWebviewRef.current;
+    if (webview) {
+      webview.executeJavaScript(`
+        (function() {
+          const userField = document.querySelector('input[name="login[usuario]"]');
+          const passField = document.querySelector('input[name="login[clave]"]');
+          const btn = document.querySelector('#submitLog');
+          
+          if (userField && passField) {
+            userField.value = 'DO1902340';
+            passField.value = 'Baez240080';
+            
+            // Trigger events to ensure frameworks pick up changes
+            userField.dispatchEvent(new Event('input', { bubbles: true }));
+            passField.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            if (btn) {
+               // Optional: Click automatically or just highlight
+               btn.click();
+            }
+          } else {
+            console.log('Inputs not found');
+          }
+        })();
+      `);
+    }
+  };
 
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -457,6 +480,7 @@ const ClubVencedoresSystem = () => {
 
     // Simple lookup based on ID (we can refine this)
     if (moduleId === 'dashboard') { label = 'Inicio'; Icon = Home; }
+    else if (moduleId === 'dataclubes') { label = 'DataClubes'; Icon = Globe; }
     else if (moduleId === 'members') { label = 'Miembros'; Icon = Users; }
     else if (moduleId === 'units') { label = 'Unidades'; Icon = Grid; }
     else if (moduleId === 'reminders') { label = 'Recordatorios'; Icon = Bell; }
@@ -538,7 +562,6 @@ const ClubVencedoresSystem = () => {
     members: [], // { id, name, grade, merits: [] }
     selectedMemberIds: [] // New: For mass selection
   });
-  const prevStateRef = useRef({});
   const [transactions, setTransactions] = useState([]);
   const [isVerifyingReceipt, setIsVerifyingReceipt] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({}); // { menuId: boolean }
@@ -589,110 +612,6 @@ const ClubVencedoresSystem = () => {
       localStorage.removeItem('clubvencedores_current_user');
     }
   }, [isAuthenticated, currentUser]);
-
-  // ========================================
-  // UNIFIED REAL-TIME SYNC ENGINE (CLOUD-FIRST)
-  // ========================================
-  useEffect(() => {
-    if (!isAuthenticated || isElectron) return;
-
-    setSyncStatus('connecting');
-    const subs = [];
-    
-    // Comprehensive stream list
-    const streams = [
-      { key: 'members', setter: setMembers },
-      { key: 'transactions', setter: setTransactions },
-      { key: 'activities', setter: setActivities },
-      { key: 'units', setter: setUnits },
-      { key: 'inventory', setter: setInventory },
-      { key: 'users', setter: setUsers },
-      { key: 'clubSettings', setter: setClubSettings },
-      { key: 'disciplineRecords', setter: setDisciplineRecords },
-      { key: 'attendanceRecords', setter: setAttendanceRecords },
-      { key: 'memberProgress', setter: setMemberProgress },
-      { key: 'points', setter: setPoints },
-      { key: 'lockedSaturdays', setter: setLockedSaturdays },
-      { key: 'inventoryCategories', setter: setInventoryCategories },
-      { key: 'cuotaAmount', setter: setCuotaAmount },
-      { key: 'masterGuideData', setter: setMasterGuideData },
-      { key: 'financeCategories', setter: setFinanceCategories },
-      { key: 'tents', setter: setTents },
-      { key: 'tentAssignments', setter: setTentAssignments },
-      { key: 'uniformInspections', setter: setUniformInspections },
-      { key: 'memberUniforms', setter: setMemberUniforms },
-      { key: 'uniformItems', setter: setUniformItems },
-      { key: 'uniformCategories', setter: setUniformCategories },
-      { key: 'fixedPaymentConcepts', setter: setFixedPaymentConcepts },
-      { key: 'fixedPayments', setter: setFixedPayments },
-      { key: 'reminders', setter: setReminders },
-      { key: 'campDetails', setter: setCampDetails },
-      { key: 'classRequirements', setter: setClassRequirements },
-      { key: 'evaluationGroups', setter: setEvaluationGroups },
-      { key: 'requirementSections', setter: setRequirementSections },
-      { key: 'firstAidItems', setter: setFirstAidItems },
-      { key: 'cleaningSchedule', setter: setCleaningSchedule },
-      { key: 'duesConfig', setter: (data) => {
-        if (data) {
-          setDuesStartDate(data.startDate || '');
-          setSkippedSaturdays(data.skippedSaturdays || []);
-        }
-      }}
-    ];
-
-    let keysLoaded = 0;
-    streams.forEach(({ key, setter }) => {
-      try {
-        const unsub = dataService.subscribeToKey(key, (data) => {
-          if (!data) {
-            if (syncStatus === 'connecting') {
-              keysLoaded++;
-              if (keysLoaded >= streams.length) setSyncStatus('synced');
-            }
-            return;
-          }
-
-          let processedData = data;
-          if (key === 'transactions' || key === 'members') {
-            const tempState = { 
-              transactions: key === 'transactions' ? data : prevStateRef.current.transactions, 
-              members: key === 'members' ? data : prevStateRef.current.members,
-              fixedPayments: prevStateRef.current.fixedPayments,
-              fixedPaymentConcepts: prevStateRef.current.fixedPaymentConcepts
-            };
-            const result = processClubData(tempState);
-            processedData = key === 'transactions' ? result.transactions : data;
-          }
-
-          setter(processedData);
-          if (prevStateRef.current) prevStateRef.current[key] = data;
-
-          if (syncStatus !== 'synced') {
-            keysLoaded++;
-            if (keysLoaded >= streams.length) {
-              setSyncStatus('synced');
-              setDataLoaded(true);
-            }
-          }
-        });
-        subs.push(unsub);
-      } catch (err) {
-        console.error(`Error a sync ${key}:`, err);
-      }
-    });
-
-    const safetyTimer = setTimeout(() => {
-      if (syncStatus === 'connecting') {
-        setSyncStatus('synced');
-        setDataLoaded(true);
-      }
-    }, 6000);
-
-    return () => {
-      subs.forEach(u => u());
-      clearTimeout(safetyTimer);
-    };
-  }, [isAuthenticated]);
 
   const [resolvingTransaction, setResolvingTransaction] = useState(null); // Transaction being resolved (debt)
   const [showFinanceForm, setShowFinanceForm] = useState(false);
@@ -846,12 +765,28 @@ const ClubVencedoresSystem = () => {
 
   // Data Safety State
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('offline'); // 'offline', 'connecting', 'synced', 'error'
 
+  // Communication Module State
+  const [whatsappGroups, setWhatsappGroups] = useState([
+    { id: '1', name: 'Directiva', link: 'https://chat.whatsapp.com/example1', description: 'Canal oficial para líderes' },
+    { id: '2', name: 'Padres', link: '', description: 'Comunicados para padres' },
+    { id: '3', name: 'Aventureros', link: '', description: 'Grupo general para niños pequeños' },
+    { id: '4', name: 'Conquistadores', link: '', description: 'Grupo para adolescentes' },
+    { id: '5', name: 'Guías Mayores', link: '', description: 'Liderazgo avanzado' },
+  ]);
+  const [editingGroup, setEditingGroup] = useState(null); // For editing WhatsApp group links
 
+  const messageTemplates = [
+    { id: 'payment', title: 'Recordatorio de Pago', icon: 'DollarSign', text: 'Hola {name}, te recordamos que tienes un pago pendiente de cuota. Por favor regularizarlo pronto. Bendiciones.' },
+    { id: 'meeting', title: 'Recordatorio de Reunión', icon: 'Bell', text: 'Hola {name}, recuerda nuestra reunión del club este sábado a las 3:00 PM. No faltes!' },
+    { id: 'absence', title: 'Notificación de Ausencia', icon: 'UserMinus', text: 'Hola {name}, notamos tu ausencia en la última reunión. Esperamos verte la próxima semana.' }
+  ];
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [customMessage, setCustomMessage] = useState('');
 
   const [campSearchTerm, setCampSearchTerm] = useState('');
-  const [settingsTab, setSettingsTab] = useState('identity'); // 'identity', 'data', 'permissions'
+
+
   // Tents state
   const [tents, setTents] = useState([]);
   const [tentAssignments, setTentAssignments] = useState({}); // { activityId: { tentId: [memberIds] } }
@@ -1361,7 +1296,6 @@ const ClubVencedoresSystem = () => {
     const d = String(today.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   });
-  const [isSyncing, setIsSyncing] = useState(false);
   const [cuotaSessionActive, setCuotaSessionActive] = useState(false);
   const [viewDate, setViewDate] = useState(new Date()); // For navigating months in the picker
   const [showDebtReport, setShowDebtReport] = useState(false);
@@ -1440,6 +1374,7 @@ const ClubVencedoresSystem = () => {
   const [selectedQualificationYear, setSelectedQualificationYear] = useState(new Date().getFullYear());
 
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  const [whatsappUrl, setWhatsappUrl] = useState('https://web.whatsapp.com');
 
   const pathfinderClasses = [
     { value: 'friend', label: 'Amigo', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800' },
@@ -1537,14 +1472,8 @@ const ClubVencedoresSystem = () => {
 
   const [clubSettings, setClubSettings] = useState({
     name: 'TriClub Manager',
-    logo: '', // empty string = default logo
-    rolePermissions: {} // Dynamic role-based permissions
+    logo: '' // empty string = default logo
   });
-
-  // Access Level Constants
-  const ACCESS_FULL = 'full';
-  const ACCESS_READ = 'read';
-  const ACCESS_NONE = 'none';
 
 
 
@@ -1592,16 +1521,12 @@ const ClubVencedoresSystem = () => {
   };
 
   // Save data to Storage (Hybrid: Firebase + Electron)
-  const saveToElectron = async (dataToSave, changedKeys = null) => {
+  const saveToElectron = async (dataToSave) => {
     try {
-      setIsSyncing(true);
-      await dataService.saveFullState(dataToSave, changedKeys);
-      console.log(`💾 Data synced to storage${changedKeys ? ` (${changedKeys.length} keys changed)` : ''}`);
-      // Give a tiny buffer for UX so the indicator doesn't just flicker
-      setTimeout(() => setIsSyncing(false), 500);
+      await dataService.saveFullState(dataToSave);
+      console.log('💾 Data synced to storage (Cloud/Local)');
     } catch (error) {
       console.error('Error saving data:', error);
-      setIsSyncing(false);
     }
   };
 
@@ -1854,141 +1779,12 @@ const ClubVencedoresSystem = () => {
   };
 
   // ========================================
-  // UNIFIED TRANSACTION DELETION
-  // ========================================
-  const handleDeleteTransaction = (transaction) => {
-    if (!transaction) return;
-
-    // 1. Cleanup linked data sources
-    if (transaction.id?.startsWith('fixed-') || transaction.id?.startsWith('trans_')) {
-      // trans_ pattern is typically followed by the underlying ID or specific mapping
-      const isBulk = transaction.id.startsWith('trans_');
-      const baseId = isBulk ? transaction.id.replace('trans_', '') : transaction.id;
-      
-      const parts = baseId.split('-');
-      // ID format is fixed-{conceptId}-{memberId} or simply the paymentId
-      if (parts.length >= 3) {
-        const conceptId = parts[1];
-        const memberId = parts[2];
-
-        setFixedPayments(prev => {
-          const newPayments = { ...prev };
-          if (newPayments[conceptId]) {
-            const updatedMemberPayments = { ...newPayments[conceptId] };
-            delete updatedMemberPayments[memberId];
-            newPayments[conceptId] = updatedMemberPayments;
-          }
-          return newPayments;
-        });
-      }
-    }
-
-    // 2. Cleanup Waivers (if applicable)
-    if (transaction.paymentMethod === 'Waiver' || transaction.description?.includes('Waiver')) {
-      setMembers(prev => prev.map(m => {
-        if (m.id === transaction.memberId && m.waivedSaturdays) {
-          return {
-            ...m,
-            waivedSaturdays: m.waivedSaturdays.filter(d => d !== transaction.date)
-          };
-        }
-        return m;
-      }));
-    }
-
-    // 3. Delete the transaction itself
-    setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-    console.log(`🗑️ Transacción eliminada y fuentes limpiadas: ${transaction.id}`);
-  };
-
-  // ========================================
-  // DATA PROCESSING & MIGRATION ENGINE
-  // ========================================
-  const processClubData = (allData) => {
-    if (!allData) return null;
-
-    let processed = { ...allData };
-
-    // 1. Initialize Transactions with Migration Check
-    let initialTransactions = allData.transactions || [];
-
-    // MIGRATION: Ensure Fixed Payments exist as real transactions
-    if (allData.fixedPayments && allData.fixedPaymentConcepts) {
-      allData.fixedPaymentConcepts.forEach(concept => {
-        const payments = allData.fixedPayments[concept.id] || {};
-        Object.entries(payments).forEach(([memberId, val]) => {
-          if (val) {
-            const txId = `fixed-${concept.id}-${memberId}`;
-            const member = (allData.members || []).find(m => m.id === memberId);
-
-            let date = getLocalISODate();
-            let amount = concept.amount || 0;
-
-            if (typeof val === 'string' && val.trim().length > 0) {
-              if (!isNaN(new Date(val).getTime())) {
-                date = val.includes('T') ? val.split('T')[0] : val;
-              }
-            } else if (typeof val === 'object') {
-              if (val.date && !isNaN(new Date(val.date).getTime())) {
-                date = val.date.includes('T') ? val.date.split('T')[0] : val.date;
-              }
-              if (val.amount !== undefined) amount = val.amount;
-            }
-
-            const txIndex = initialTransactions.findIndex(t => t.id === txId);
-            if (txIndex >= 0) {
-              initialTransactions[txIndex] = {
-                ...initialTransactions[txIndex],
-                category: concept.name,
-                description: concept.name,
-                responsibleId: memberId
-              };
-            } else {
-              initialTransactions.push({
-                id: txId,
-                type: 'income',
-                category: concept.name,
-                description: concept.name,
-                amount: parseFloat(amount),
-                date: date,
-                memberId: memberId,
-                responsibleId: memberId,
-                status: 'official'
-              });
-            }
-          }
-        });
-      });
-    }
-
-    // MIGRATION: Fix legacy bulk quota transactions
-    initialTransactions = initialTransactions.map(t => {
-      if (t.category === 'inc_1') t.category = 'Cuotas';
-      if ((t.description === 'Pago de Cuota Semanal (Masivo)' || t.description === 'Condonación de deuda (Waiver)') && !t.responsibleId && t.memberId) {
-        t.responsibleId = t.memberId;
-      }
-      return t;
-    });
-
-    // MIGRATION: Waiver pruning
-    if (allData.members) {
-      const legacyWaivers = initialTransactions.filter(t => t.paymentMethod === 'Waiver' && t.description === 'Condonación de deuda (Waiver)' && t.amount === 0);
-      if (legacyWaivers.length > 0) {
-        initialTransactions = initialTransactions.filter(t => !(t.paymentMethod === 'Waiver' && t.description === 'Condonación de deuda (Waiver)' && t.amount === 0));
-      }
-    }
-
-    processed.transactions = initialTransactions;
-    return processed;
-  };
-
-  // ========================================
   // TENT HANDLERS
   // ========================================
   useEffect(() => {
     const fetchData = async () => {
-      // ONLY FOR ELECTRON: Web uses the Real-time Sync Engine below
-      if (!isElectron) return;
+      // Si estamos en la web y NO estamos autenticados aún, detener.
+      if (!isAuthenticated && !window.electronAPI) return;
 
       try {
         console.log('🔄 Cargando datos desde Electron Storage...');
@@ -2165,6 +1961,7 @@ const ClubVencedoresSystem = () => {
         cuotaAmount,
         masterGuideData,
         financeCategories,
+        // paymentConcepts, concepts, achievements removed as they are undefined
         reminders,
         inventoryCategories,
         tents,
@@ -2174,6 +1971,10 @@ const ClubVencedoresSystem = () => {
         uniformItems,
         uniformCategories,
         clubSettings,
+        duesConfig: {
+          startDate: duesStartDate,
+          skippedSaturdays
+        },
         qualifications,
         disciplineRecords,
         fixedPaymentConcepts,
@@ -2185,119 +1986,55 @@ const ClubVencedoresSystem = () => {
         memberProgress,
         requirementSections,
         firstAidItems,
-        cleaningSchedule,
-        duesConfig: {
-          startDate: duesStartDate,
-          skippedSaturdays
-        }
+        cleaningSchedule
       };
 
       try {
-        // DETECCIÓN DE CAMBIOS: Solo guardamos las llaves que han mutado
-        const changedKeys = [];
-        const prev = prevStateRef.current;
-        
-        Object.keys(dataToSave).forEach(key => {
-          if (key === 'duesConfig') {
-            if (!prev[key] || prev[key].startDate !== duesStartDate || prev[key].skippedSaturdays !== skippedSaturdays) {
-              changedKeys.push(key);
-            }
-          } else if (prev[key] !== dataToSave[key]) {
-            changedKeys.push(key);
-          }
-        });
-
-        if (changedKeys.length > 0) {
-          // Sync selective keys to cloud (Cloud-sync optimized)
-          await saveToElectron(dataToSave, changedKeys);
-          
-          // Update ref for next comparison cycle
-          prevStateRef.current = { ...dataToSave };
-        }
+        // SANITIZATION STEP:
+        const cleanData = JSON.parse(JSON.stringify(dataToSave));
+        await saveToElectron(cleanData);
       } catch (err) {
-        console.error("Error en auto-guardado optimizado:", err);
+        console.error("Error sanitizing/saving data:", err);
       }
     };
 
-    const debounceSave = setTimeout(saveData, 300); // Debounce saves (much faster for sync reliability)
+    const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
   }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, cleaningSchedule]);
 
   // ========================================
 
-
-  // Get detailed access level for a module: 'full', 'read', or 'none'
-  const getModuleAccessLevel = (moduleId) => {
-    if (!currentUser) return ACCESS_NONE;
-    
-    // Primary cloud owner bypass
-    if (currentUser.email === 'jeancarlosbzpn@gmail.com') return ACCESS_FULL;
-
-    // Director / Admin full access
-    if (currentUser.role === 'administrator' || currentUser.position === 'Director') return ACCESS_FULL;
-
-    // Check custom permissions in clubSettings first
-    if (clubSettings.rolePermissions && clubSettings.rolePermissions[currentUser.position]) {
-      const perms = clubSettings.rolePermissions[currentUser.position];
-      if (perms[moduleId]) return perms[moduleId];
-    }
-
-    // Role-based Mapping Logic (as requested by user)
-    const position = currentUser.position;
-    const isSubdirector = position === 'Subdirector' || position === 'Assistant Director';
-    const isSecretario = position === 'Secretario' || position === 'Secretary';
-    const isTesorera = position === 'Tesorera' || position === 'Treasurer';
-    const isDUMC = position === 'DUMC';
-
-    // 1. Full Access Roles
-    if (moduleId === 'dashboard') return ACCESS_FULL; // Everyone has full access to home
-
-    if (isSubdirector) {
-      // Subdirector has full access to almost everything except Config
-      if (moduleId === 'settings') return ACCESS_NONE;
-      return ACCESS_FULL;
-    }
-
-    if (isSecretario) {
-      // Secretario has full access to administration modules
-      const fullModules = ['discipline', 'activities', 'members', 'inventory', 'camps', 'uniformity', 'reports', 'attendance', 'reminders'];
-      if (fullModules.includes(moduleId)) return ACCESS_FULL;
-      if (moduleId === 'finances' || moduleId === 'points' || moduleId === 'settings') return ACCESS_NONE;
-      return ACCESS_READ;
-    }
-
-    if (isDUMC) {
-      // DUMC has full access to specific points and discipline areas
-      const fullModules = ['discipline', 'points', 'camps', 'uniformity', 'reports'];
-      if (fullModules.includes(moduleId)) return ACCESS_FULL;
-      if (moduleId === 'finances' || moduleId === 'attendance' || moduleId === 'reminders' || moduleId === 'settings') return ACCESS_NONE;
-      return ACCESS_READ;
-    }
-
-    if (isTesorera) {
-      // Tesorera focus on finances and inventory
-      if (moduleId === 'finances' || moduleId === 'inventory') return ACCESS_FULL;
-      if (moduleId === 'settings' || moduleId === 'points' || moduleId === 'reminders') return ACCESS_NONE;
-      return ACCESS_READ;
-    }
-
-    // 4. Default for others (Counselors, Instructors, etc.)
-    const hiddenForOthers = ['finances', 'points', 'reminders', 'settings'];
-    if (hiddenForOthers.includes(moduleId)) return ACCESS_NONE;
-    
-    return ACCESS_READ;
-  };
-
-  // Legacy boolean check (updated to use the new logic)
+  // Check if user has access to a module
   const hasModuleAccess = (moduleId) => {
-    const level = getModuleAccessLevel(moduleId);
-    return level === ACCESS_FULL || level === ACCESS_READ;
+    if (!currentUser) return false;
+    
+    // Bypás de seguridad para el dueño de la nube primaria
+    if (currentUser.email === 'jeancarlosbzpn@gmail.com') return true;
+
+    if (currentUser.role === 'administrator' || currentUser.position === 'Director') return true;
+
+    // Check for explicit allowedModules
+    if (currentUser.allowedModules && Array.isArray(currentUser.allowedModules) && currentUser.allowedModules.length > 0) {
+      return currentUser.allowedModules.includes(moduleId);
+    }
+
+    // Fallback to legacy position-based permissions
+    const permissions = {
+      'Subdirector': ['dashboard', 'members', 'directive', 'activities', 'inventory', 'idcards', 'ranking', 'communication', 'discipline'],
+      'Secretary': ['dashboard', 'members', 'directive', 'parents', 'medical', 'classes', 'units', 'activities', 'ranking', 'inventory', 'settings', 'communication', 'discipline'],
+      'Secretario': ['dashboard', 'members', 'directive', 'parents', 'medical', 'classes', 'units', 'activities', 'ranking', 'inventory', 'settings', 'communication', 'discipline'],
+      'Treasurer': ['dashboard', 'finances', 'cuotas', 'inventory']
+    };
+
+    const userPermissions = permissions[currentUser.position] || [];
+    return userPermissions.includes(moduleId);
   };
 
   // Navigation menu items
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: Home, available: true },
+    { id: 'dataclubes', label: 'DataClubes', icon: Globe, available: true },
     { id: 'discipline', label: 'Faltas', icon: AlertTriangle, available: true },
     {
       id: 'activities',
@@ -2348,6 +2085,17 @@ const ClubVencedoresSystem = () => {
       label: 'Campamentos',
       icon: Tent, // Reuse Tent icon
       available: true
+    },
+    {
+      id: 'communication',
+      label: 'Comunicación',
+      icon: MessageCircle,
+      available: true,
+      submenu: [
+        { id: 'comm_groups', label: 'Grupos', icon: Users, available: true },
+        { id: 'comm_messaging', label: 'Mensajería Rápida', icon: MessageSquare, available: true },
+        { id: 'comm_whatsapp', label: 'WhatsApp Web', icon: MessageCircle, available: true }
+      ]
     },
     {
       id: 'uniformity',
@@ -4605,8 +4353,6 @@ const ClubVencedoresSystem = () => {
   // CAMPS MODULE RENDERER
   // ===================================
   const renderCampsModule = () => {
-    const accessLevel = getModuleAccessLevel('camps');
-    const isReadOnly = accessLevel === ACCESS_READ;
     // If activeModule is 'camps_tents', show assignments view (similar to old inventory_tents)
     if (activeModule === 'camps_tents') {
       return (
@@ -4670,17 +4416,15 @@ const ClubVencedoresSystem = () => {
                         })}
                       </div>
 
-                      {!isReadOnly && (
-                        <button
-                          onClick={() => {
-                            setCurrentAssignmentTent(tent);
-                            setShowAssignmentModal(true);
-                          }}
-                          className="w-full py-2 border border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-sm font-medium transition-colors"
-                        >
-                          Gestionar Ocupantes
-                        </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          setCurrentAssignmentTent(tent);
+                          setShowAssignmentModal(true);
+                        }}
+                        className="w-full py-2 border border-indigo-600 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-sm font-medium transition-colors"
+                      >
+                        Gestionar Ocupantes
+                      </button>
                     </div>
                   );
                 })}
@@ -4731,7 +4475,6 @@ const ClubVencedoresSystem = () => {
                             <input
                               type="checkbox"
                               checked={isAssignedHere}
-                              disabled={isReadOnly}
                               onChange={(e) => handleAssignmentChange(member.id, e.target.checked)}
                               className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 mr-3"
                             />
@@ -4918,7 +4661,7 @@ const ClubVencedoresSystem = () => {
                         <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                           {formatCurrency(totalPerPerson)}
                         </div>
-                        {linkedConcept && !isReadOnly && (
+                        {linkedConcept && (
                           <button
                             onClick={() => {
                               setFixedPaymentConcepts(prev => prev.map(c =>
@@ -4958,7 +4701,6 @@ const ClubVencedoresSystem = () => {
                               <input
                                 type="number"
                                 value={details.registration?.fee || ''}
-                                disabled={isReadOnly}
                                 onChange={(e) => updateDetails('registration', { ...details.registration, fee: e.target.value })}
                                 className="w-full pl-7 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="0.00"
@@ -4970,34 +4712,31 @@ const ClubVencedoresSystem = () => {
                             <input
                               type="date"
                               value={details.registration?.deadline || ''}
-                              disabled={isReadOnly}
                               onChange={(e) => updateDetails('registration', { ...details.registration, deadline: e.target.value })}
                               className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                             />
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => {
-                                  // Auto-calc logic: 15 days before camp date, find closest Saturday
-                                  const campDate = new Date(activeCampData.date);
-                                  if (isNaN(campDate.getTime())) {
-                                    alert('Por favor configure una fecha válida para el campamento primero.');
-                                    return;
-                                  }
-                                  const targetDate = new Date(campDate);
-                                  targetDate.setDate(targetDate.getDate() - 15);
-                                  // Find closest Saturday (backwards)
-                                  let safeguard = 0;
-                                  while (targetDate.getDay() !== 6 && safeguard < 7) {
-                                    targetDate.setDate(targetDate.getDate() - 1);
-                                    safeguard++;
-                                  }
-                                  updateDetails('registration', { ...details.registration, deadline: dateToLocalISO(targetDate) });
-                                }}
-                                className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 hover:underline underline-offset-2"
-                              >
-                                Calcular Automático (15 días antes)
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                // Auto-calc logic: 15 days before camp date, find closest Saturday
+                                const campDate = new Date(activeCampData.date);
+                                if (isNaN(campDate.getTime())) {
+                                  alert('Por favor configure una fecha válida para el campamento primero.');
+                                  return;
+                                }
+                                const targetDate = new Date(campDate);
+                                targetDate.setDate(targetDate.getDate() - 15);
+                                // Find closest Saturday (backwards)
+                                let safeguard = 0;
+                                while (targetDate.getDay() !== 6 && safeguard < 7) {
+                                  targetDate.setDate(targetDate.getDate() - 1);
+                                  safeguard++;
+                                }
+                                updateDetails('registration', { ...details.registration, deadline: dateToLocalISO(targetDate) });
+                              }}
+                              className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 hover:underline underline-offset-2"
+                            >
+                              Calcular Automático (15 días antes)
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -5015,7 +4754,6 @@ const ClubVencedoresSystem = () => {
                               <input
                                 type="number"
                                 value={details.transport?.totalCost || ''}
-                                disabled={isReadOnly}
                                 onChange={(e) => updateDetails('transport', { ...details.transport, totalCost: e.target.value })}
                                 className="w-full pl-7 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="0.00"
@@ -5028,7 +4766,6 @@ const ClubVencedoresSystem = () => {
                               <input
                                 type="time"
                                 value={details.transport?.departureTime || ''}
-                                disabled={isReadOnly}
                                 onChange={(e) => updateDetails('transport', { ...details.transport, departureTime: e.target.value })}
                                 className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                               />
@@ -5038,7 +4775,6 @@ const ClubVencedoresSystem = () => {
                               <input
                                 type="text"
                                 value={details.transport?.departurePoint || ''}
-                                disabled={isReadOnly}
                                 onChange={(e) => updateDetails('transport', { ...details.transport, departurePoint: e.target.value })}
                                 className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Ej. Iglesia"
@@ -5050,7 +4786,6 @@ const ClubVencedoresSystem = () => {
                             <input
                               type="text"
                               value={details.transport?.returnPoint || ''}
-                              disabled={isReadOnly}
                               onChange={(e) => updateDetails('transport', { ...details.transport, returnPoint: e.target.value })}
                               className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                               placeholder="Ej. Iglesia"
@@ -5068,14 +4803,12 @@ const ClubVencedoresSystem = () => {
                           <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                             <Utensils className="w-5 h-5 text-indigo-500" /> Menú
                           </h3>
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => updateDetails('menu', [...(details.menu || []), { id: Date.now(), item: '', price: '', quantity: '', unit: 'unidad' }])}
-                              className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-100 font-medium"
-                            >
-                              + Agregar Artículo
-                            </button>
-                          )}
+                          <button
+                            onClick={() => updateDetails('menu', [...(details.menu || []), { id: Date.now(), item: '', price: '', quantity: '', unit: 'unidad' }])}
+                            className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-100 font-medium"
+                          >
+                            + Agregar Artículo
+                          </button>
                         </div>
                         <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                           {(details.menu || []).map((item, idx) => (
@@ -5085,7 +4818,6 @@ const ClubVencedoresSystem = () => {
                                   type="text"
                                   placeholder="Artículo"
                                   value={item.item}
-                                  disabled={isReadOnly}
                                   onChange={(e) => {
                                     const newMenu = [...details.menu];
                                     newMenu[idx].item = e.target.value;
@@ -5099,7 +4831,6 @@ const ClubVencedoresSystem = () => {
                                   type="number"
                                   placeholder="$$"
                                   value={item.price}
-                                  disabled={isReadOnly}
                                   onChange={(e) => {
                                     const newMenu = [...details.menu];
                                     newMenu[idx].price = e.target.value;
@@ -5113,7 +4844,6 @@ const ClubVencedoresSystem = () => {
                                   type="number"
                                   placeholder="#"
                                   value={item.quantity}
-                                  disabled={isReadOnly}
                                   onChange={(e) => {
                                     const newMenu = [...details.menu];
                                     newMenu[idx].quantity = e.target.value;
@@ -5125,7 +4855,6 @@ const ClubVencedoresSystem = () => {
                               <div className="col-span-3">
                                 <select
                                   value={item.unit}
-                                  disabled={isReadOnly}
                                   onChange={(e) => {
                                     const newMenu = [...details.menu];
                                     newMenu[idx].unit = e.target.value;
@@ -5141,14 +4870,12 @@ const ClubVencedoresSystem = () => {
                                 </select>
                               </div>
                               <div className="col-span-1 flex justify-center">
-                               {!isReadOnly && (
-                                 <button
-                                   onClick={() => updateDetails('menu', details.menu.filter((_, i) => i !== idx))}
-                                   className="text-red-500 hover:text-red-700"
-                                 >
-                                   <X className="w-4 h-4" />
-                                 </button>
-                               )}
+                                <button
+                                  onClick={() => updateDetails('menu', details.menu.filter((_, i) => i !== idx))}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -5162,14 +4889,12 @@ const ClubVencedoresSystem = () => {
                           <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                             <Wallet className="w-5 h-5 text-indigo-500" /> Otros Gastos
                           </h3>
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => updateDetails('expenses', [...(details.expenses || []), { id: Date.now(), description: '', amount: '' }])}
-                              className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-100 font-medium"
-                            >
-                              + Agregar Gasto
-                            </button>
-                          )}
+                          <button
+                            onClick={() => updateDetails('expenses', [...(details.expenses || []), { id: Date.now(), description: '', amount: '' }])}
+                            className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-100 font-medium"
+                          >
+                            + Agregar Gasto
+                          </button>
                         </div>
                         <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                           {(details.expenses || []).map((item, idx) => (
@@ -5179,7 +4904,6 @@ const ClubVencedoresSystem = () => {
                                   type="text"
                                   placeholder="Descripción"
                                   value={item.description}
-                                  disabled={isReadOnly}
                                   onChange={(e) => {
                                     const newExpenses = [...details.expenses];
                                     newExpenses[idx].description = e.target.value;
@@ -5193,7 +4917,6 @@ const ClubVencedoresSystem = () => {
                                   type="number"
                                   placeholder="Monto"
                                   value={item.amount}
-                                  disabled={isReadOnly}
                                   onChange={(e) => {
                                     const newExpenses = [...details.expenses];
                                     newExpenses[idx].amount = e.target.value;
@@ -5203,14 +4926,12 @@ const ClubVencedoresSystem = () => {
                                 />
                               </div>
                               <div className="col-span-1 flex justify-center">
-                               {!isReadOnly && (
-                                 <button
-                                   onClick={() => updateDetails('expenses', details.expenses.filter((_, i) => i !== idx))}
-                                   className="text-red-500 hover:text-red-700"
-                                 >
-                                   <X className="w-4 h-4" />
-                                 </button>
-                               )}
+                                <button
+                                  onClick={() => updateDetails('expenses', details.expenses.filter((_, i) => i !== idx))}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -5247,7 +4968,7 @@ const ClubVencedoresSystem = () => {
                     </div>
                   </div>
                 </div>
-                        );
+              );
             })()}
 
             {campsTab === 'attendees' && (() => {
@@ -5279,51 +5000,38 @@ const ClubVencedoresSystem = () => {
                       <h3 className="text-xl font-bold text-gray-800 dark:text-white">Lista de Asistentes</h3>
                       <p className="text-gray-500 text-sm">{currentAttendees.length} miembros seleccionados</p>
                     </div>
-                    {!isReadOnly && (
-                      <div className="flex gap-2 w-full md:w-auto">
-                        <input
-                          type="text"
-                          placeholder="Buscar miembro..."
-                          value={campSearchTerm}
-                          onChange={(e) => setCampSearchTerm(e.target.value)}
-                          className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full md:w-64"
-                        />
-                        <button
-                          onClick={() => {
-                            const allIds = members.map(m => m.id);
-                            setCampDetails(prev => ({
-                              ...prev,
-                              [activeCamp]: { ...(prev[activeCamp] || details), attendees: allIds }
-                            }));
-                          }}
-                          className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 text-sm font-medium whitespace-nowrap"
-                        >
-                          Todos
-                        </button>
-                        <button
-                          onClick={() => {
-                            setCampDetails(prev => ({
-                              ...prev,
-                              [activeCamp]: { ...(prev[activeCamp] || details), attendees: [] }
-                            }));
-                          }}
-                          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap"
-                        >
-                          Ninguno
-                        </button>
-                      </div>
-                    )}
-                    {isReadOnly && (
-                      <div className="flex gap-2 w-full md:w-auto">
-                        <input
-                          type="text"
-                          placeholder="Buscar miembro..."
-                          value={campSearchTerm}
-                          onChange={(e) => setCampSearchTerm(e.target.value)}
-                          className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full md:w-64"
-                        />
-                      </div>
-                    )}
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <input
+                        type="text"
+                        placeholder="Buscar miembro..."
+                        value={campSearchTerm}
+                        onChange={(e) => setCampSearchTerm(e.target.value)}
+                        className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full md:w-64"
+                      />
+                      <button
+                        onClick={() => {
+                          const allIds = members.map(m => m.id);
+                          setCampDetails(prev => ({
+                            ...prev,
+                            [activeCamp]: { ...(prev[activeCamp] || details), attendees: allIds }
+                          }));
+                        }}
+                        className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 text-sm font-medium whitespace-nowrap"
+                      >
+                        Todos
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCampDetails(prev => ({
+                            ...prev,
+                            [activeCamp]: { ...(prev[activeCamp] || details), attendees: [] }
+                          }));
+                        }}
+                        className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm font-medium whitespace-nowrap"
+                      >
+                        Ninguno
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -5332,8 +5040,8 @@ const ClubVencedoresSystem = () => {
                       return (
                         <div
                           key={member.id}
-                          onClick={!isReadOnly ? () => toggleAttendee(member.id) : undefined}
-                          className={`flex items-center p-3 rounded-lg border transition-all ${!isReadOnly ? 'cursor-pointer' : 'cursor-default'} ${isSelected
+                          onClick={() => toggleAttendee(member.id)}
+                          className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${isSelected
                             ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800'
                             : 'bg-white border-gray-200 hover:border-indigo-300 dark:bg-gray-700/50 dark:border-gray-600'
                             } `}
@@ -5452,7 +5160,6 @@ const ClubVencedoresSystem = () => {
                                     className="block w-full rounded-md border-gray-300 dark:border-gray-600 pl-7 pr-3 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                     placeholder="0.00"
                                     value={currentPayments[member.id] || ''}
-                                    disabled={isReadOnly}
                                     onChange={(e) => {
                                       const val = e.target.value;
                                       setCampPayments(prev => ({
@@ -5614,9 +5321,9 @@ const ClubVencedoresSystem = () => {
                         </div>
                       </div>
                     </div>
-              )}
-            </div>
-  );
+                  )}
+                </div>
+              );
             })()}
           </div>
         </div>
@@ -5631,8 +5338,6 @@ const ClubVencedoresSystem = () => {
   };
 
   const renderUniformityModule = () => {
-    const accessLevel = getModuleAccessLevel('uniformity');
-    const isReadOnly = accessLevel === ACCESS_READ;
     // Helper to get inspection for a member on a specific date
     const getInspection = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
@@ -5823,16 +5528,14 @@ const ClubVencedoresSystem = () => {
                   <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Gestión de Inspecciones</h3>
 
                   <div className="flex flex-col sm:flex-row gap-4 w-full max-w-2xl">
-                    {!isReadOnly && (
-                      <button
-                        onClick={() => setInspectionViewMode('selection')}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white p-6 rounded-xl shadow-md transition-all hover:scale-105 flex flex-col items-center gap-2 group"
-                      >
-                        <PlusCircle className="w-10 h-10 group-hover:rotate-90 transition-transform" />
-                        <span className="font-bold text-xl">Realizar Inspección</span>
-                        <span className="text-indigo-200">Seleccionar grupo para inspeccionar</span>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setInspectionViewMode('selection')}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white p-6 rounded-xl shadow-md transition-all hover:scale-105 flex flex-col items-center gap-2 group"
+                    >
+                      <PlusCircle className="w-10 h-10 group-hover:rotate-90 transition-transform" />
+                      <span className="font-bold text-xl">Realizar Inspección</span>
+                      <span className="text-indigo-200">Seleccionar grupo para inspeccionar</span>
+                    </button>
                   </div>
                 </div>
 
@@ -5883,20 +5586,18 @@ const ClubVencedoresSystem = () => {
                                   <Printer className="w-4 h-4" />
                                   Imprimir
                                 </button>
-                                {!isReadOnly && (
-                                  <button
-                                    onClick={() => {
-                                      if (confirm('¿Estás seguro de que deseas eliminar este reporte? \n\nEsta acción eliminará todos los registros de inspección para esta fecha (' + new Date(date + 'T12:00:00').toLocaleDateString() + ').')) {
-                                        setUniformInspections(prev => prev.filter(i => i.date !== date));
-                                      }
-                                    }}
-                                    className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 flex items-center gap-1 ml-4"
-                                    title="Eliminar Reporte"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    Eliminar
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => {
+                                    if (confirm('¿Estás seguro de que deseas eliminar este reporte? \n\nEsta acción eliminará todos los registros de inspección para esta fecha (' + new Date(date + 'T12:00:00').toLocaleDateString() + ').')) {
+                                      setUniformInspections(prev => prev.filter(i => i.date !== date));
+                                    }
+                                  }}
+                                  className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 flex items-center gap-1 ml-4"
+                                  title="Eliminar Reporte"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Eliminar
+                                </button>
                               </td>
                             </tr>
                           ));
@@ -5905,6 +5606,7 @@ const ClubVencedoresSystem = () => {
                     </table>
                   </div>
                 </div>
+              </div>
             )}
 
             {/* SELECTION MODE */}
@@ -5974,42 +5676,41 @@ const ClubVencedoresSystem = () => {
                           >
                             <Printer className="w-4 h-4" /> <span className="hidden sm:inline">Imprimir</span>
                           </button>
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => {
-                                  if (confirm(`¿Estás seguro de que deseas eliminar el reporte de ${group.label}?\n\nSe borrarán los datos de inspección de este grupo para hoy.`)) {
-                                    // Logic to identify members of the group
-                                    const isDirective = (m) => m.position && m.position.trim() !== '' && m.position !== 'Ninguno';
-                                    const getAge = (m) => {
-                                      if (!m.dateOfBirth) return 0;
-                                      return Math.abs(new Date(Date.now() - new Date(m.dateOfBirth).getTime()).getUTCFullYear() - 1970);
-                                    };
+                          <button
+                            onClick={() => {
+                              if (confirm(`¿Estás seguro de que deseas eliminar el reporte de ${group.label}?\n\nSe borrarán los datos de inspección de este grupo para hoy.`)) {
+                                // Logic to identify members of the group
+                                const isDirective = (m) => m.position && m.position.trim() !== '' && m.position !== 'Ninguno';
+                                const getAge = (m) => {
+                                  if (!m.dateOfBirth) return 0;
+                                  return Math.abs(new Date(Date.now() - new Date(m.dateOfBirth).getTime()).getUTCFullYear() - 1970);
+                                };
 
-                                    const groupMemberIds = members.filter(m => {
-                                      // Special handling: Directive usually overrides age groups, so we prioritize it
-                                      // But for creating reports we want to be strict.
-                                      if (group.id === 'directive') return isDirective(m);
+                                const groupMemberIds = members.filter(m => {
+                                  // Special handling: Directive usually overrides age groups, so we prioritize it
+                                  // But for creating reports we want to be strict.
+                                  if (group.id === 'directive') return isDirective(m);
 
-                                      // For age groups, exclude directive members to avoid duplicates if that's the desired behavior
-                                      // OR keep them if they should be inspected in their age group too. 
-                                      // Previous logic excluded directive from age groups: "!isDirective(m)"
-                                      if (isDirective(m)) return false;
+                                  // For age groups, exclude directive members to avoid duplicates if that's the desired behavior
+                                  // OR keep them if they should be inspected in their age group too. 
+                                  // Previous logic excluded directive from age groups: "!isDirective(m)"
+                                  if (isDirective(m)) return false;
 
-                                      const age = getAge(m);
-                                      if (group.id === 'aventureros') return age >= 4 && age <= 9;
-                                      if (group.id === 'conquistadores') return age >= 10 && age <= 15;
-                                      if (group.id === 'guias_mayores') return age >= 16;
-                                      return false;
-                                    }).map(m => m.id);
+                                  const age = getAge(m);
+                                  if (group.id === 'aventureros') return age >= 4 && age <= 9;
+                                  if (group.id === 'conquistadores') return age >= 10 && age <= 15;
+                                  if (group.id === 'guias_mayores') return age >= 16;
+                                  return false;
+                                }).map(m => m.id);
 
-                                  }
-                                }}
-                                className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 text-sm font-medium px-2 py-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                                title="Eliminar datos del grupo"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
+                                setUniformInspections(prev => prev.filter(i => !(i.date === bgDate && groupMemberIds.includes(i.memberId))));
+                              }
+                            }}
+                            className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 text-sm font-medium px-2 py-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                            title="Eliminar datos del grupo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -6185,8 +5886,8 @@ const ClubVencedoresSystem = () => {
                                           return (
                                             <button
                                               key={item.id}
-                                              onClick={!isReadOnly ? () => toggleInspectionItem(member.id, bgDate, item.id) : undefined}
-                                              className={`px-2 py-1 text-xs border rounded transition-colors ${!isReadOnly ? '' : 'cursor-default'} ${inspection.itemsMissing?.includes(item.id)
+                                              onClick={() => toggleInspectionItem(member.id, bgDate, item.id)}
+                                              className={`px-2 py-1 text-xs border rounded transition-colors ${inspection.itemsMissing?.includes(item.id)
                                                 ? 'bg-red-100 border-red-300 text-red-800 font-bold shadow-sm dark:bg-red-900/30 dark:border-red-700 dark:text-red-300'
                                                 : 'bg-white border-gray-200 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400 dark:hover:border-indigo-400 dark:hover:text-indigo-300'
                                                 } `}
@@ -6199,7 +5900,7 @@ const ClubVencedoresSystem = () => {
                                       </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                      {!isComplete && !isReadOnly && (
+                                      {!isComplete && (
                                         <button
                                           onClick={() => markInspectionComplete(member.id, bgDate)}
                                           className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded hover:bg-green-100 transition-colors dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40"
@@ -6217,132 +5918,130 @@ const ClubVencedoresSystem = () => {
 
                         {/* Footer / Report Button */}
                         <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => {
-                                  // Generate Report Data
-                                  const report = {
-                                    title: `Reporte de Uniformidad-${title} `,
-                                    date: bgDate,
-                                    group: title,
-                                    itemsMissingSummary: {}, // { 'Pañoleta': 5, 'Camisa': 2 }
-                                    individualMissing: [] // [{ name: 'Juan', missing: ['Camisa'] }]
-                                  };
+                          <button
+                            onClick={() => {
+                              // Generate Report Data
+                              const report = {
+                                title: `Reporte de Uniformidad-${title} `,
+                                date: bgDate,
+                                group: title,
+                                itemsMissingSummary: {}, // { 'Pañoleta': 5, 'Camisa': 2 }
+                                individualMissing: [] // [{ name: 'Juan', missing: ['Camisa'] }]
+                              };
 
-                                  groupMembers.forEach(m => {
-                                    const inspection = getInspection(m.id, bgDate);
-                                    if (inspection.itemsMissing && inspection.itemsMissing.length > 0) {
-                                      const missingNames = [];
-                                      inspection.itemsMissing.forEach(itemId => {
-                                        const item = uniformItems.find(i => i.id === itemId);
-                                        if (item) {
-                                          missingNames.push(item.label);
-                                          report.itemsMissingSummary[item.label] = (report.itemsMissingSummary[item.label] || 0) + 1;
-                                        }
-                                      });
-                                      report.individualMissing.push({
-                                        name: `${m.firstName} ${m.lastName} `,
-                                        missing: missingNames
-                                      });
+                              groupMembers.forEach(m => {
+                                const inspection = getInspection(m.id, bgDate);
+                                if (inspection.itemsMissing && inspection.itemsMissing.length > 0) {
+                                  const missingNames = [];
+                                  inspection.itemsMissing.forEach(itemId => {
+                                    const item = uniformItems.find(i => i.id === itemId);
+                                    if (item) {
+                                      missingNames.push(item.label);
+                                      report.itemsMissingSummary[item.label] = (report.itemsMissingSummary[item.label] || 0) + 1;
                                     }
                                   });
+                                  report.individualMissing.push({
+                                    name: `${m.firstName} ${m.lastName} `,
+                                    missing: missingNames
+                                  });
+                                }
+                              });
 
-                                  // PRINT REPORT FUNCTION
-                                  const printContent = `
-      < html >
-                                        <head>
-                                          <title>${report.title}</title>
-                                          <style>
-                                            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
-                                            .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-                                            .header h1 { margin: 0; font-size: 24px; color: #1a1a1a; }
-                                            .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
-                                            .section { margin-bottom: 30px; }
-                                            .section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #4f46e5; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-                                            table { w-full; border-collapse: collapse; width: 100%; font-size: 14px; }
-                                            th { text-align: left; border-bottom: 1px solid #ccc; padding: 10px; background-color: #f9fafb; font-weight: 600; }
-                                            td { border-bottom: 1px solid #eee; padding: 10px; }
-                                            .total-row td { font-weight: bold; border-top: 2px solid #ccc; }
-                                            .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-                                            .badge-red { background-color: #fef2f2; color: #991b1b; }
-                                            .empty-state { color: #6b7280; font-style: italic; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; }
-                                          </style>
-                                        </head>
-                                        <body>
-                                          <div class="header">
-                                            <h1>TriClub Manager</h1>
-                                            <p>${report.title}</p>
-                                            <p>Fecha de Inspección: ${new Date(bgDate + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                          </div>
+                              // PRINT REPORT FUNCTION
+                              const printContent = `
+  < html >
+                                    <head>
+                                      <title>${report.title}</title>
+                                      <style>
+                                        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
+                                        .header { text-align: center; margin-bottom: 40px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
+                                        .header h1 { margin: 0; font-size: 24px; color: #1a1a1a; }
+                                        .header p { margin: 5px 0 0; color: #666; font-size: 14px; }
+                                        .section { margin-bottom: 30px; }
+                                        .section-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #4f46e5; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+                                        table { w-full; border-collapse: collapse; width: 100%; font-size: 14px; }
+                                        th { text-align: left; border-bottom: 1px solid #ccc; padding: 10px; background-color: #f9fafb; font-weight: 600; }
+                                        td { border-bottom: 1px solid #eee; padding: 10px; }
+                                        .total-row td { font-weight: bold; border-top: 2px solid #ccc; }
+                                        .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+                                        .badge-red { background-color: #fef2f2; color: #991b1b; }
+                                        .empty-state { color: #6b7280; font-style: italic; text-align: center; padding: 20px; background: #f9fafb; border-radius: 8px; }
+                                      </style>
+                                    </head>
+                                    <body>
+                                      <div class="header">
+                                        <h1>TriClub Manager</h1>
+                                        <p>${report.title}</p>
+                                        <p>Fecha de Inspección: ${new Date(bgDate + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                      </div>
 
-                                          <div class="section">
-                                            <div class="section-title">Resumen de Faltantes (Totales)</div>
-                                            ${Object.keys(report.itemsMissingSummary).length > 0 ? `
-                                              <table>
-                                                <thead>
-                                                  <tr>
-                                                    <th>Artículo</th>
-                                                    <th style="text-align: right;">Cantidad Necesaria</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  ${Object.entries(report.itemsMissingSummary).map(([item, count]) => `
-                                                    <tr>
-                                                      <td>${item}</td>
-                                                      <td style="text-align: right; font-weight: bold;">${count}</td>
-                                                    </tr>
-                                                  `).join('')}
-                                                </tbody>
-                                              </table>
-                                            ` : '<div class="empty-state">¡Felicitaciones! No hay elementos faltantes en este grupo.</div>'}
-                                          </div>
+                                      <div class="section">
+                                        <div class="section-title">Resumen de Faltantes (Totales)</div>
+                                        ${Object.keys(report.itemsMissingSummary).length > 0 ? `
+                                          <table>
+                                            <thead>
+                                              <tr>
+                                                <th>Artículo</th>
+                                                <th style="text-align: right;">Cantidad Necesaria</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              ${Object.entries(report.itemsMissingSummary).map(([item, count]) => `
+                                                <tr>
+                                                  <td>${item}</td>
+                                                  <td style="text-align: right; font-weight: bold;">${count}</td>
+                                                </tr>
+                                              `).join('')}
+                                            </tbody>
+                                          </table>
+                                        ` : '<div class="empty-state">¡Felicitaciones! No hay elementos faltantes en este grupo.</div>'}
+                                      </div>
 
-                                          <div class="section">
-                                            <div class="section-title">Detalle por Miembro</div>
-                                            ${report.individualMissing.length > 0 ? `
-                                              <table>
-                                                <thead>
-                                                  <tr>
-                                                    <th>Nombre</th>
-                                                    <th>Elementos Faltantes</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  ${report.individualMissing.map(m => `
-                                                    <tr>
-                                                      <td style="font-weight: 500;">${m.name}</td>
-                                                      <td>
-                                                        ${m.missing.map(item => `<span class="badge badge-red">${item}</span>`).join(' ')}
-                                                      </td>
-                                                    </tr>
-                                                  `).join('')}
-                                                </tbody>
-                                              </table>
-                                            ` : '<div class="empty-state">Todos los miembros de este grupo tienen su uniforme completo.</div>'}
-                                          </div>
-                                          
-                                          <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af;">
-                                            Generado automáticamente por TriClub Manager
-                                          </div>
-                                        </body>
-                                      </html >
-      `;
+                                      <div class="section">
+                                        <div class="section-title">Detalle por Miembro</div>
+                                        ${report.individualMissing.length > 0 ? `
+                                          <table>
+                                            <thead>
+                                              <tr>
+                                                <th>Nombre</th>
+                                                <th>Elementos Faltantes</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              ${report.individualMissing.map(m => `
+                                                <tr>
+                                                  <td style="font-weight: 500;">${m.name}</td>
+                                                  <td>
+                                                    ${m.missing.map(item => `<span class="badge badge-red">${item}</span>`).join(' ')}
+                                                  </td>
+                                                </tr>
+                                              `).join('')}
+                                            </tbody>
+                                          </table>
+                                        ` : '<div class="empty-state">Todos los miembros de este grupo tienen su uniforme completo.</div>'}
+                                      </div>
+                                      
+                                      <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #9ca3af;">
+                                        Generado automáticamente por TriClub Manager
+                                      </div>
+                                    </body>
+                                  </html >
+  `;
 
-                                  const printWindow = window.open('', '', 'width=800,height=800');
-                                  printWindow.document.write(printContent);
-                                  printWindow.document.close();
-                                  printWindow.focus();
-                                  setTimeout(() => {
-                                    printWindow.print();
-                                    printWindow.close();
-                                  }, 500);
-                                }}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
-                              >
-                                <Save className="w-4 h-4" />
-                                Guardar y Salir
-                              </button>
-                            )}
+                              const printWindow = window.open('', '', 'width=800,height=800');
+                              printWindow.document.write(printContent);
+                              printWindow.document.close();
+                              printWindow.focus();
+                              setTimeout(() => {
+                                printWindow.print();
+                                printWindow.close();
+                              }, 500);
+                            }}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors"
+                          >
+                            <Save className="w-4 h-4" />
+                            Guardar y Salir
+                          </button>
                         </div>
                       </div>
                     );
@@ -6360,7 +6059,8 @@ const ClubVencedoresSystem = () => {
               </div>
             </div>
           </div>
-        )}
+        )
+        }
 
         {/* INVENTORY VIEW */}
         {
@@ -6394,7 +6094,6 @@ const ClubVencedoresSystem = () => {
                               type="text"
                               className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={data.shirtSize || ''}
-                              disabled={isReadOnly}
                               onChange={(e) => updateMemberUniform(member.id, 'shirtSize', e.target.value)}
                               placeholder="-"
                             />
@@ -6404,7 +6103,6 @@ const ClubVencedoresSystem = () => {
                               type="text"
                               className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               value={data.pantsSize || ''}
-                              disabled={isReadOnly}
                               onChange={(e) => updateMemberUniform(member.id, 'pantsSize', e.target.value)}
                               placeholder="-"
                             />
@@ -6428,24 +6126,22 @@ const ClubVencedoresSystem = () => {
                   <h3 className="text-lg font-bold text-gray-800 dark:text-white">Configuración de Elementos</h3>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">Administra la lista y precios del uniforme.</p>
                 </div>
-                {!isReadOnly && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowUniformCategoryModal(true)}
-                      className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-                    >
-                      <List className="w-4 h-4" />
-                      Gestionar Categorías
-                    </button>
-                    <button
-                      onClick={openNewItemForm}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Nuevo Elemento
-                    </button>
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowUniformCategoryModal(true)}
+                    className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  >
+                    <List className="w-4 h-4" />
+                    Gestionar Categorías
+                  </button>
+                  <button
+                    onClick={openNewItemForm}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nuevo Elemento
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto border rounded-lg dark:border-gray-700">
@@ -6466,38 +6162,34 @@ const ClubVencedoresSystem = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${parseFloat(item.price || 0).toFixed(2)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
-                            {!isReadOnly && (
-                              <>
-                                <div className="flex flex-col mr-2">
-                                  <button
-                                    onClick={() => handleMoveItemUp(index)}
-                                    disabled={index === 0}
-                                    className={`p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'} `}
-                                  >
-                                    <ChevronUp className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleMoveItemDown(index)}
-                                    disabled={index === uniformItems.length - 1}
-                                    className={`p-1 hover:bg-gray-100 rounded ${index === uniformItems.length - 1 ? 'text-gray-300' : 'text-gray-600 hover:text-indigo-600'} `}
-                                  >
-                                    <ChevronDown className="w-4 h-4" />
-                                  </button>
-                                </div>
-                                <button
-                                  onClick={() => openEditItemForm(item)}
-                                  className="text-indigo-600 hover:text-indigo-900"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteItem(item.id)}
-                                  className="text-red-600 hover:text-red-900"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
-                            )}
+                            <div className="flex flex-col mr-2">
+                              <button
+                                onClick={() => handleMoveItemUp(index)}
+                                disabled={index === 0}
+                                className={`p-1 hover:bg-gray-100 dark: hover:bg-gray-700 rounded ${index === 0 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400'} `}
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveItemDown(index)}
+                                disabled={index === uniformItems.length - 1}
+                                className={`p-1 hover:bg-gray-100 rounded ${index === uniformItems.length - 1 ? 'text-gray-300' : 'text-gray-600 hover:text-indigo-600'} `}
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => openEditItemForm(item)}
+                              className="text-indigo-600 hover:text-indigo-900"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -6726,13 +6418,12 @@ const ClubVencedoresSystem = () => {
                   </div>
                 </div>
               </div>
-                )
-              }
-            )
-         }
-        </div>
-      );
-    };
+            </div>
+          )
+        }
+      </div >
+    );
+  };
 
   // ===================================
   // REMINDERS MODULE RENDERER
@@ -6741,8 +6432,6 @@ const ClubVencedoresSystem = () => {
   // ATTENDANCE MODULE RENDERER
   // ===================================
   const renderAttendanceModule = () => {
-    const accessLevel = getModuleAccessLevel('attendance');
-    const isReadOnly = accessLevel === ACCESS_READ;
     // Calculate all Saturdays in the selected month
     // Get dates based on view
     const getEventDatesInMonth = (monthStr, viewMode) => {
@@ -7077,8 +6766,6 @@ const ClubVencedoresSystem = () => {
   };
 
   const renderRemindersModule = () => {
-    const accessLevel = getModuleAccessLevel('reminders');
-    const isReadOnly = accessLevel === ACCESS_READ;
     // Sort reminders: Scheduled (future notice) last, then by date/time
     const sortedReminders = [...reminders].sort((a, b) => {
       const now = new Date();
@@ -7107,15 +6794,13 @@ const ClubVencedoresSystem = () => {
               Gestiona tus tareas y eventos importantes del club
             </p>
           </div>
-          {!isReadOnly && (
-            <button
-              onClick={handleAddReminder}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              Nuevo Recordatorio
-            </button>
-          )}
+          <button
+            onClick={handleAddReminder}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Nuevo Recordatorio
+          </button>
         </div>
 
         {/* Reminders List */}
@@ -7128,14 +6813,12 @@ const ClubVencedoresSystem = () => {
             <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
               Crea recordatorios para no olvidar eventos importantes, tareas administrativas o fechas límite.
             </p>
-            {!isReadOnly && (
-              <button
-                onClick={handleAddReminder}
-                className="text-red-600 hover:text-red-700 font-medium hover:underline"
-              >
-                Crear mi primer recordatorio
-              </button>
-            )}
+            <button
+              onClick={handleAddReminder}
+              className="text-red-600 hover:text-red-700 font-medium hover:underline"
+            >
+              Crear mi primer recordatorio
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -7158,39 +6841,30 @@ const ClubVencedoresSystem = () => {
 
                       <div className="flex gap-1 ml-2">
                         {/* Toggle Completion */}
-                        {!isReadOnly && (
-                          <button
-                            onClick={() => toggleReminderCompletion(reminder.id)}
-                            className={`p-1.5 rounded transition-colors ${isCompleted ? 'text-green-600 bg-green-100 hover:bg-green-200' : 'text-gray-400 hover:text-green-600 hover:bg-gray-100'} `}
-                            title={isCompleted ? "Marcar como pendiente" : "Marcar como finalizado"}
-                          >
-                            <CheckCircle className={`w-5 h-5 ${isCompleted ? 'fill-current' : ''} `} />
-                          </button>
-                        )}
-                        {isReadOnly && (
-                           <div className={`p-1.5 rounded ${isCompleted ? 'text-green-600' : 'text-gray-300'} `}>
-                             <CheckCircle className={`w-5 h-5 ${isCompleted ? 'fill-current' : ''} `} />
-                           </div>
-                        )}
+                        <button
+                          onClick={() => toggleReminderCompletion(reminder.id)}
+                          className={`p-1.5 rounded transition-colors ${isCompleted ? 'text-green-600 bg-green-100 hover:bg-green-200' : 'text-gray-400 hover:text-green-600 hover:bg-gray-100'} `}
+                          title={isCompleted ? "Marcar como pendiente" : "Marcar como finalizado"}
+                        >
+                          <CheckCircle className={`w-5 h-5 ${isCompleted ? 'fill-current' : ''} `} />
+                        </button>
 
-                        {!isReadOnly && (
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleEditReminder(reminder)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
-                              title="Editar"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReminder(reminder.id)}
-                              className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEditReminder(reminder)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                            title="Editar"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReminder(reminder.id)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -7352,15 +7026,13 @@ const ClubVencedoresSystem = () => {
                   >
                     Cancelar
                   </button>
-                  {!isReadOnly && (
-                    <button
-                      onClick={handleSaveReminder}
-                      className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm hover:shadow transition-all font-medium flex items-center gap-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      Guardar
-                    </button>
-                  )}
+                  <button
+                    onClick={handleSaveReminder}
+                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-sm hover:shadow transition-all font-medium flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Guardar
+                  </button>
                 </div>
               </div>
             </div>
@@ -7784,23 +7456,9 @@ const ClubVencedoresSystem = () => {
                             <div className="font-medium text-gray-900">{t.category}</div>
                             <div className="text-xs text-gray-500">{new Date(t.date).toLocaleDateString()}</div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'} `}>
-                              {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                            </span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (window.confirm('¿Eliminar esta transacción?')) {
-                                  handleDeleteTransaction(t);
-                                }
-                              }}
-                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                              title="Eliminar transacción"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <span className={`font-bold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'} `}>
+                            {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -9420,33 +9078,15 @@ const ClubVencedoresSystem = () => {
 
   const handleDeletePayment = (paymentId) => {
     if (!confirm('¿Está seguro de eliminar este registro de pago?')) return;
-    const txToDelete = transactions.find(t => t.id === paymentId || t.id === `trans_${paymentId}`);
-    if (txToDelete) {
-      handleDeleteTransaction(txToDelete);
-    } else {
-      // Fallback if not found in state (unlikely)
-      setTransactions(prev => prev.filter(t => t.id !== paymentId && t.id !== `trans_${paymentId}`));
-    }
+    // Strip from transactions directly. 
+    // Need to handle IDs mapping: bulk adds prefix 'trans_' but individual might not.
+    setTransactions(transactions.filter(t => t.id !== paymentId && t.id !== `trans_${paymentId} `));
   };
 
   const handleClearHistory = () => {
     if (!confirm('ADVERTENCIA: ¿Está seguro de eliminar TODO el historial de pagos? Esta acción no se puede deshacer.')) return;
     if (!confirm('¿De verdad está seguro? Se perderán todos los registros de cuotas.')) return;
-    
-    // Identify cuotas transactions
-    const toRemove = transactions.filter(t => t.category === 'Cuotas' || t.category === 'inc_1');
-    
-    // Perform bulk delete but ensure dependencies are cleaned for each
-    toRemove.forEach(tx => {
-      // We don't want to call setTransactions in a loop 100 times
-      // So we'll just handle the side effects and then do one big filter
-      if (tx.id?.startsWith('fixed-') || tx.id?.startsWith('trans_')) {
-        handleDeleteTransaction(tx); // This will call setTransactions in a loop... hmm.
-      }
-    });
-
-    // Final filter to ensure they are gone
-    setTransactions(prev => prev.filter(t => t.category !== 'Cuotas' && t.category !== 'inc_1'));
+    setTransactions(transactions.filter(t => t.category !== 'Cuotas' && t.category !== 'inc_1'));
   };
 
   const handleBulkSubmit = () => {
@@ -10289,12 +9929,11 @@ const ClubVencedoresSystem = () => {
               <select
                 value={activity.status || 'Pendiente'}
                 onChange={(e) => handleStatusChange(activity.id, e.target.value)}
-                disabled={isReadOnly}
                 className={`w-full px-2 py-0.5 text-xs font-semibold rounded-full border cursor-pointer focus: outline-none focus:ring-2 focus:ring-offset-1 transition-all ${activity.status === 'Completado' ? 'bg-green-100 text-green-700 border-green-200 focus:ring-green-500' :
                   activity.status === 'Cancelada' ? 'bg-red-100 text-red-700 border-red-200 focus:ring-red-500' :
                     activity.status === 'En curso' ? 'bg-blue-100 text-blue-700 border-blue-200 focus:ring-blue-500' :
                       'bg-yellow-100 text-yellow-700 border-yellow-200 focus:ring-yellow-500'
-                  } ${isReadOnly ? 'cursor-not-allowed opacity-75' : ''}`}
+                  } `}
                 onClick={(e) => e.stopPropagation()}
               >
                 <option value="Pendiente">Pendiente</option>
@@ -10317,17 +9956,15 @@ const ClubVencedoresSystem = () => {
                 onClick={() => handleEditActivity(activity)}
                 className="text-blue-600 hover:text-blue-900 text-sm font-medium flex items-center gap-1"
               >
-                {isReadOnly ? 'Ver' : 'Editar'} <ChevronRight className="w-4 h-4" />
+                Ver <ChevronRight className="w-4 h-4" />
               </button>
-              {!isReadOnly && (
-                <button
-                  onClick={() => handleDeleteActivity(activity.id)}
-                  className="text-red-600 hover:text-red-900 text-sm font-medium p-1 hover:bg-red-50 rounded"
-                  title="Delete Activity"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                onClick={() => handleDeleteActivity(activity.id)}
+                className="text-red-600 hover:text-red-900 text-sm font-medium p-1 hover:bg-red-50 rounded"
+                title="Delete Activity"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
@@ -10432,21 +10069,7 @@ const ClubVencedoresSystem = () => {
                   <ClubLogo darkMode={true} className="w-full h-full object-contain" />
                 )}
               </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-bold text-sm truncate">{clubSettings?.name || 'TriClub Manager'}</span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className={`w-1.5 h-1.5 rounded-full ${
-                    syncStatus === 'synced' ? 'bg-green-400 shadow-[0_0_5px_rgba(74,222,128,0.8)]' : 
-                    syncStatus === 'connecting' ? 'bg-yellow-400 animate-pulse' : 
-                    syncStatus === 'error' ? 'bg-red-500' : 'bg-gray-400'
-                  }`} />
-                  <span className="text-[10px] opacity-70 font-medium uppercase tracking-wider">
-                    {syncStatus === 'synced' ? 'En Vivo' : 
-                     syncStatus === 'connecting' ? 'Sincronizando' : 
-                     syncStatus === 'error' ? 'Error' : 'Offline'}
-                  </span>
-                </div>
-              </div>
+              <span className="font-bold text-sm truncate">{clubSettings?.name || 'TriClub Manager'}</span>
             </div>
           )}
           <button
@@ -10496,26 +10119,29 @@ const ClubVencedoresSystem = () => {
                 </button>
 
                 {/* Submenu Items */}
-                {/* Submenu Items */}
                 {!sidebarCollapsed && hasSubmenu && (
-                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'}`}>
+                  <div className={`overflow-hidden transition-all duration-300 ease -in -out ${isExpanded ? 'max-h-[500px] opacity-100 mt-1' : 'max-h-0 opacity-0 mt-0'} `}>
                     <div className="pl-4 space-y-1">
-                      {item.submenu.filter(sub => sub.available).map(sub => (
-                        <button
-                          key={sub.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleModuleClick(sub.id);
-                          }}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${activeModule === sub.id
-                            ? 'bg-red-700 text-white font-medium dark:bg-gray-700'
-                            : 'text-red-200 hover:bg-red-700/50 hover:text-white dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white'
-                            }`}
-                        >
-                          <div className="w-5 flex justify-center"><div className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></div></div>
-                          <div className="flex-1 text-left">{sub.label}</div>
-                        </button>
-                      ))}
+                      {item.submenu.filter(sub => sub.available).map(sub => {
+                        const SubIcon = sub.icon;
+                        const isSubActive = activeModule === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleModuleClick(sub.id);
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${isSubActive
+                              ? 'bg-red-700 text-white font-medium dark:bg-gray-700'
+                              : 'text-red-200 hover:bg-red-700/50 hover:text-white dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-white'
+                              } `}
+                          >
+                            <div className="w-5 flex justify-center"><div className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></div></div>
+                            <div className="flex-1 text-left">{sub.label}</div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -10523,19 +10149,6 @@ const ClubVencedoresSystem = () => {
             );
           })}
         </nav>
-
-        {/* Sidebar Footer with Resync */}
-        {!sidebarCollapsed && isAuthenticated && (
-           <div className="p-3 border-t border-red-700/50 dark:border-gray-700/50">
-             <button 
-               onClick={() => window.location.reload()}
-               className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-200 hover:text-white hover:bg-red-700/50 dark:text-gray-400 dark:hover:bg-gray-700/50 transition-all border border-transparent hover:border-red-600/30"
-             >
-               <Cloud className="w-4 h-4" />
-               Forzar Resincronización
-             </button>
-           </div>
-        )}
 
         {/* Sidebar Footer */}
         {!sidebarCollapsed && (
@@ -10605,17 +10218,6 @@ const ClubVencedoresSystem = () => {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Tab Bar Logic */}
         <div className="bg-gray-200 dark:bg-black pt-2 px-2 flex items-end gap-1 overflow-x-auto border-b border-gray-300 dark:border-gray-700 select-none">
-          {/* Sincronización Indicator */}
-          <div className={`px-3 py-2 flex items-center gap-2 text-xs font-semibold rounded-t-lg mb-0 transition-all duration-300 ${isSyncing ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'text-green-600 dark:text-green-500 bg-white dark:bg-gray-800'}`}>
-             <div className="relative flex items-center justify-center">
-               <Cloud className={`w-4 h-4 ${isSyncing ? 'animate-pulse' : ''}`} />
-               {isSyncing && <div className="absolute inset-0 animate-ping opacity-30 bg-indigo-400 rounded-full"></div>}
-             </div>
-             <span className="whitespace-nowrap uppercase tracking-wider text-[10px]">
-               {isSyncing ? 'Sincronizando...' : 'Sincronizado'}
-             </span>
-          </div>
-
           {tabs.map(tab => {
             const isActive = activeTabId === tab.id;
             const TabIcon = tab.icon || FileText;
@@ -10689,9 +10291,38 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
         {/* Content */}
         <div className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className={activeModule === 'comm_whatsapp' ? "h-full" : "max-w-7xl mx-auto px-6 py-8"}>
             {/* User Management Modal */}
             {/* Communication Dashboard (Landing Page) */}
+            {activeModule === 'communication' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { id: 'comm_groups', label: 'Grupos', icon: Users, desc: 'Gestionar grupos de WhatsApp' },
+                  { id: 'comm_messaging', label: 'Mensajería Rápida', icon: MessageSquare, desc: 'Enviar mensajes predefinidos' },
+                  { id: 'comm_whatsapp', label: 'WhatsApp Web', icon: MessageCircle, desc: 'Abrir WhatsApp Web' }
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveModule(item.id);
+                      if (item.id === 'camps') {
+                        setCampViewMode('dashboard');
+                        setActiveCamp(null);
+                      }
+                    }}
+                    className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md hover:shadow-lg transition-all flex flex-col items-center text-center gap-4 group border border-transparent hover:border-red-500"
+                  >
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-full text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
+                      <item.icon className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">{item.label}</h3>
+                      <p className="text-gray-500 dark:text-gray-400 mt-2">{item.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Profile View */}
             {activeModule === 'attendance' && renderAttendanceModule()}
@@ -11122,18 +10753,252 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             {/* Uniformity Module */}
             {activeModule === 'uniformity' && renderUniformityModule()}
 
+            {/* Communication: Groups Module */}
+            {activeModule === 'comm_groups' && (
+              <div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <Users className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                    Grupos de WhatsApp
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 mt-1">Gestiona los enlaces de invitación a los grupos del club.</p>
+                </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {whatsappGroups.map(group => (
+                    <div key={group.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-start hover:shadow-md transition-shadow">
+                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 mb-4">
+                        <Users className="w-6 h-6" />
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-1">{group.name}</h3>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 flex-grow">{group.description}</p>
+
+                      {group.link ? (
+                        <a
+                          href={group.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                          Unirme al Grupo
+                        </a>
+                      ) : (
+                        <button className="w-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+                          <MessageCircle className="w-5 h-5" />
+                          Sin Enlace
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setEditingGroup(group)}
+                        className="mt-2 text-xs text-gray-400 hover:text-gray-600 w-full text-center"
+                      >
+                        Editar Enlace
+                      </button>
+                    </div>
+                  ))}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
+                    <PlusCircle className="w-12 h-12 text-gray-300 mb-2" />
+                    <span className="text-gray-500 dark:text-gray-400 font-medium">Agregar Nuevo Grupo</span>
+                  </div>
+                </div>
+
+                {/* Edit Group Modal */}
+                {editingGroup && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Editar Grupo de WhatsApp</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Grupo</label>
+                          <input
+                            type="text"
+                            value={editingGroup.name}
+                            onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enlace de Invitación</label>
+                          <input
+                            type="text"
+                            value={editingGroup.link}
+                            onChange={(e) => setEditingGroup({ ...editingGroup, link: e.target.value })}
+                            placeholder="https://chat.whatsapp.com/..."
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+                          <textarea
+                            value={editingGroup.description}
+                            onChange={(e) => setEditingGroup({ ...editingGroup, description: e.target.value })}
+                            rows="3"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          ></textarea>
+                        </div>
+                      </div>
+                      <div className="flex gap-4 mt-6 justify-end">
+                        <button
+                          onClick={() => setEditingGroup(null)}
+                          className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updatedGroups = whatsappGroups.map(g => g.id === editingGroup.id ? editingGroup : g);
+                            setWhatsappGroups(updatedGroups);
+                            setEditingGroup(null);
+                          }}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+                        >
+                          Guardar Cambios
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Communication: Messaging Module */}
+            {activeModule === 'comm_messaging' && (
+              <div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <MessageSquare className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                    Mensajería Rápida
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 mt-1">Envía mensajes de WhatsApp predefinidos a los miembros.</p>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="p-4 border-b bg-gray-50 dark:bg-gray-900/50 dark:border-gray-700 flex justify-between items-center">
+                    <h3 className="font-bold text-gray-700 dark:text-gray-300">Miembros del Club ({members.length})</h3>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Buscar miembro..."
+                        className="pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto h-[600px] overflow-y-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs sticky top-0">
+                        <tr>
+                          <th className="px-6 py-3 bg-gray-50 dark:bg-gray-800">Nombre</th>
+                          <th className="px-6 py-3 bg-gray-50 dark:bg-gray-800">Teléfono</th>
+                          <th className="px-6 py-3 text-right bg-gray-50 dark:bg-gray-800">Enviar Mensaje</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {(() => {
+                          // Helper logic to determine absence based on selected Points Saturday
+                          const getMemberAbsence = (memberId) => {
+                            if (!selectedSaturday || !selectedPointsMonth) return false;
+                            const record = points.find(p => p.memberId === memberId && p.month === selectedPointsMonth);
+                            if (!record || !record.saturdays || !record.saturdays[selectedSaturday]) return false;
+                            // Absent if attendance is explicitly unchecked (false) or not marked present?
+                            // Based on logic: attendance checkbox sets it to true/false.
+                            // If it exists and is not true, they are absent.
+                            return record.saturdays[selectedSaturday].attendance !== true;
+                          };
+
+                          // Sort members: Absent ones first
+                          const sortedMembers = [...members].sort((a, b) => {
+                            const absentA = getMemberAbsence(a.id);
+                            const absentB = getMemberAbsence(b.id);
+                            if (absentA && !absentB) return -1;
+                            if (!absentA && absentB) return 1;
+                            return a.firstName.localeCompare(b.firstName);
+                          });
+
+                          return sortedMembers.map(member => {
+                            const isAbsent = getMemberAbsence(member.id);
+                            return (
+                              <tr key={member.id} className={`${isAbsent ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'} `}>
+                                <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                  {member.firstName} {member.lastName}
+                                  {isAbsent && (
+                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 dark:border-red-800">
+                                      Ausente
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono">
+                                  {member.primaryContact ? formatPhone(member.primaryContact) : <span className="text-gray-300 italic">Sin número</span>}
+                                </td>
+                                <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                  {messageTemplates.map(template => (
+                                    <button
+                                      key={template.id}
+                                      onClick={() => {
+                                        if (!member.primaryContact) return;
+                                        const phone = member.primaryContact.replace(/\D/g, '');
+                                        const text = encodeURIComponent(template.text.replace('{name}', member.firstName));
+                                        const url = `https://web.whatsapp.com/send?phone=${phone}&text=${text}`;
+
+                                        setWhatsappUrl(url);
+                                        setActiveModule('comm_whatsapp');
+                                      }}
+                                      title={template.title}
+                                      disabled={!member.primaryContact}
+                                      className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${!member.primaryContact ? 'opacity-30 cursor-not-allowed text-gray-400' : ''} ${template.icon === 'UserMinus' && isAbsent ? 'bg-red-100 text-red-600 animate-pulse border border-red-200' : 'text-gray-600 dark:text-gray-400'}`}
+                                    >
+                                      {template.icon === 'DollarSign' && <DollarSign className="w-4 h-4 text-green-600" />}
+                                      {template.icon === 'Bell' && <MessageCircle className="w-4 h-4 text-blue-600" />}
+                                      {template.icon === 'UserMinus' && <AlertCircle className={`w-4 h-4 ${isAbsent ? 'text-red-600' : 'text-orange-600'}`} />}
+                                    </button >
+                                  ))}
+                                </td >
+                              </tr >
+                            );
+                          });
+                        })()}
+                      </tbody >
+                    </table >
+                  </div >
+                </div >
+              </div >
+            )}
 
             {/* Persistent Global Components */}
 
+            {/* WhatsApp Web-Globally Persistent, Visible only when active module */}
+            {/* WhatsApp Web-Globally Persistent, Visible only when active module */}
+            <div style={{ display: activeModule === 'comm_whatsapp' ? 'flex' : 'none' }} className={`w-full flex-col bg-white dark:bg-gray-900 ${activeModule === 'comm_whatsapp' ? 'h-full' : 'hidden'}`}>
+              <div className="bg-green-500 text-white px-4 py-2 flex justify-between items-center shrink-0">
+                <span className="font-bold flex items-center gap-2">
+                  <MessageCircle className="w-5 h-5" />
+                  WhatsApp Web
+                  {activeModule === 'comm_whatsapp' && (
+                    <button
+                      onClick={() => setActiveModule('communication')}
+                      className="ml-4 bg-green-700 hover:bg-green-800 text-white text-xs px-2 py-1 rounded transition-colors"
+                    >
+                      Volver
+                    </button>
+                  )}
+                </span>
+                <span className="text-xs bg-green-600 px-2 py-1 rounded">Sesión Segura & Persistente</span>
+              </div>
+              <div className="flex-1 bg-gray-100 dark:bg-gray-900 relative">
+                <webview
+                  src={whatsappUrl}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  allowpopups="true"
+                  useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                />
+              </div>
+            </div>
 
             {/* Inventory Module */}
             {
-              activeModule === 'inventory' && (() => {
-                const accessLevel = getModuleAccessLevel('inventory');
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
-                  <div>
+              activeModule === 'inventory' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -11283,9 +11148,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 });
                                 setShowFirstAidForm(true);
                               }}
-                              disabled={isReadOnly}
-                              className={`bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              title={isReadOnly ? "No tienes permisos" : "Agregar Medicamento"}
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
                             >
                               <Plus className="w-5 h-5" />
                               Agregar Medicamento
@@ -11356,48 +11219,46 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           {item.location}
                                         </td>
                                         <td className="px-6 py-4 text-sm">
-                                          {!isReadOnly && (
-                                            <div className="flex gap-2">
-                                              <button
-                                                onClick={() => {
-                                                  const newQuantity = Number(item.quantity) - 1;
-                                                  if (newQuantity <= 0) {
-                                                    if (window.confirm(`¿${item.name} se ha agotado? Mover a la lista de compras.`)) {
-                                                      setFirstAidItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: 0, status: 'shopping' } : i));
-                                                    } else {
-                                                      setFirstAidItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: 0 } : i));
-                                                    }
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => {
+                                                const newQuantity = Number(item.quantity) - 1;
+                                                if (newQuantity <= 0) {
+                                                  if (window.confirm(`¿${item.name} se ha agotado? Mover a la lista de compras.`)) {
+                                                    setFirstAidItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: 0, status: 'shopping' } : i));
                                                   } else {
-                                                    setFirstAidItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
+                                                    setFirstAidItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: 0 } : i));
                                                   }
-                                                }}
-                                                title="Consumir 1 unidad"
-                                                className="p-1 text-orange-600 hover:bg-orange-100 rounded dark:hover:bg-orange-900/30 transition-colors"
-                                              >
-                                                <ArrowDown className="w-5 h-5" />
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  setEditingFirstAidItem(item);
-                                                  setFirstAidFormData(item);
-                                                  setShowFirstAidForm(true);
-                                                }}
-                                                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded dark:hover:bg-indigo-900/30 transition-colors"
-                                              >
-                                                <Edit2 className="w-5 h-5" />
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  if (window.confirm('¿Eliminar este artículo del botiquín?')) {
-                                                    setFirstAidItems(prev => prev.filter(i => i.id !== item.id));
-                                                  }
-                                                }}
-                                                className="p-1 text-red-600 hover:bg-red-100 rounded dark:hover:bg-red-900/30 transition-colors"
-                                              >
-                                                <Trash2 className="w-5 h-5" />
-                                              </button>
-                                            </div>
-                                          )}
+                                                } else {
+                                                  setFirstAidItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
+                                                }
+                                              }}
+                                              title="Consumir 1 unidad"
+                                              className="p-1 text-orange-600 hover:bg-orange-100 rounded dark:hover:bg-orange-900/30 transition-colors"
+                                            >
+                                              <ArrowDown className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setEditingFirstAidItem(item);
+                                                setFirstAidFormData(item);
+                                                setShowFirstAidForm(true);
+                                              }}
+                                              className="p-1 text-indigo-600 hover:bg-indigo-100 rounded dark:hover:bg-indigo-900/30 transition-colors"
+                                            >
+                                              <Edit2 className="w-5 h-5" />
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                if (window.confirm('¿Eliminar este artículo del botiquín?')) {
+                                                  setFirstAidItems(prev => prev.filter(i => i.id !== item.id));
+                                                }
+                                              }}
+                                              className="p-1 text-red-600 hover:bg-red-100 rounded dark:hover:bg-red-900/30 transition-colors"
+                                            >
+                                              <Trash2 className="w-5 h-5" />
+                                            </button>
+                                          </div>
                                         </td>
                                       </tr>
                                     );
@@ -11442,30 +11303,28 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           {item.quantity} {item.unit} (Agotado)
                                         </td>
                                         <td className="px-6 py-4 text-sm">
-                                          {!isReadOnly && (
-                                            <div className="flex gap-2">
-                                              <button
-                                                onClick={() => {
-                                                  setEditingFirstAidItem(item);
-                                                  setFirstAidFormData({ ...item, status: 'available', quantity: 1 }); // Default to 1 and available
-                                                  setShowFirstAidForm(true);
-                                                }}
-                                                className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-xs font-medium transition-colors"
-                                              >
-                                                Marcar Comprado
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  if (window.confirm('¿Eliminar de la lista de compras?')) {
-                                                    setFirstAidItems(prev => prev.filter(i => i.id !== item.id));
-                                                  }
-                                                }}
-                                                className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-                                              >
-                                                <X className="w-4 h-4" />
-                                              </button>
-                                            </div>
-                                          )}
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => {
+                                                setEditingFirstAidItem(item);
+                                                setFirstAidFormData({ ...item, status: 'available', quantity: 1 }); // Default to 1 and available
+                                                setShowFirstAidForm(true);
+                                              }}
+                                              className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded text-xs font-medium transition-colors"
+                                            >
+                                              Marcar Comprado
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                if (window.confirm('¿Eliminar de la lista de compras?')) {
+                                                  setFirstAidItems(prev => prev.filter(i => i.id !== item.id));
+                                                }
+                                              }}
+                                              className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </button>
+                                          </div>
                                         </td>
                                       </tr>
                                     ))
@@ -11601,26 +11460,24 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
 
                             <div className="md:col-span-2 mt-4 flex gap-4">
-                              {!isReadOnly && (
-                                <button
-                                  onClick={() => {
-                                    if (!firstAidFormData.name || !firstAidFormData.quantity) {
-                                      alert('Por favor complete el nombre y la cantidad');
-                                      return;
-                                    }
+                              <button
+                                onClick={() => {
+                                  if (!firstAidFormData.name || !firstAidFormData.quantity) {
+                                    alert('Por favor complete el nombre y la cantidad');
+                                    return;
+                                  }
 
-                                    if (editingFirstAidItem) {
-                                      setFirstAidItems(prev => prev.map(i => i.id === editingFirstAidItem.id ? { ...firstAidFormData, id: i.id } : i));
-                                    } else {
-                                      setFirstAidItems(prev => [...prev, { ...firstAidFormData, id: Date.now().toString() }]);
-                                    }
-                                    setShowFirstAidForm(false);
-                                  }}
-                                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex-1"
-                                >
-                                  {editingFirstAidItem ? 'Guardar Cambios' : 'Registrar Artículo'}
-                                </button>
-                              )}
+                                  if (editingFirstAidItem) {
+                                    setFirstAidItems(prev => prev.map(i => i.id === editingFirstAidItem.id ? { ...firstAidFormData, id: i.id } : i));
+                                  } else {
+                                    setFirstAidItems(prev => [...prev, { ...firstAidFormData, id: Date.now().toString() }]);
+                                  }
+                                  setShowFirstAidForm(false);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex-1"
+                              >
+                                {editingFirstAidItem ? 'Guardar Cambios' : 'Registrar Artículo'}
+                              </button>
                               <button
                                 onClick={() => setShowFirstAidForm(false)}
                                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200 px-6 py-2 rounded-lg font-medium"
@@ -11680,9 +11537,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 });
                                 setShowInventoryForm(true);
                               }}
-                              disabled={isReadOnly}
-                              className={`bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors ${isReadOnly ? "opacity-50 cursor-not-allowed" : ""}`}
-                              title={isReadOnly ? "No tienes permisos" : "Agregar Nuevo Artículo"}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
                             >
                               <Plus className="w-5 h-5" />
                               Agregar Nuevo Artículo
@@ -11722,9 +11577,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     />
                                     <button
                                       onClick={handleAddCategory}
-                                      disabled={!newCategory.trim() || isReadOnly}
-                                      className={`bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 ${isReadOnly ? 'cursor-not-allowed' : ''}`}
-                                      title={isReadOnly ? "No tienes permisos" : ""}
+                                      disabled={!newCategory.trim()}
+                                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg disabled:opacity-50"
                                     >
                                       <Plus className="w-5 h-5" />
                                     </button>
@@ -11733,14 +11587,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     {inventoryCategories.map(cat => (
                                       <div key={cat} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg group">
                                         <span className="font-medium text-gray-700 dark:text-gray-300">{cat}</span>
-                                        {!isReadOnly && (
-                                          <button
-                                            onClick={() => handleDeleteCategory(cat)}
-                                            className="text-red-400 hover:text-red-600 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                          </button>
-                                        )}
+                                        <button
+                                          onClick={() => handleDeleteCategory(cat)}
+                                          className="text-red-400 hover:text-red-600 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
                                       </div>
                                     ))}
                                     {inventoryCategories.length === 0 && (
@@ -11825,15 +11677,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <div className="flex gap-2">
                                             <button
                                               onClick={() => handleEditInventoryItem(item)}
-                                              disabled={isReadOnly}
-                                              className={`text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium"
                                             >
                                               Editar
                                             </button>
                                             <button
                                               onClick={() => handleDeleteInventoryItem(item.id)}
-                                              disabled={isReadOnly}
-                                              className={`text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 font-medium ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 font-medium"
                                             >
                                               Eliminar
                                             </button>
@@ -12009,26 +11859,24 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       !showTentForm ? (
                         <>
                           <div className="mb-6 flex justify-between items-center">
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => {
-                                  setEditingTent(null);
-                                  setTentFormData({
-                                    name: '',
-                                    capacity: 4,
-                                    condition: 'Good',
-                                    brand: '',
-                                    color: '',
-                                    photo: ''
-                                  });
-                                  setShowTentForm(true);
-                                }}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
-                              >
-                                <Plus className="w-5 h-5" />
-                                Agregar Nueva Carpa
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                setEditingTent(null);
+                                setTentFormData({
+                                  name: '',
+                                  capacity: 4,
+                                  condition: 'Good',
+                                  brand: '',
+                                  color: '',
+                                  photo: ''
+                                });
+                                setShowTentForm(true);
+                              }}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
+                            >
+                              <Plus className="w-5 h-5" />
+                              Agregar Nueva Carpa
+                            </button>
                           </div>
 
                           <div className="overflow-x-auto">
@@ -12067,12 +11915,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     </td>
                                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{tent.brand} {tent.color ? `(${tent.color})` : ''}</td>
                                     <td className="px-6 py-4">
-                                      {!isReadOnly && (
-                                        <div className="flex gap-2">
-                                          <button onClick={() => handleEditTent(tent)} className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium">Editar</button>
-                                          <button onClick={() => handleDeleteTent(tent.id)} className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 font-medium">Eliminar</button>
-                                        </div>
-                                      )}
+                                      <div className="flex gap-2">
+                                        <button onClick={() => handleEditTent(tent)} className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 font-medium">Editar</button>
+                                        <button onClick={() => handleDeleteTent(tent.id)} className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 font-medium">Eliminar</button>
+                                      </div>
                                     </td>
                                   </tr>
                                 ))}
@@ -12381,11 +12227,31 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                   </div>
                 </div>
-              );
-            })()}
+              )
+            }
 
 
 
+            {/* Dashboard View-Truncated due to length */}
+            {/* DataClubes Module-PERSISTENT RENDERING */}
+            <div style={{ display: activeModule === 'dataclubes' ? 'flex' : 'none', height: 'calc(100vh - 120px)' }} className="w-full bg-white rounded-lg shadow-lg overflow-hidden flex-col">
+              <div className="bg-gray-100 dark:bg-gray-800 p-2 border-b flex justify-between items-center px-4">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Portal DataClubes</span>
+                <button
+                  onClick={handleAutoFillDataClubes}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1.5 rounded-md shadow flex items-center gap-2"
+                >
+                  <Globe className="w-4 h-4" />
+                  Rellenar mis Datos (DO1902340)
+                </button>
+              </div>
+              <webview
+                ref={dataclubesWebviewRef}
+                src="https://dataclubes.azurewebsites.net/Portal/login"
+                style={{ width: '100%', height: '100%' }}
+                allowpopups="true"
+              ></webview>
+            </div>
 
             {
               activeModule === 'dashboard' && (
@@ -12893,13 +12759,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
     }
 
     {/* Members Module */}
-            {/* Discipline Module */}
-            {
-              activeModule === 'discipline' && (() => {
-                const accessLevel = getModuleAccessLevel('discipline');
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
-                  <div className="animate-in fade-in duration-300">
+    {/* Discipline Module */}
+    {
+      activeModule === 'discipline' && (
+                <div className="animate-in fade-in duration-300">
                   <div className="flex justify-between items-center mb-6">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
@@ -12908,25 +12771,23 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </h2>
                       <p className="text-gray-500 dark:text-gray-400">Registro de incidencias y deducción de puntos</p>
                     </div>
-                    {!isReadOnly && (
-                      <button
-                        onClick={() => {
-                          setEditingDiscipline(null);
-                          setDisciplineFormData({
-                            memberIds: [],
-                            date: getLocalISODate(),
-                            title: '',
-                            description: '',
-                            points: ''
-                          });
-                          setShowDisciplineForm(true);
-                        }}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors"
-                      >
-                        <PlusCircle className="w-5 h-5" />
-                        Registrar Falta
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        setEditingDiscipline(null);
+                        setDisciplineFormData({
+                          memberIds: [],
+                          date: getLocalISODate(),
+                          title: '',
+                          description: '',
+                          points: ''
+                        });
+                        setShowDisciplineForm(true);
+                      }}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-colors"
+                    >
+                      <PlusCircle className="w-5 h-5" />
+                      Registrar Falta
+                    </button>
                   </div>
 
                   {/* Stats Cards */}
@@ -13007,15 +12868,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     -{record.points}
                                   </td>
                                   <td className="p-4 text-right">
-                                    {!isReadOnly && (
-                                      <button
-                                        onClick={() => handleDeleteDiscipline(record.id)}
-                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                        title="Eliminar registro"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    )}
+                                    <button
+                                      onClick={() => handleDeleteDiscipline(record.id)}
+                                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                      title="Eliminar registro"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
                                   </td>
                                 </tr>
                               );
@@ -13132,80 +12991,71 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           >
                             Cancelar
                           </button>
-                          {!isReadOnly && (
-                            <button
-                              onClick={handleSaveDiscipline}
-                              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm transition-colors"
-                            >
-                              Guardar Registro
-                            </button>
-                          )}
+                          <button
+                            onClick={handleSaveDiscipline}
+                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm transition-colors"
+                          >
+                            Guardar Registro
+                          </button>
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-              );
-            })()
-          }
+              )
+            }
 
             {
-              activeModule === 'members' && !showForm && (() => {
-                const accessLevel = getModuleAccessLevel('members');
-                return (
-                  <div>
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                            <Users className="w-7 h-7 text-red-600 dark:text-red-500" />
-                            Gestión de Miembros
-                          </h2>
-                          <div className="flex items-center gap-4">
-                            <p className="text-gray-600 dark:text-gray-400 mt-1">Administra y organiza todos los conquistadores</p>
-                            {accessLevel === ACCESS_FULL && (
-                              <button
-                                onClick={handleMassCleanupMembers}
-                                className="text-[10px] bg-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-600 px-2 py-1 rounded border border-gray-200 hover:border-red-200 transition-colors uppercase font-bold"
-                                title="Limpiar todas las clases y cargos de todos los miembros"
-                              >
-                                Limpiar Clases/Cargos
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-3xl font-bold text-red-600 dark:text-red-400">{members.length}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">Total de Miembros</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
-                      <div className="flex gap-4 flex-wrap items-center">
-                        <div className="flex-1 min-w-64">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input
-                              type="text"
-                              placeholder="Buscar por nombre o ID..."
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
-                            />
-                          </div>
-                        </div>
-                        {!isReadOnly && (
+              activeModule === 'members' && !showForm && (
+                <div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                          <Users className="w-7 h-7 text-red-600 dark:text-red-500" />
+                          Gestión de Miembros
+                        </h2>
+                        <div className="flex items-center gap-4">
+                          <p className="text-gray-600 dark:text-gray-400 mt-1">Administra y organiza todos los conquistadores</p>
                           <button
-                            onClick={() => setShowForm(true)}
-                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                            onClick={handleMassCleanupMembers}
+                            className="text-[10px] bg-gray-100 hover:bg-red-50 text-gray-400 hover:text-red-600 px-2 py-1 rounded border border-gray-200 hover:border-red-200 transition-colors uppercase font-bold"
+                            title="Limpiar todas las clases y cargos de todos los miembros"
                           >
-                            <Plus className="w-5 h-5" />
-                            Agregar Miembro
+                            Limpiar Clases/Cargos
                           </button>
-                        )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-red-600 dark:text-red-400">{members.length}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Total de Miembros</div>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
+                    <div className="flex gap-4 flex-wrap items-center">
+                      <div className="flex-1 min-w-64">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <input
+                            type="text"
+                            placeholder="Buscar por nombre o ID..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowForm(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                      >
+                        <Plus className="w-5 h-5" />
+                        Agregar Miembro
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                     {filteredMembers.length === 0 ? (
@@ -13529,15 +13379,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                             </td>
                                             <td className="px-6 py-4">
                                               <div className="flex items-center gap-2">
-                                                {!isReadOnly && (
-                                                  <button
-                                                    onClick={() => handleEdit(member)}
-                                                    className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                                                    title="Editar"
-                                                  >
-                                                    <Edit2 className="w-4 h-4" />
-                                                  </button>
-                                                )}
+                                                <button
+                                                  onClick={() => handleEdit(member)}
+                                                  className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                                  title="Editar"
+                                                >
+                                                  <Edit2 className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                   onClick={() => printMemberForm(member)}
                                                   className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -13545,15 +13393,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 >
                                                   <FileText className="w-4 h-4" />
                                                 </button>
-                                                {!isReadOnly && (
-                                                  <button
-                                                    onClick={() => handleDeleteMember(member.id)}
-                                                    className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                                    title="Eliminar"
-                                                  >
-                                                    <Trash2 className="w-4 h-4" />
-                                                  </button>
-                                                )}
+                                                <button
+                                                  onClick={() => handleDeleteMember(member.id)}
+                                                  className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                  title="Eliminar"
+                                                >
+                                                  <Trash2 className="w-4 h-4" />
+                                                </button>
                                               </div>
                                             </td>
                                           </tr>
@@ -13613,15 +13459,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     )}
                   </div>
-                })() }
-
+                </div>
+              )
+            }
 
             {/* Member Form */}
             {
-              activeModule === 'members' && showForm && (() => {
-                const accessLevel = getModuleAccessLevel('members');
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
+              activeModule === 'members' && showForm && (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
@@ -13642,8 +13486,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       />
                       {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
                     </div>
@@ -13657,8 +13500,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       />
                       {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
                     </div>
@@ -13672,8 +13514,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         name="dateOfBirth"
                         value={formData.dateOfBirth}
                         onChange={handleInputChange}
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       />
                       {errors.dateOfBirth && <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>}
                     </div>
@@ -13697,8 +13538,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         name="bloodType"
                         value={formData.bloodType}
                         onChange={handleInputChange}
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.bloodType ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.bloodType ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       >
                         <option value="">Select</option>
                         {bloodTypes.map(type => <option key={type} value={type}>{type}</option>)}
@@ -13714,8 +13554,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         name="gender"
                         value={formData.gender}
                         onChange={handleInputChange}
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.gender ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.gender ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       >
                         <option value="">Seleccionar</option>
                         <option value="Male">Masculino</option>
@@ -13733,8 +13572,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         name="address"
                         value={formData.address}
                         onChange={handleInputChange}
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       />
                       {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                     </div>
@@ -13752,8 +13590,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           handleInputChange({ target: { name: 'primaryContact', value } });
                         }}
                         placeholder="+1 (809) 555-1234"
-                        disabled={isReadOnly}
-                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.primaryContact ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${errors.primaryContact ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                       />
                       {errors.primaryContact && <p className="text-red-500 text-sm mt-1">{errors.primaryContact}</p>}
                     </div>
@@ -14610,37 +14447,33 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
+
+                    {/* Grid closed before buttons */}
                   </div>
 
                   <div className="flex gap-4 mt-8">
-                    {!isReadOnly && (
-                      <button
-                        onClick={handleSubmit}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-                      >
-                        <Save className="w-5 h-5" />
-                        {editingMember ? 'Actualizar' : 'Guardar'}
-                      </button>
-                    )}
+                    <button
+                      onClick={handleSubmit}
+                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                    >
+                      <Save className="w-5 h-5" />
+                      {editingMember ? 'Actualizar' : 'Guardar'}
+                    </button>
                     <button
                       onClick={handleCancel}
-                      className={`px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 ${!isReadOnly ? 'flex-1' : 'w-full'}`}
+                      className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
                     >
-                      {isReadOnly ? 'Volver' : 'Cancelar'}
+                      Cancelar
                     </button>
                   </div>
                 </div>
-                );
-              })()
+              )
             }
 
             {/* Directive Module */}
             {
-              activeModule === 'directive' && (() => {
-                const accessLevel = getModuleAccessLevel('directive');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'directive' && (
+                <>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -14676,7 +14509,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           checked={fusedDirective}
                           onChange={(e) => setFusedDirective(e.target.checked)}
                           className="sr-only peer"
-                          disabled={isReadOnly}
                         />
                         <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
                         <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -14922,18 +14754,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <p className="text-gray-500 mb-6">
                               Comienza a construir el equipo de liderazgo asignando cargos a los miembros en la sección de Membresía.
                             </p>
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => {
-                                  setActiveModule('members');
-                                  setShowForm(true);
-                                }}
-                                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
-                              >
-                                <Plus className="w-5 h-5" />
-                                Agregar Miembro con Cargo
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                setActiveModule('members');
+                                setShowForm(true);
+                              }}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
+                            >
+                              <Plus className="w-5 h-5" />
+                              Agregar Miembro con Cargo
+                            </button>
                           </div>
                         ) : (
                           <>
@@ -15009,18 +14839,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 </div>
                                               )}
 
-                                              {!isReadOnly && (
-                                                <button
-                                                  onClick={() => {
-                                                    handleEdit(line.member);
-                                                    setActiveModule('members');
-                                                  }}
-                                                  className="ml-auto text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                                                  title="Editar"
-                                                >
-                                                  <Edit2 className="w-4 h-4" />
-                                                </button>
-                                              )}
+                                              <button
+                                                onClick={() => {
+                                                  handleEdit(line.member);
+                                                  setActiveModule('members');
+                                                }}
+                                                className="ml-auto text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 p-1 rounded-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                                                title="Editar"
+                                              >
+                                                <Edit2 className="w-4 h-4" />
+                                              </button>
                                             </div>
                                           </div>
                                         </div>
@@ -15028,8 +14856,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     </div>
                                   </div>
                                 </div>
-                        );
-                      })}
+                              );
+                            })}
 
                             {/* Summary Card */}
                             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6">
@@ -15083,16 +14911,14 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     );
                   })()}
-                </>);
-              })()}
+                </>
+              )
+            }
 
             {/* Parents Module */}
             {
-              activeModule === 'parents' && (() => {
-                const accessLevel = getModuleAccessLevel('parents');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'parents' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -15183,14 +15009,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                      {!isReadOnly && (
-                                        <button
-                                          onClick={() => handleDeleteParent(father.name, 'father')}
-                                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 font-medium"
-                                        >
-                                          Eliminar
-                                        </button>
-                                      )}
+                                      <button
+                                        onClick={() => handleDeleteParent(father.name, 'father')}
+                                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 font-medium"
+                                      >
+                                        Eliminar
+                                      </button>
                                     </td>
                                   </tr>
                                 ));
@@ -15257,14 +15081,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                      {!isReadOnly && (
-                                        <button
-                                          onClick={() => handleDeleteParent(mother.name, 'mother')}
-                                          className="text-red-600 hover:text-red-900 font-medium"
-                                        >
-                                          Eliminar
-                                        </button>
-                                      )}
+                                      <button
+                                        onClick={() => handleDeleteParent(mother.name, 'mother')}
+                                        className="text-red-600 hover:text-red-900 font-medium"
+                                      >
+                                        Eliminar
+                                      </button>
                                     </td>
                                   </tr>
                                 ));
@@ -15275,20 +15097,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </>
                   )}
-                </>);
-              })()}
-
+                </div>
+              )
+            }
 
 
 
 
             {/* Units Module */}
             {
-              activeModule === 'units' && (() => {
-                const accessLevel = getModuleAccessLevel('units');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'units' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -15299,29 +15118,25 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         <p className="text-gray-600 dark:text-gray-300 mt-1">Organiza miembros en unidades con capitanes y secretarios</p>
                       </div>
                       <div className="flex gap-2">
-                        {!isReadOnly && (
-                          <>
-                            <button
-                              onClick={handleAutoFillUnits}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center gap-2"
-                              title="Asignar miembros automáticamente por edad y género"
-                            >
-                              <Users className="w-5 h-5" />
-                              Auto-Llenar
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowUnitForm(true);
-                                setEditingUnit(null);
-                                setUnitFormData({ name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
-                              }}
-                              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
-                            >
-                              <Plus className="w-5 h-5" />
-                              Agregar Nueva Unidad
-                            </button>
-                          </>
-                        )}
+                        <button
+                          onClick={handleAutoFillUnits}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center gap-2"
+                          title="Asignar miembros automáticamente por edad y género"
+                        >
+                          <Users className="w-5 h-5" />
+                          Auto-Llenar
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowUnitForm(true);
+                            setEditingUnit(null);
+                            setUnitFormData({ name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
+                          }}
+                          className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
+                        >
+                          <Plus className="w-5 h-5" />
+                          Agregar Nueva Unidad
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -15353,7 +15168,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               onChange={(e) => setUnitFormData({ ...unitFormData, name: e.target.value })}
                               placeholder="e.g., Águilas, Leones, Tigres"
                               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                              disabled={isReadOnly}
                             />
                           </div>
 
@@ -15386,7 +15200,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     }
                                   }}
                                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                  disabled={isReadOnly}
                                 />
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Recomendado: Imagen cuadrada, al menos 200x200px</p>
                               </div>
@@ -15415,9 +15228,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     type="checkbox"
                                     className="sr-only"
                                     checked={unitFormData.clubType.includes(club.id)}
-                                    disabled={isReadOnly}
                                     onChange={() => {
-                                      if (isReadOnly) return;
                                       const currentClubs = Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType];
                                       let newClubs;
                                       if (currentClubs.includes(club.id)) {
@@ -15449,7 +15260,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </label>
                             <select
                               value={unitFormData.gender}
-                              disabled={isReadOnly}
                               onChange={(e) => {
                                 setUnitFormData({
                                   ...unitFormData,
@@ -15472,7 +15282,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </label>
                             <select
                               value={unitFormData.captainId}
-                              disabled={isReadOnly}
                               onChange={(e) => setUnitFormData({ ...unitFormData, captainId: e.target.value })}
                               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             >
@@ -15497,7 +15306,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </label>
                             <select
                               value={unitFormData.secretaryId}
-                              disabled={isReadOnly}
                               onChange={(e) => setUnitFormData({ ...unitFormData, secretaryId: e.target.value })}
                               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             >
@@ -15517,64 +15325,62 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </div>
 
                           <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => {
-                                  if (!unitFormData.name.trim()) {
-                                    alert('Por favor ingrese un nombre para la unidad');
-                                    return;
-                                  }
+                            <button
+                              onClick={() => {
+                                if (!unitFormData.name.trim()) {
+                                  alert('Por favor ingrese un nombre para la unidad');
+                                  return;
+                                }
 
-                                  if (editingUnit) {
-                                    // Ensure clubType is an array when saving
-                                    const finalClubType = Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType];
-                                    setUnits(units.map(u => u.id === editingUnit.id ? { ...editingUnit, ...unitFormData, clubType: finalClubType } : u));
+                                if (editingUnit) {
+                                  // Ensure clubType is an array when saving
+                                  const finalClubType = Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType];
+                                  setUnits(units.map(u => u.id === editingUnit.id ? { ...editingUnit, ...unitFormData, clubType: finalClubType } : u));
 
-                                    // Update members with new roles
-                                    const updatedMembers = members.map(m => {
-                                      if (m.id === unitFormData.captainId) {
-                                        return { ...m, unitId: editingUnit.id, unitRole: 'Captain' };
-                                      }
-                                      if (m.id === unitFormData.secretaryId) {
-                                        return { ...m, unitId: editingUnit.id, unitRole: 'Secretary' };
-                                      }
-                                      if (m.unitId === editingUnit.id && m.unitRole &&
-                                        m.id !== unitFormData.captainId && m.id !== unitFormData.secretaryId) {
-                                        return { ...m, unitRole: '' };
-                                      }
-                                      return m;
-                                    });
-                                    setMembers(updatedMembers);
-                                  } else {
-                                    const newUnit = {
-                                      id: Date.now().toString(),
-                                      ...unitFormData,
-                                      clubType: Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType]
-                                    };
-                                    setUnits([...units, newUnit]);
+                                  // Update members with new roles
+                                  const updatedMembers = members.map(m => {
+                                    if (m.id === unitFormData.captainId) {
+                                      return { ...m, unitId: editingUnit.id, unitRole: 'Captain' };
+                                    }
+                                    if (m.id === unitFormData.secretaryId) {
+                                      return { ...m, unitId: editingUnit.id, unitRole: 'Secretary' };
+                                    }
+                                    if (m.unitId === editingUnit.id && m.unitRole &&
+                                      m.id !== unitFormData.captainId && m.id !== unitFormData.secretaryId) {
+                                      return { ...m, unitRole: '' };
+                                    }
+                                    return m;
+                                  });
+                                  setMembers(updatedMembers);
+                                } else {
+                                  const newUnit = {
+                                    id: Date.now().toString(),
+                                    ...unitFormData,
+                                    clubType: Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType]
+                                  };
+                                  setUnits([...units, newUnit]);
 
-                                    // Assign roles to members
-                                    const updatedMembers = members.map(m => {
-                                      if (m.id === unitFormData.captainId) {
-                                        return { ...m, unitId: newUnit.id, unitRole: 'Captain' };
-                                      }
-                                      if (m.id === unitFormData.secretaryId) {
-                                        return { ...m, unitId: newUnit.id, unitRole: 'Secretary' };
-                                      }
-                                      return m;
-                                    });
-                                    setMembers(updatedMembers);
-                                  }
+                                  // Assign roles to members
+                                  const updatedMembers = members.map(m => {
+                                    if (m.id === unitFormData.captainId) {
+                                      return { ...m, unitId: newUnit.id, unitRole: 'Captain' };
+                                    }
+                                    if (m.id === unitFormData.secretaryId) {
+                                      return { ...m, unitId: newUnit.id, unitRole: 'Secretary' };
+                                    }
+                                    return m;
+                                  });
+                                  setMembers(updatedMembers);
+                                }
 
-                                  setShowUnitForm(false);
-                                  setUnitFormData({ name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
-                                }}
-                                className="flex-1 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-                              >
-                                <Save className="w-5 h-5" />
-                                {editingUnit ? 'Actualizar Unidad' : 'Crear Unidad'}
-                              </button>
-                            )}
+                                setShowUnitForm(false);
+                                setUnitFormData({ name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
+                              }}
+                              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                            >
+                              <Save className="w-5 h-5" />
+                              {editingUnit ? 'Actualizar Unidad' : 'Crear Unidad'}
+                            </button>
                             <button
                               onClick={() => setShowUnitForm(false)}
                               className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -15650,83 +15456,79 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
 
                             <div className="p-4">
-                              {!isReadOnly && (
-                                <div className="flex gap-2 mb-3">
-                                  <button
-                                    onClick={() => {
-                                      setEditingUnit(unit);
-                                      setUnitFormData({
-                                        name: unit.name,
-                                        logo: unit.logo,
-                                        clubType: Array.isArray(unit.clubType) ? unit.clubType : [unit.clubType || 'conquistadores'],
-                                        gender: unit.gender || 'Mixed',
-                                        captainId: unit.captainId || '',
-                                        secretaryId: unit.secretaryId || ''
-                                      });
-                                      setShowUnitForm(true);
-                                    }}
-                                    className="flex-1 px-3 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded font-medium"
-                                  >
-                                    <Edit2 className="w-4 h-4 inline mr-1" />
-                                    Editar
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      if (window.confirm(`¿Eliminar unidad "${unit.name}" ? Los miembros serán asignados como 'sin unidad'.`)) {
-                                        setUnits(units.filter(u => u.id !== unit.id));
-                                        // Remove unit assignment from members
-                                        const updatedMembers = members.map(m =>
-                                          m.unitId === unit.id ? { ...m, unitId: '', unitRole: '' } : m
-                                        );
-                                        setMembers(updatedMembers);
-                                      }
-                                    }}
-                                    className="px-3 py-2 text-sm border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded font-medium"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
+                              <div className="flex gap-2 mb-3">
+                                <button
+                                  onClick={() => {
+                                    setEditingUnit(unit);
+                                    setUnitFormData({
+                                      name: unit.name,
+                                      logo: unit.logo,
+                                      clubType: Array.isArray(unit.clubType) ? unit.clubType : [unit.clubType || 'conquistadores'],
+                                      gender: unit.gender || 'Mixed',
+                                      captainId: unit.captainId || '',
+                                      secretaryId: unit.secretaryId || ''
+                                    });
+                                    setShowUnitForm(true);
+                                  }}
+                                  className="flex-1 px-3 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white rounded font-medium"
+                                >
+                                  <Edit2 className="w-4 h-4 inline mr-1" />
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm(`¿Eliminar unidad "${unit.name}" ? Los miembros serán asignados como 'sin unidad'.`)) {
+                                      setUnits(units.filter(u => u.id !== unit.id));
+                                      // Remove unit assignment from members
+                                      const updatedMembers = members.map(m =>
+                                        m.unitId === unit.id ? { ...m, unitId: '', unitRole: '' } : m
+                                      );
+                                      setMembers(updatedMembers);
+                                    }
+                                  }}
+                                  className="px-3 py-2 text-sm border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded font-medium"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
 
                               {/* Assign Members */}
-                              {!isReadOnly && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asignar Miembros:</label>
-                                  <select
-                                    onChange={(e) => {
-                                      const memberId = e.target.value;
-                                      if (memberId) {
-                                        const updatedMembers = members.map(m =>
-                                          m.id === memberId ? { ...m, unitId: unit.id, unitRole: '' } : m
-                                        );
-                                        setMembers(updatedMembers);
-                                        e.target.value = '';
-                                      }
-                                    }}
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                  >
-                                    <option value="">Seleccionar miembro para añadir...</option>
-                                    {members.filter(m => {
-                                      // Must not have a unit assigned
-                                      if (m.unitId && m.unitId !== '') return false;
-                                      // Must not have a directive position
-                                      if (m.position && m.position !== '') return false;
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asignar Miembros:</label>
+                                <select
+                                  onChange={(e) => {
+                                    const memberId = e.target.value;
+                                    if (memberId) {
+                                      const updatedMembers = members.map(m =>
+                                        m.id === memberId ? { ...m, unitId: unit.id, unitRole: '' } : m
+                                      );
+                                      setMembers(updatedMembers);
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                >
+                                  <option value="">Seleccionar miembro para añadir...</option>
+                                  {members.filter(m => {
+                                    // Must not have a unit assigned
+                                    if (m.unitId && m.unitId !== '') return false;
+                                    // Must not have a directive position
+                                    if (m.position && m.position !== '') return false;
 
-                                      const safeGender = unit.gender || 'Mixed';
+                                    const safeGender = unit.gender || 'Mixed';
 
-                                      // Check Gender
-                                      if (safeGender === 'Male' && (m.gender !== 'Male' && m.gender !== 'M')) return false;
-                                      if (safeGender === 'Female' && (m.gender !== 'Female' && m.gender !== 'F')) return false;
+                                    // Check Gender
+                                    if (safeGender === 'Male' && (m.gender !== 'Male' && m.gender !== 'M')) return false;
+                                    if (safeGender === 'Female' && (m.gender !== 'Female' && m.gender !== 'F')) return false;
 
-                                      return true;
-                                    }).map((member) => (
-                                      <option key={member.id} value={member.id}>
-                                        {member.firstName} {member.lastName} ({calculateAge(member.dateOfBirth)} años)
-                                      </option>
-                                    ))}
-                                  </select>
-                                </div>
-                              )}
+                                    return true;
+                                  }).map((member) => (
+                                    <option key={member.id} value={member.id}>
+                                      {member.firstName} {member.lastName} ({calculateAge(member.dateOfBirth)} años)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
 
                               {/* Unit Members List */}
                               {unitMembers.length > 0 && (
@@ -15764,34 +15566,32 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           </span>
                                         )}
                                       </span>
-                                      {!isReadOnly && (
-                                        <button
-                                          onClick={() => {
-                                            const updatedMembers = members.map(m =>
-                                              m.id === member.id ? { ...m, unitId: '', unitRole: '' } : m
-                                            );
-                                            setMembers(updatedMembers);
+                                      <button
+                                        onClick={() => {
+                                          const updatedMembers = members.map(m =>
+                                            m.id === member.id ? { ...m, unitId: '', unitRole: '' } : m
+                                          );
+                                          setMembers(updatedMembers);
 
-                                            // If removing captain or secretary, update unit
-                                            if (unit.captainId === member.id || unit.secretaryId === member.id) {
-                                              const updatedUnits = units.map(u => {
-                                                if (u.id === unit.id) {
-                                                  return {
-                                                    ...u,
-                                                    captainId: u.captainId === member.id ? '' : u.captainId,
-                                                    secretaryId: u.secretaryId === member.id ? '' : u.secretaryId
-                                                  };
-                                                }
-                                                return u;
-                                              });
-                                              setUnits(updatedUnits);
-                                            }
-                                          }}
-                                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </button>
-                                      )}
+                                          // If removing captain or secretary, update unit
+                                          if (unit.captainId === member.id || unit.secretaryId === member.id) {
+                                            const updatedUnits = units.map(u => {
+                                              if (u.id === unit.id) {
+                                                return {
+                                                  ...u,
+                                                  captainId: u.captainId === member.id ? '' : u.captainId,
+                                                  secretaryId: u.secretaryId === member.id ? '' : u.secretaryId
+                                                };
+                                              }
+                                              return u;
+                                            });
+                                            setUnits(updatedUnits);
+                                          }
+                                        }}
+                                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
@@ -15802,18 +15602,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       })}
                     </div>
                   )}
-                </>);
-              })()}
+                </div>
+              )
+            }
 
 
 
             {/* Achievements Module */}
             {
-              activeModule === 'achievements' && (() => {
-                const accessLevel = getModuleAccessLevel('achievements');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'achievements' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -15829,53 +15627,63 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   </div>
+
+                  {/* Statistics Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {/* Guías Mayores */}
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-600 dark:text-purple-300 text-sm font-semibold">Guías Mayores</p>
-              <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{members.filter(m => m.achievements?.some(a => a.achievementId === "master-guide")).length}</p>
-            </div>
-            <Award className="w-10 h-10 text-purple-400" />
-          </div>
-        </div>
-        {/* Oro */}
-        <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-600 dark:text-yellow-300 text-sm font-semibold">Medallas de Oro</p>
-              <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{members.filter(m => m.achievements?.some(a => a.achievementId === "medal-gold")).length}</p>
-            </div>
-            <Award className="w-10 h-10 text-yellow-400" />
-          </div>
-        </div>
-        {/* Plata */}
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold">Medallas de Plata</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{members.filter(m => m.achievements?.some(a => a.achievementId === "medal-silver")).length}</p>
-            </div>
-            <Award className="w-10 h-10 text-gray-400" />
-          </div>
-        </div>
-        {/* Total */}
-        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40 rounded-lg p-4 border-2 border-indigo-200 dark:border-indigo-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-indigo-600 dark:text-indigo-300 text-sm font-semibold">Total Logros</p>
-              <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{members.reduce((sum, m) => sum + (m.achievements?.length || 0), 0)}</p>
-            </div>
-            <Award className="w-10 h-10 text-indigo-400" />
-          </div>
-        </div>
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-purple-600 dark:text-purple-300 text-sm font-semibold">Guías Mayores</p>
+                          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'master-guide')).length}
+                          </p>
+                        </div>
+                        <Award className="w-10 h-10 text-purple-400" />
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-yellow-600 dark:text-yellow-300 text-sm font-semibold">Medallas de Oro</p>
+                          <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
+                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'medal-gold')).length}
+                          </p>
+                        </div>
+                        <Award className="w-10 h-10 text-yellow-400" />
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-600">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold">Medallas de Plata</p>
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'medal-silver')).length}
+                          </p>
+                        </div>
+                        <Award className="w-10 h-10 text-gray-400" />
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40 rounded-lg p-4 border-2 border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-indigo-600 dark:text-indigo-300 text-sm font-semibold">Total Logros</p>
+                          <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
+                            {members.reduce((sum, m) => sum + (m.achievements?.length || 0), 0)}
+                          </p>
+                        </div>
+                        <Award className="w-10 h-10 text-indigo-400" />
+                      </div>
+                    </div>
                   </div>
 
+                  {/* Members Grid */}
                   {members.length === 0 ? (
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
                       <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400 text-lg">No hay miembros registrados aún</p>
+                      <p className="text-gray-500 text-lg">No hay miembros registrados aún</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -16017,12 +15825,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                               {/* Add/Remove Achievements */}
                               <div className="mt-4 pt-4 border-t dark:border-gray-700">
-                                {!isReadOnly && (
-                                  <details className="group">
-                                    <summary className="cursor-pointer list-none flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Gestionar Logros</span>
-                                      <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform" />
-                                    </summary>
+                                <details className="group">
+                                  <summary className="cursor-pointer list-none flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
+                                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Gestionar Logros</span>
+                                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform" />
+                                  </summary>
 
                                   <div className="mt-3 space-y-3 max-h-96 overflow-y-auto">
                                     {/* Classes Section */}
@@ -16170,26 +15977,21 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     </div>
                                   </div>
                                 </details>
-                            )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
                         );
                       })}
                     </div>
                   )}
-                  </>
-                );
-              })()}
+                </div>
+              )
+            }
 
-
-  
+            {/* Qualifications Module */}
             {
-              activeModule === 'qualifications' && (() => {
-                const accessLevel = getModuleAccessLevel('qualifications');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'qualifications' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -16200,15 +16002,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         <p className="text-gray-600 dark:text-gray-300 mt-1">Gestión de puntajes para clases Progresivas y Avanzadas</p>
                       </div>
                       <div className="flex items-center gap-4">
-                        {!isReadOnly && (
-                          <button
-                            onClick={() => setShowInvestitureModal(true)}
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition-colors"
-                          >
-                            <Medal className="w-5 h-5" />
-                            Investiduras
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setShowInvestitureModal(true)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition-colors"
+                        >
+                          <Medal className="w-5 h-5" />
+                          Investiduras
+                        </button>
                         <div className="text-right">
                           <label className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold block mb-1">Año</label>
                           <select
@@ -16564,42 +16364,39 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         {/* Progresiva Inputs */}
                                         <td className="px-2 py-3 text-center bg-blue-50/30 dark:bg-blue-900/10">
                                           {isProgressive ? (
-                                              <input
-                                                type="number" min="0" max="25"
-                                                value={qual.scores.progWork || 0}
-                                                onChange={(e) => updateScore('progWork', e.target.value)}
-                                                className={inputBaseClass}
-                                                placeholder="0-25"
-                                                disabled={isReadOnly}
-                                              />
+                                            <input
+                                              type="number" min="0" max="25"
+                                              value={qual.scores.progWork || 0}
+                                              onChange={(e) => updateScore('progWork', e.target.value)}
+                                              className={inputBaseClass}
+                                              placeholder="0-25"
+                                            />
                                           ) : (
                                             <span className="text-gray-400">-</span>
                                           )}
                                         </td>
                                         <td className="px-2 py-3 text-center bg-blue-50/30 dark:bg-blue-900/10">
                                           {isProgressive ? (
-                                              <input
-                                                type="number" min="0" max="25"
-                                                value={qual.scores.progExam || 0}
-                                                onChange={(e) => updateScore('progExam', e.target.value)}
-                                                className={inputBaseClass}
-                                                placeholder="0-25"
-                                                disabled={isReadOnly}
-                                              />
+                                            <input
+                                              type="number" min="0" max="25"
+                                              value={qual.scores.progExam || 0}
+                                              onChange={(e) => updateScore('progExam', e.target.value)}
+                                              className={inputBaseClass}
+                                              placeholder="0-25"
+                                            />
                                           ) : (
                                             <span className="text-gray-400">-</span>
                                           )}
                                         </td>
                                         <td className="px-2 py-3 text-center border-r border-gray-100 dark:border-gray-700 bg-blue-50/30 dark:bg-blue-900/10">
                                           {isProgressive ? (
-                                              <input
-                                                type="number" min="0" max="50"
-                                                value={qual.scores.progCamp || 0}
-                                                onChange={(e) => updateScore('progCamp', e.target.value)}
-                                                className={inputBaseClass}
-                                                placeholder="0-50"
-                                                disabled={isReadOnly}
-                                              />
+                                            <input
+                                              type="number" min="0" max="50"
+                                              value={qual.scores.progCamp || 0}
+                                              onChange={(e) => updateScore('progCamp', e.target.value)}
+                                              className={inputBaseClass}
+                                              placeholder="0-50"
+                                            />
                                           ) : (
                                             <span className="text-gray-400">-</span>
                                           )}
@@ -16608,14 +16405,14 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         {/* Avanzada Inputs (No Toggle) */}
                                         <td className="px-2 py-3 text-center bg-purple-50/30 dark:bg-purple-900/10">
                                           {isAdvanced ? (
-                                            <input type="number" min="0" max="50" value={qual.scores.advWork || 0} onChange={(e) => updateScore('advWork', e.target.value)} className={inputBaseClass} placeholder="0-50" disabled={isReadOnly} />
+                                            <input type="number" min="0" max="50" value={qual.scores.advWork || 0} onChange={(e) => updateScore('advWork', e.target.value)} className={inputBaseClass} placeholder="0-50" />
                                           ) : (
                                             <span className="text-gray-400">-</span>
                                           )}
                                         </td>
                                         <td className="px-2 py-3 text-center border-r border-gray-100 dark:border-gray-700 bg-purple-50/30 dark:bg-purple-900/10">
                                           {isAdvanced ? (
-                                            <input type="number" min="0" max="50" value={qual.scores.advCamp || 0} onChange={(e) => updateScore('advCamp', e.target.value)} className={inputBaseClass} placeholder="0-50" disabled={isReadOnly} />
+                                            <input type="number" min="0" max="50" value={qual.scores.advCamp || 0} onChange={(e) => updateScore('advCamp', e.target.value)} className={inputBaseClass} placeholder="0-50" />
                                           ) : (
                                             <span className="text-gray-400">-</span>
                                           )}
@@ -16679,17 +16476,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </table>
                     </div>
                   </div>
-                )}
-  
-            )}
-
+                </div>
+              )
+            }
             {/* Medical Records Module */}
             {
-              activeModule === "medical" && (() => {
-                const accessLevel = getModuleAccessLevel('medical');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'medical' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -16851,30 +16644,25 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <Printer className="w-4 h-4" />
                               Imprimir Ficha
                             </button>
-                             {!isReadOnly && (
-                               <button
-                                 onClick={() => handleEdit(member)}
-                                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
-                               >
-                                 <Edit2 className="w-4 h-4" />
-                                 Editar
-                               </button>
-                             )}
+                            <button
+                              onClick={() => handleEdit(member)}
+                              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                              Editar
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-                </>);
-              })()}
-
+                </div>
+              )
+            }
             {/* Classes Module */}
             {
-              activeModule === 'classes' && (() => {
-                const accessLevel = getModuleAccessLevel('classes');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
+              activeModule === 'classes' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -16912,17 +16700,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               </h3>
                               <div className="flex items-center gap-4">
                                 <span className="text-2xl font-bold">{membersInClass.length}</span>
-                                  {!isReadOnly && !['Aspirante a Guía Mayor', 'Guía Mayor Investido'].includes(pClass.label) && (
-                                    <button
-                                      onClick={() => {
-                                        setSelectedClassId(pClass.value);
-                                        setActiveClassTab('summary');
-                                      }}
-                                      className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded shadow transition-colors"
-                                    >
-                                      Gestionar Clase
-                                    </button>
-                                  )}
+                                {!['Aspirante a Guía Mayor', 'Guía Mayor Investido'].includes(pClass.label) && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedClassId(pClass.value);
+                                      setActiveClassTab('summary');
+                                    }}
+                                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded shadow transition-colors"
+                                  >
+                                    Gestionar Clase
+                                  </button>
+                                )}
                               </div>
                             </div>
 
@@ -17092,8 +16880,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           return (
                                             <td key={req.id} className="p-3 border-b dark:border-gray-700 text-center">
                                               <button
-                                                onClick={() => !isReadOnly && toggleRequirementStatus(member.id, req.id)}
-                                                className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 dark:border-gray-600 hover:border-indigo-500'} ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                onClick={() => toggleRequirementStatus(member.id, req.id)}
+                                                className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 dark:border-gray-600 hover:border-indigo-500'}`}
                                               >
                                                 {isCompleted && <Check className="w-4 h-4" />}
                                               </button>
@@ -17114,19 +16902,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                             <div className="flex justify-between items-center mb-6">
                               <h3 className="text-xl font-bold dark:text-white">Requisitos de la Clase</h3>
-                              {!isReadOnly && (
-                                <button
-                                  onClick={() => {
-                                    setEditingClassRequirement(null);
-                                    setReqFormData({ description: '', section: 'General', type: 'regular', isCampRequirement: false });
-                                    setShowRequirementModal(true);
-                                  }}
-                                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                  Agregar Requisito
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  setEditingClassRequirement(null);
+                                  setReqFormData({ description: '', section: 'General', type: 'regular', isCampRequirement: false });
+                                  setShowRequirementModal(true);
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Agregar Requisito
+                              </button>
                             </div>
 
                             {/* Requirement List Logic Here */}
@@ -17149,29 +16935,27 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       <p className="mt-1 font-medium text-gray-800 dark:text-white">{req.description}</p>
                                       <p className="text-sm text-gray-500">Sección: {req.section}</p>
                                     </div>
-                                    {!isReadOnly && (
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={() => {
-                                            setEditingClassRequirement(req);
-                                            setReqFormData(req);
-                                            setShowRequirementModal(true);
-                                          }}
-                                          className="text-indigo-600 hover:text-indigo-800 p-2"
-                                        >
-                                          <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            const newReqs = classRequirements.filter(r => r.id !== req.id);
-                                            setClassRequirements(newReqs);
-                                          }}
-                                          className="text-red-500 hover:text-red-700 p-2"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          setEditingClassRequirement(req);
+                                          setReqFormData(req);
+                                          setShowRequirementModal(true);
+                                        }}
+                                        className="text-indigo-600 hover:text-indigo-800 p-2"
+                                      >
+                                        <Edit2 className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const newReqs = classRequirements.filter(r => r.id !== req.id);
+                                          setClassRequirements(newReqs);
+                                        }}
+                                        className="text-red-500 hover:text-red-700 p-2"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
                                   </div>
                                 ))
                               )}
@@ -17184,19 +16968,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                             <div className="flex justify-between items-center mb-6">
                               <h3 className="text-xl font-bold dark:text-white">Evaluaciones Programadas</h3>
-                              {!isReadOnly && (
-                                <button
-                                  onClick={() => {
-                                    setEditingEvaluationGroup(null);
-                                    setEvalFormData({ name: '', scheduledDate: '' });
-                                    setShowEvaluationModal(true);
-                                  }}
-                                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                                >
-                                  <Calendar className="w-4 h-4" />
-                                  Programar Evaluación
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  setEditingEvaluationGroup(null);
+                                  setEvalFormData({ name: '', scheduledDate: '' });
+                                  setShowEvaluationModal(true);
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                              >
+                                <Calendar className="w-4 h-4" />
+                                Programar Evaluación
+                              </button>
                             </div>
 
                             <div className="space-y-4">
@@ -17214,28 +16996,26 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         <span>{new Date(group.scheduledDate).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                                       </div>
                                     </div>
-                                    {!isReadOnly && (
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={() => {
-                                            setEditingEvaluationGroup(group);
-                                            setEvalFormData(group);
-                                            setShowEvaluationModal(true);
-                                          }}
-                                          className="text-indigo-600 hover:text-indigo-800 p-2"
-                                        >
-                                          <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            setEvaluationGroups(prev => prev.filter(g => g.id !== group.id));
-                                          }}
-                                          className="text-red-500 hover:text-red-700 p-2"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => {
+                                          setEditingEvaluationGroup(group);
+                                          setEvalFormData(group);
+                                          setShowEvaluationModal(true);
+                                        }}
+                                        className="text-indigo-600 hover:text-indigo-800 p-2"
+                                      >
+                                        <Edit2 className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setEvaluationGroups(prev => prev.filter(g => g.id !== group.id));
+                                        }}
+                                        className="text-red-500 hover:text-red-700 p-2"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
                                   </div>
                                 ))
                               )}
@@ -17264,7 +17044,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     onChange={(e) => setEvalFormData({ ...evalFormData, name: e.target.value })}
                                     className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     placeholder="Ej. Examen de Nudos"
-                                    disabled={isReadOnly}
                                   />
                                 </div>
                                 <div>
@@ -17274,18 +17053,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     value={evalFormData.scheduledDate}
                                     onChange={(e) => setEvalFormData({ ...evalFormData, scheduledDate: e.target.value })}
                                     className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    disabled={isReadOnly}
                                   />
                                 </div>
 
-                                {!isReadOnly && (
-                                  <button
-                                    onClick={handleSaveEvaluationGroup}
-                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium mt-4"
-                                  >
-                                    {editingEvaluationGroup ? 'Guardar Cambios' : 'Programar Evaluación'}
-                                  </button>
-                                )}
+                                <button
+                                  onClick={handleSaveEvaluationGroup}
+                                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium mt-4"
+                                >
+                                  {editingEvaluationGroup ? 'Guardar Cambios' : 'Programar Evaluación'}
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -17312,20 +17088,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     rows="3"
                                     placeholder="Describa el requisito..."
-                                    disabled={isReadOnly}
                                   />
                                 </div>
                                 <div>
                                   <div className="flex justify-between items-center mb-1">
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Sección</label>
-                                    {!isReadOnly && (
-                                      <button
-                                        onClick={() => setShowSectionManager(!showSectionManager)}
-                                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-                                      >
-                                        {showSectionManager ? 'Listo' : 'Editar Secciones'}
-                                      </button>
-                                    )}
+                                    <button
+                                      onClick={() => setShowSectionManager(!showSectionManager)}
+                                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                                    >
+                                      {showSectionManager ? 'Listo' : 'Editar Secciones'}
+                                    </button>
                                   </div>
 
                                   {showSectionManager && (
@@ -17370,7 +17143,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     value={reqFormData.section}
                                     onChange={(e) => setReqFormData({ ...reqFormData, section: e.target.value })}
                                     className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    disabled={isReadOnly}
                                   >
                                     {requirementSections.map(sec => (
                                       <option key={sec} value={sec}>{sec}</option>
@@ -17405,15 +17177,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     );
                   })()}
-                </>);
-              })()}
-
+                </div>
+              )
+            }
             {/* Points System Module */}
             {
-               activeModule === 'points' && (() => {
-                 const accessLevel = getModuleAccessLevel('points');
-                 const isReadOnly = accessLevel === ACCESS_READ;
-                 return (<>
+              activeModule === 'points' && (
+                <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -18197,55 +17967,50 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         {/* FRIDAY Buttons (Society) */}
                                         {gradesTab === 'society' && (
                                           <>
-                                            {!isReadOnly && (
-                                              <button
-                                                onClick={() => {
-                                                  if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos del VIERNES para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
-                                                    setPoints(prev => prev.map(p => {
-                                                      if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
-                                                        const newSats = { ...p.saturdays };
-                                                        const sat = newSats[selectedSaturday];
-                                                        // Remove Friday fields
-                                                        const { worshipFriday, attendanceFriday, ...rest } = sat;
-                                                        newSats[selectedSaturday] = rest;
-                                                        return { ...p, saturdays: newSats };
-                                                      }
-                                                      return p;
-                                                    }));
-                                                  }
-                                                }}
-                                                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                                title="Eliminar datos del Viernes"
-                                              >
-                                                <Trash2 className="w-4 h-4" />
-                                              </button>
-                                            )}
+                                            <button
+                                              onClick={() => {
+                                                if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos del VIERNES para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
+                                                  setPoints(prev => prev.map(p => {
+                                                    if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
+                                                      const newSats = { ...p.saturdays };
+                                                      const sat = newSats[selectedSaturday];
+                                                      // Remove Friday fields
+                                                      const { worshipFriday, attendanceFriday, ...rest } = sat;
+                                                      newSats[selectedSaturday] = rest;
+                                                      return { ...p, saturdays: newSats };
+                                                    }
+                                                    return p;
+                                                  }));
+                                                }
+                                              }}
+                                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                              title="Eliminar datos del Viernes"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
 
                                             {lockedSaturdays.includes(selectedSaturday + '_FRI') ? (
                                               <button
                                                 onClick={() => {
-                                                  if (isReadOnly) return;
                                                   if (window.confirm(`¿Desbloquear puntaje del VIERNES?`)) {
                                                     setLockedSaturdays(prev => prev.filter(d => d !== selectedSaturday + '_FRI'));
                                                   }
                                                 }}
-                                                className={`px-3 py-2 bg-pink-100 text-pink-700 rounded-lg font-semibold text-sm flex items-center gap-1 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100 hover:text-red-600'} transition-colors`}
+                                                className="px-3 py-2 bg-pink-100 text-pink-700 rounded-lg font-semibold text-sm flex items-center gap-1 hover:bg-red-100 hover:text-red-600 transition-colors"
                                               >
                                                 <Unlock className="w-4 h-4" /> Viernes (Desbloquear)
                                               </button>
                                             ) : (
-                                              !isReadOnly && (
-                                                <button
-                                                  onClick={() => {
-                                                    if (window.confirm(`¿Bloquear puntaje del VIERNES?`)) {
-                                                      setLockedSaturdays(prev => [...prev, selectedSaturday + '_FRI']);
-                                                    }
-                                                  }}
-                                                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
-                                                >
-                                                  <Lock className="w-4 h-4" /> Bloquear Viernes
-                                                </button>
-                                              )
+                                              <button
+                                                onClick={() => {
+                                                  if (window.confirm(`¿Bloquear puntaje del VIERNES?`)) {
+                                                    setLockedSaturdays(prev => [...prev, selectedSaturday + '_FRI']);
+                                                  }
+                                                }}
+                                                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
+                                              >
+                                                <Lock className="w-4 h-4" /> Bloquear Viernes
+                                              </button>
                                             )}
                                           </>
                                         )}
@@ -18253,34 +18018,31 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         {/* MORNING Buttons (Sabbath School + Worship) */}
                                         {gradesTab === 'morning' && (
                                           <>
-                                            {!isReadOnly && (
-                                              <button
-                                                onClick={() => {
-                                                  if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos de la MAÑANA para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
-                                                    setPoints(prev => prev.map(p => {
-                                                      if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
-                                                        const newSats = { ...p.saturdays };
-                                                        const sat = newSats[selectedSaturday];
-                                                        // Remove Morning fields
-                                                        const { worshipSaturday, sabbathSchool, attendanceSatAM, ...rest } = sat;
-                                                        newSats[selectedSaturday] = rest;
-                                                        return { ...p, saturdays: newSats };
-                                                      }
-                                                      return p;
-                                                    }));
-                                                  }
-                                                }}
-                                                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                                title="Eliminar datos de la Mañana"
-                                              >
-                                                <Trash2 className="w-4 h-4" />
-                                              </button>
-                                            )}
+                                            <button
+                                              onClick={() => {
+                                                if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos de la MAÑANA para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
+                                                  setPoints(prev => prev.map(p => {
+                                                    if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
+                                                      const newSats = { ...p.saturdays };
+                                                      const sat = newSats[selectedSaturday];
+                                                      // Remove Morning fields
+                                                      const { worshipSaturday, sabbathSchool, attendanceSatAM, ...rest } = sat;
+                                                      newSats[selectedSaturday] = rest;
+                                                      return { ...p, saturdays: newSats };
+                                                    }
+                                                    return p;
+                                                  }));
+                                                }
+                                              }}
+                                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                              title="Eliminar datos de la Mañana"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
 
                                             {isLockedAM ? (
                                               <button
                                                 onClick={() => {
-                                                  if (isReadOnly) return;
                                                   if (window.confirm(`¿Desbloquear puntaje de la MAÑANA del Sábado ${selectedDate.getDate()}?`)) {
                                                     setLockedSaturdays(prev => {
                                                       let newLocks = prev.filter(d => d !== selectedSaturday + '_AM');
@@ -18294,23 +18056,21 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                     });
                                                   }
                                                 }}
-                                                className={`px-3 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold text-sm flex items-center gap-1 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100 hover:text-red-600'} transition-colors`}
+                                                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold text-sm flex items-center gap-1 hover:bg-red-100 hover:text-red-600 transition-colors"
                                               >
                                                 <Unlock className="w-4 h-4" /> Mañana (Desbloquear)
                                               </button>
                                             ) : (
-                                              !isReadOnly && (
-                                                <button
-                                                  onClick={() => {
-                                                    if (window.confirm(`¿Bloquear puntaje de la MAÑANA del Sábado ${selectedDate.getDate()}?`)) {
-                                                      setLockedSaturdays(prev => [...prev, selectedSaturday + '_AM']);
-                                                    }
-                                                  }}
-                                                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
-                                                >
-                                                  <Lock className="w-4 h-4" /> Bloquear AM
-                                                </button>
-                                              )
+                                              <button
+                                                onClick={() => {
+                                                  if (window.confirm(`¿Bloquear puntaje de la MAÑANA del Sábado ${selectedDate.getDate()}?`)) {
+                                                    setLockedSaturdays(prev => [...prev, selectedSaturday + '_AM']);
+                                                  }
+                                                }}
+                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
+                                              >
+                                                <Lock className="w-4 h-4" /> Bloquear AM
+                                              </button>
                                             )}
                                           </>
                                         )}
@@ -18318,34 +18078,31 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         {/* AFTERNOON Buttons (Club Meeting) */}
                                         {gradesTab === 'club' && (
                                           <>
-                                            {!isReadOnly && (
-                                              <button
-                                                onClick={() => {
-                                                  if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos de la TARDE para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
-                                                    setPoints(prev => prev.map(p => {
-                                                      if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
-                                                        const newSats = { ...p.saturdays };
-                                                        const sat = newSats[selectedSaturday];
-                                                        // Remove Afternoon fields
-                                                        const { punctuality, bible, uniform, discipline, homework, participation, additional, attendanceSatPM, attendance, ...rest } = sat;
-                                                        newSats[selectedSaturday] = rest;
-                                                        return { ...p, saturdays: newSats };
-                                                      }
-                                                      return p;
-                                                    }));
-                                                  }
-                                                }}
-                                                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                                                title="Eliminar datos de la Tarde"
-                                              >
-                                                <Trash2 className="w-4 h-4" />
-                                              </button>
-                                            )}
+                                            <button
+                                              onClick={() => {
+                                                if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos de la TARDE para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
+                                                  setPoints(prev => prev.map(p => {
+                                                    if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
+                                                      const newSats = { ...p.saturdays };
+                                                      const sat = newSats[selectedSaturday];
+                                                      // Remove Afternoon fields
+                                                      const { punctuality, bible, uniform, discipline, homework, participation, additional, attendanceSatPM, attendance, ...rest } = sat;
+                                                      newSats[selectedSaturday] = rest;
+                                                      return { ...p, saturdays: newSats };
+                                                    }
+                                                    return p;
+                                                  }));
+                                                }
+                                              }}
+                                              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                              title="Eliminar datos de la Tarde"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
 
                                             {isLockedPM ? (
                                               <button
                                                 onClick={() => {
-                                                  if (isReadOnly) return;
                                                   if (window.confirm(`¿Desbloquear puntaje de la TARDE del Sábado ${selectedDate.getDate()}?`)) {
                                                     setLockedSaturdays(prev => {
                                                       let newLocks = prev.filter(d => d !== selectedSaturday + '_PM');
@@ -18359,24 +18116,22 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                     });
                                                   }
                                                 }}
-                                                className={`px-3 py-2 bg-purple-100 text-purple-700 rounded-lg font-semibold text-sm flex items-center gap-1 ${isReadOnly ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100 hover:text-red-600'} transition-colors`}
+                                                className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg font-semibold text-sm flex items-center gap-1 hover:bg-red-100 hover:text-red-600 transition-colors"
                                               >
                                                 <Unlock className="w-4 h-4" /> Tarde (Desbloquear)
                                               </button>
                                             ) : (
-                                              !isReadOnly && (
-                                                <button
-                                                  onClick={() => {
-                                                    if (window.confirm(`¿Bloquear puntaje de la TARDE del Sábado ${selectedDate.getDate()}?`)) {
-                                                      setLockedSaturdays(prev => [...prev, selectedSaturday + '_PM']);
-                                                      if (isLockedAM) setSelectedSaturday(''); // Only clear if fully locked (legacy behavior check, probably safe to remove but keeping for logic safety)
-                                                    }
-                                                  }}
-                                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
-                                                >
-                                                  <Lock className="w-4 h-4" /> Bloquear PM
-                                                </button>
-                                              )
+                                              <button
+                                                onClick={() => {
+                                                  if (window.confirm(`¿Bloquear puntaje de la TARDE del Sábado ${selectedDate.getDate()}?`)) {
+                                                    setLockedSaturdays(prev => [...prev, selectedSaturday + '_PM']);
+                                                    if (isLockedAM) setSelectedSaturday(''); // Only clear if fully locked (legacy behavior check, probably safe to remove but keeping for logic safety)
+                                                  }
+                                                }}
+                                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-sm transition-colors flex items-center gap-1"
+                                              >
+                                                <Lock className="w-4 h-4" /> Bloquear PM
+                                              </button>
                                             )}
                                           </>
                                         )}
@@ -18574,7 +18329,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                               return (
                                                                 <button
                                                                   key={status}
-                                                                  disabled={isAttendanceLocked || isReadOnly}
+                                                                  disabled={isAttendanceLocked}
                                                                   onClick={() => {
                                                                     setPoints(prev => {
                                                                       const targetField = attendanceTypeMarking === 'friday' ? 'attendanceFriday' :
@@ -18650,7 +18405,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                     maxLength={1}
                                                                     placeholder="0"
                                                                     max={maxPoints}
-                                                                    disabled={lock || isReadOnly}
                                                                     value={satPoints[category] || ''}
                                                                     onChange={(e) => {
                                                                       const val = e.target.value;
@@ -18714,7 +18468,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                 type="text"
                                                                 maxLength={2}
                                                                 placeholder="0"
-                                                                disabled={isReadOnly}
                                                                 value={satPoints.worshipFriday || ''}
                                                                 onChange={(e) => {
                                                                   const val = e.target.value === '' ? '' : Math.min(10, parseInt(e.target.value) || 0);
@@ -18757,7 +18510,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                     type="text"
                                                                     maxLength={2}
                                                                     placeholder="0"
-                                                                    disabled={lock || isReadOnly}
                                                                     value={satPoints[category] || ''}
                                                                     onChange={(e) => {
                                                                       const val = e.target.value === '' ? '' : Math.min(maxPoints, parseInt(e.target.value) || 0);
@@ -18797,7 +18549,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                             <input
                                                               type="number"
                                                               min="0"
-                                                              disabled={isReadOnly}
                                                               value={satPoints.additional || ''}
                                                               placeholder="0"
                                                               onChange={(e) => {
@@ -18880,16 +18631,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         )}
                       </>
                     );
-                   })()}
-                 </>);
-               })()
-             }
+                  })()}
+                </div>
+              )
+            }
             {/* Finanzas Module */}
             {
-              activeModule === 'finances' && !showFinanceForm && (() => {
-                const accessLevel = getModuleAccessLevel('finances');
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
+              activeModule === 'finances' && !showFinanceForm && (
                 <>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     <div className="flex items-center justify-between mb-6">
@@ -19206,16 +18954,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
                         <div className="flex gap-4 flex-wrap">
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => setShowFinanceForm(true)}
-                              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
-                              title="Agregar Transacción"
-                            >
-                              <Plus className="w-5 h-5" />
-                              Agregar Transacción
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setShowFinanceForm(true)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                          >
+                            <Plus className="w-5 h-5" />
+                            Agregar Transacción
+                          </button>
 
                           <button
                             onClick={() => setShowMonthlyReport(!showMonthlyReport)}
@@ -19231,157 +18976,155 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <BarChart3 className="w-5 h-5" />
                             {showCategoryReport ? 'Ocultar' : 'Ver'} Reporte de Categoría
                           </button>
-                          {!isReadOnly && (
-                             <button
-                               onClick={() => setShowCategoryManager(!showCategoryManager)}
-                               className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                             >
-                               <Settings className="w-5 h-5" />
-                               {showCategoryManager ? 'Ocultar' : 'Gestionar'} Categorías
-                             </button>
-                           )}
-                          {!isReadOnly && (
-                             <button
-                               onClick={handleClearAllTransactions}
-                               className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 ml-auto"
-                               title="Borrar todo el historial"
-                             >
-                               <Trash2 className="w-5 h-5" />
-                               Eliminar Todo
-                             </button>
-                           )}
+                          <button
+                            onClick={() => setShowCategoryManager(!showCategoryManager)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                          >
+                            <Settings className="w-5 h-5" />
+                            {showCategoryManager ? 'Ocultar' : 'Gestionar'} Categorías
+                          </button>
+                          <button
+                            onClick={handleClearAllTransactions}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 ml-auto"
+                            title="Borrar todo el historial"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                            Eliminar Todo
+                          </button>
 
                           {/* Publish to Web Button */}
-                          {!isReadOnly && (
-                             <button
-                               onClick={async () => {
-                                 try {
-                                   const btn = document.getElementById('publish-finance-btn');
-                                   if (btn) { btn.textContent = 'Publicando...'; btn.disabled = true; }
+                          <button
+                            onClick={async () => {
+                              try {
+                                const btn = document.getElementById('publish-finance-btn');
+                                if (btn) { btn.textContent = 'Publicando...'; btn.disabled = true; }
 
-                                   let updatedTransactions = [...transactions];
-                                   let receiptsUploaded = false;
+                                let updatedTransactions = [...transactions];
+                                let receiptsUploaded = false;
 
-                                   for (let i = 0; i < updatedTransactions.length; i++) {
-                                     let t = updatedTransactions[i];
-                                     if (t.receipt && t.receipt.startsWith('data:')) {
-                                       if (btn) btn.textContent = `Subiendo de Facturas...`;
-                                       const base64Data = t.receipt.split(',')[1];
-                                       const mimeMatch = t.receipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,/);
-                                       const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-                                       const extension = contentType.split('/')[1] || 'jpeg';
-                                       const fileName = `receipts/${t.id}_${Date.now()}.${extension}`;
-                                       const storageRef = ref(storage, fileName);
+                                for (let i = 0; i < updatedTransactions.length; i++) {
+                                  let t = updatedTransactions[i];
+                                  if (t.receipt && t.receipt.startsWith('data:')) {
+                                    if (btn) btn.textContent = `Subiendo de Facturas...`;
+                                    const base64Data = t.receipt.split(',')[1];
+                                    const mimeMatch = t.receipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,/);
+                                    const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                                    const extension = contentType.split('/')[1] || 'jpeg';
+                                    const fileName = `receipts/${t.id}_${Date.now()}.${extension}`;
+                                    const storageRef = ref(storage, fileName);
 
-                                       try {
-                                         await uploadString(storageRef, base64Data, 'base64', { contentType });
-                                         const url = await getDownloadURL(storageRef);
-                                         updatedTransactions[i] = { ...t, receipt: url };
-                                         receiptsUploaded = true;
-                                       } catch (e) {
-                                         console.error("Error subiendo factura al server", e);
-                                       }
-                                     }
-                                   }
+                                    try {
+                                      await uploadString(storageRef, base64Data, 'base64', { contentType });
+                                      const url = await getDownloadURL(storageRef);
+                                      updatedTransactions[i] = { ...t, receipt: url };
+                                      receiptsUploaded = true;
+                                    } catch (e) {
+                                      console.error("Error subiendo factura al server", e);
+                                    }
+                                  }
+                                }
 
-                                   if (receiptsUploaded) setTransactions(updatedTransactions);
-                                   if (btn) btn.textContent = 'Publicando...';
+                                if (receiptsUploaded) setTransactions(updatedTransactions);
+                                if (btn) btn.textContent = 'Publicando...';
 
-                                   // Keep public URLs to be sent to Firestore.
-                                   const lightTransactions = updatedTransactions.map(t => {
-                                     const { receipt, ...rest } = t;
-                                     if (receipt && receipt.startsWith('http')) return { ...rest, receipt };
-                                     return rest;
-                                   });
+                                // Keep public URLs to be sent to Firestore.
+                                const lightTransactions = updatedTransactions.map(t => {
+                                  const { receipt, ...rest } = t;
+                                  if (receipt && receipt.startsWith('http')) return { ...rest, receipt };
+                                  return rest;
+                                });
 
-                                   // Only save id + name for members (no photos or sensitive data)
-                                   const membersSummary = members.map(m => ({
-                                     id: m.id,
-                                     firstName: m.firstName || '',
-                                     lastName: m.lastName || ''
-                                   }));
+                                // Only save id + name for members (no photos or sensitive data)
+                                const membersSummary = members.map(m => ({
+                                  id: m.id,
+                                  firstName: m.firstName || '',
+                                  lastName: m.lastName || ''
+                                }));
+                                await saveCollectionToFirestore('transactions', lightTransactions);
+                                await saveCollectionToFirestore('financeCategories', financeCategories);
+                                await saveCollectionToFirestore('clubSettings', { name: clubSettings?.name || 'Mi Club' });
+                                await saveCollectionToFirestore('membersSummary', membersSummary);
+                                await saveCollectionToFirestore('fixedPaymentConcepts', fixedPaymentConcepts);
+                                await saveCollectionToFirestore('fixedPayments', fixedPayments);
+                                alert('✅ ¡Datos publicados en la web exitosamente!\n\n🌐 URL: https://unityclubmanager.web.app');
+                              } catch (err) {
+                                alert('❌ Error al publicar: ' + err.message);
+                              } finally {
+                                const btn = document.getElementById('publish-finance-btn');
+                                if (btn) { btn.textContent = 'Publicar en la Web'; btn.disabled = false; }
+                              }
+                            }}
+                            id="publish-finance-btn"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                            title="Publicar datos de finanzas en la página web pública"
+                          >
+                            <Globe className="w-5 h-5" />
+                            Publicar en la Web
+                          </button>
 
-                                   await saveCollectionToFirestore('transactions', lightTransactions);
-                                   await saveCollectionToFirestore('financeCategories', financeCategories);
-                                   await saveCollectionToFirestore('clubSettings', { name: clubSettings?.name || 'Mi Club' });
-                                   await saveCollectionToFirestore('membersSummary', membersSummary);
-                                   await saveCollectionToFirestore('fixedPaymentConcepts', fixedPaymentConcepts);
-                                   await saveCollectionToFirestore('fixedPayments', fixedPayments);
-                                   if (btn) btn.textContent = 'Sincronizado con Éxito';
-                                   setTimeout(() => { if (btn) { btn.textContent = 'Publicar a la Web'; btn.disabled = false; } }, 3000);
-                                 } catch (err) {
-                                   console.error("Error publicando finanzas", err);
-                                   const btn = document.getElementById('publish-finance-btn');
-                                   if (btn) { btn.textContent = 'Error al Publicar'; btn.disabled = false; }
-                                 }
-                               }}
-                               className="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                               id="publish-finance-btn"
-                             >
-                               <Cloud className="w-5 h-5" />
-                               Publicar a la Web
-                             </button>
-                           )}
+                          {/* Sync from Web Button */}
+                          <button
+                            onClick={async () => {
+                              try {
+                                const btn = document.getElementById('sync-finance-btn');
+                                if (btn) { btn.textContent = 'Sincronizando...'; btn.disabled = true; }
 
-                           {/* Sync from Web Button */}
-                           {!isReadOnly && (
-                             <button
-                               id="sync-finance-btn"
-                               onClick={async () => {
-                                 try {
-                                   const btn = document.getElementById('sync-finance-btn');
-                                   if (btn) { btn.textContent = 'Sincronizando...'; btn.disabled = true; }
+                                const remoteTransactions = await loadCollectionFromFirestore('transactions');
 
-                                   const remoteTransactions = await loadCollectionFromFirestore('transactions');
+                                if (remoteTransactions && Array.isArray(remoteTransactions)) {
+                                  let newCount = 0;
+                                  setTransactions(prev => {
+                                    const currentIds = new Set(prev.map(t => t.id));
+                                    const remoteIds = new Set(remoteTransactions.map(t => t.id));
 
-                                   if (remoteTransactions && Array.isArray(remoteTransactions)) {
-                                     let newCount = 0;
-                                     setTransactions(prev => {
-                                       const currentIds = new Set(prev.map(t => t.id));
-                                       const remoteIds = new Set(remoteTransactions.map(t => t.id));
+                                    // 1. Identify brand new transactions from the web
+                                    const newTxs = remoteTransactions.filter(t => !currentIds.has(t.id));
+                                    newCount = newTxs.length;
 
-                                       // 1. Identify brand new transactions from the web
-                                       const newTxs = remoteTransactions.filter(t => !currentIds.has(t.id));
-                                       newCount = newTxs.length;
+                                    // 2. Remove local transactions that originated from 'web' but were DELETED on the web
+                                    // Keep transactions that either didn't originate from 'web', OR are still present in remote 
+                                    const keptLocalTxs = prev.filter(t => t.source !== 'web' || remoteIds.has(t.id));
+                                    const deletedCount = prev.length - keptLocalTxs.length;
 
-                                       // 2. Remove local transactions that originated from 'web' but were DELETED on the web
-                                       const keptLocalTxs = prev.filter(t => t.source !== 'web' || remoteIds.has(t.id));
-                                       const deletedCount = prev.length - keptLocalTxs.length;
+                                    if (newCount > 0 || deletedCount > 0) {
+                                      const merged = [...newTxs, ...keptLocalTxs];
+                                      localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(merged));
 
-                                       if (newCount > 0 || deletedCount > 0) {
-                                         const merged = [...newTxs, ...keptLocalTxs];
-                                         localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(merged));
-                                         window.syncResultMsg = `✅ Sincronización exitosa.\n`;
-                                         if (newCount > 0) window.syncResultMsg += `\n📥 Se descargaron ${newCount} transacciones nuevas.`;
-                                         if (deletedCount > 0) window.syncResultMsg += `\n🗑️ Se eliminaron ${deletedCount} transacciones que fueron borradas en la web.`;
-                                         return merged;
-                                       }
-                                       window.syncResultMsg = '✅ La base de datos local ya está actualizada. No hay cambios nuevos en la web.';
-                                       return prev;
-                                     });
-                                     if (window.syncResultMsg) {
-                                       alert(window.syncResultMsg);
-                                       delete window.syncResultMsg;
-                                     }
-                                   } else {
-                                     alert('ℹ️ No se encontraron transacciones en la web para sincronizar.');
-                                   }
-                                 } catch (err) {
-                                   alert('❌ Error al sincronizar desde la web: ' + err.message);
-                                 } finally {
-                                   const btn = document.getElementById('sync-finance-btn');
-                                   if (btn) { btn.textContent = 'Sincronizar desde Web'; btn.disabled = false; }
-                                 }
-                               }}
-                               className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                               title="Descargar nuevas transacciones ingresadas mediante la página web pública"
-                             >
-                               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                               </svg>
-                               Sincronizar desde Web
-                             </button>
-                           )}
+                                      // Pre-build alert message to show at the end
+                                      window.syncResultMsg = `✅ Sincronización exitosa.\n`;
+                                      if (newCount > 0) window.syncResultMsg += `\n📥 Se descargaron ${newCount} transacciones nuevas.`;
+                                      if (deletedCount > 0) window.syncResultMsg += `\n🗑️ Se eliminaron ${deletedCount} transacciones que fueron borradas en la web.`;
+
+                                      return merged;
+                                    }
+
+                                    window.syncResultMsg = '✅ La base de datos local ya está actualizada. No hay cambios nuevos en la web.';
+                                    return prev;
+                                  });
+
+                                  if (window.syncResultMsg) {
+                                    alert(window.syncResultMsg);
+                                    delete window.syncResultMsg;
+                                  }
+                                } else {
+                                  alert('ℹ️ No se encontraron transacciones en la web para sincronizar.');
+                                }
+                              } catch (err) {
+                                alert('❌ Error al sincronizar desde la web: ' + err.message);
+                              } finally {
+                                const btn = document.getElementById('sync-finance-btn');
+                                if (btn) { btn.textContent = 'Sincronizar desde Web'; btn.disabled = false; }
+                              }
+                            }}
+                            id="sync-finance-btn"
+                            className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                            title="Descargar nuevas transacciones ingresadas mediante la página web pública"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Sincronizar desde Web
+                          </button>
                         </div>
                       </div>
 
@@ -19392,9 +19135,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             Gestor de Categorías
                           </h3>
                           <form onSubmit={(e) => {
-                            if (isReadOnly) return;
                             e.preventDefault();
                             const fd = new FormData(e.target);
+                            // const isFixed = fd.get('isFixedPrice') === 'on'; // Removed as requested
                             const newCat = {
                               id: Date.now().toString(),
                               name: fd.get('name'),
@@ -19406,29 +19149,28 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           }} className="flex flex-wrap gap-4 mb-6 items-end bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                             <div className="flex-1 min-w-[200px]">
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre de Categoría</label>
-                              <input name="name" required disabled={isReadOnly} className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" placeholder="Ej: Ventas, Transporte..." />
+                              <input name="name" required className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white" placeholder="Ej: Ventas, Transporte..." />
                             </div>
                             <div className="w-40">
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
-                              <select name="type" disabled={isReadOnly} className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                              <select name="type" className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                                 <option value="income">Ingreso</option>
                                 <option value="expense">Gasto</option>
                               </select>
                             </div>
                             <div className="w-48">
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vincular a Campamento/Actividad</label>
-                              <select name="linkedActivityId" disabled={isReadOnly} className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                              <select name="linkedActivityId" className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
                                 <option value="">-- Ninguno --</option>
                                 {activities.map(act => (
                                   <option key={act.id} value={act.id}>{act.title}</option>
                                 ))}
                               </select>
                             </div>
-                            {!isReadOnly && (
-                              <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center gap-2">
-                                <Plus className="w-5 h-5" /> Agregar
-                              </button>
-                            )}
+                            {/* Fixed Price removed by request */}
+                            <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center gap-2">
+                              <Plus className="w-5 h-5" /> Agregar
+                            </button>
                           </form>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -19565,14 +19307,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <div className="flex items-center gap-1 text-orange-600 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/40 px-2 py-1 rounded-full text-xs w-fit">
                                             <AlertTriangle className="w-3 h-3" /> Pendiente
                                           </div>
-                                          {!isReadOnly && (
-                                            <button
-                                              onClick={() => setResolvingTransaction(transaction)}
-                                              className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium underline mt-1"
-                                            >
-                                              Resolver Deuda
-                                            </button>
-                                          )}
+                                          <button
+                                            onClick={() => setResolvingTransaction(transaction)}
+                                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium underline mt-1"
+                                          >
+                                            Resolver Deuda
+                                          </button>
                                         </div>
                                       ) : transaction.status === 'repaid' ? (
                                         <div className="flex items-center gap-1 text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2 py-1 rounded-full text-xs w-fit">
@@ -19633,19 +19373,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                      {!isReadOnly && (
-                                        <button
-                                          onClick={() => {
-                                            if (window.confirm('¿Estás seguro de que deseas eliminar esta transacción? Esta acción no se puede deshacer.')) {
-                                              setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-                                            }
-                                          }}
-                                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                                          title="Eliminar transacción"
-                                        >
-                                          <Trash2 className="w-5 h-5" />
-                                        </button>
-                                      )}
+                                      <button
+                                        onClick={() => {
+                                          if (window.confirm('¿Estás seguro de que deseas eliminar esta transacción? Esta acción no se puede deshacer.')) {
+                                            setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+                                          }
+                                        }}
+                                        className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                                        title="Eliminar transacción"
+                                      >
+                                        <Trash2 className="w-5 h-5" />
+                                      </button>
                                     </td>
                                   </tr>
                                 ))}
@@ -19668,22 +19406,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <h3 className="text-xl font-bold text-gray-800 dark:text-white">Control de Pagos Fijos</h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">Marcar pagos completados por miembro</p>
                         </div>
-                        {!isReadOnly && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setNewConceptName('');
-                              setNewConceptAmount('');
-                              setShowNewConceptModal(true);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm cursor-pointer"
-                          >
-                            <Plus className="w-4 h-4" />
-                            Nuevo Concepto
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setNewConceptName('');
+                            setNewConceptAmount('');
+                            setShowNewConceptModal(true);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Nuevo Concepto
+                        </button>
                       </div>
 
                       {fixedPaymentConcepts.length === 0 ? (
@@ -19703,36 +19439,34 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     <div className="flex flex-col items-center">
                                       <span className="font-bold text-gray-800 dark:text-gray-200">{c.name}</span>
                                       {c.amount > 0 && <span className="text-xs text-green-600 dark:text-green-400">{formatCurrency(c.amount)}</span>}
-                                      {!isReadOnly && (
-                                        <div className="absolute top-1 right-1 flex gap-1 transform translate-x-1 -translate-y-1">
-                                          <button
-                                            onClick={() => {
-                                              setEditingConcept(c);
-                                              setNewConceptName(c.name);
-                                              setNewConceptAmount(c.amount > 0 ? c.amount : '');
-                                              setShowNewConceptModal(true);
-                                            }}
-                                            className="text-blue-600 hover:text-blue-700 bg-white dark:bg-gray-800 p-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all z-20"
-                                            title="Editar concepto"
-                                          >
-                                            <Edit className="w-3.5 h-3.5" />
-                                          </button>
-                                          <button
-                                            onClick={() => {
-                                              if (confirm(`¿Estás seguro de eliminar el concepto "${c.name}"? Se perderán las marcas de todos los miembros.`)) {
-                                                setFixedPaymentConcepts(prev => prev.filter(x => x.id !== c.id));
-                                                const newPayments = { ...fixedPayments };
-                                                delete newPayments[c.id];
-                                                setFixedPayments(newPayments);
-                                              }
-                                            }}
-                                            className="text-red-500 hover:text-red-600 bg-white dark:bg-gray-800 p-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all z-20"
-                                            title="Eliminar columna"
-                                          >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                          </button>
-                                        </div>
-                                      )}
+                                      <div className="absolute top-1 right-1 flex gap-1 transform translate-x-1 -translate-y-1">
+                                        <button
+                                          onClick={() => {
+                                            setEditingConcept(c);
+                                            setNewConceptName(c.name);
+                                            setNewConceptAmount(c.amount > 0 ? c.amount : '');
+                                            setShowNewConceptModal(true);
+                                          }}
+                                          className="text-blue-600 hover:text-blue-700 bg-white dark:bg-gray-800 p-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all z-20"
+                                          title="Editar concepto"
+                                        >
+                                          <Edit className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            if (confirm(`¿Estás seguro de eliminar el concepto "${c.name}"? Se perderán las marcas de todos los miembros.`)) {
+                                              setFixedPaymentConcepts(prev => prev.filter(x => x.id !== c.id));
+                                              const newPayments = { ...fixedPayments };
+                                              delete newPayments[c.id];
+                                              setFixedPayments(newPayments);
+                                            }
+                                          }}
+                                          className="text-red-500 hover:text-red-600 bg-white dark:bg-gray-800 p-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all z-20"
+                                          title="Eliminar columna"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
                                     </div>
                                   </th>
                                 ))}
@@ -19769,7 +19503,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                               <input
                                                 type="checkbox"
                                                 checked={!!fixedPayments[c.id]?.[member.id]}
-                                                disabled={isReadOnly}
                                                 onChange={(e) => {
                                                   const checked = e.target.checked;
                                                   const txId = `fixed-${c.id}-${member.id}`;
@@ -19834,15 +19567,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                               }
                                                             }
 
+                                                            // SYNC FIX: Update campDetails if this is the active camp
                                                             setCampDetails(prevDetails => {
                                                               if (prevDetails[act.id]) {
                                                                 const prevCampAttendees = prevDetails[act.id].attendees || [];
+                                                                // Ensure we don't add duplicates
                                                                 if (!prevCampAttendees.includes(member.id)) {
                                                                   return {
                                                                     ...prevDetails,
                                                                     [act.id]: {
                                                                       ...prevDetails[act.id],
-                                                                      attendees: [...prevCampAttendees, member.id]
+                                                                      attendees: [...prevCampAttendees, member.id] // Always use IDs for local campDetails state
                                                                     }
                                                                   };
                                                                 }
@@ -19858,7 +19593,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                     }
                                                   } else {
                                                     // Remove Transaction
-                                                    handleDeleteTransaction({ id: txId });
+                                                    setTransactions(prev => prev.filter(t => t.id !== txId));
                                                   }
 
                                                   setFixedPayments(prev => ({
@@ -19877,9 +19612,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 min="0"
                                                 step="0.01"
                                                 placeholder="0.00"
-                                                disabled={isReadOnly}
                                                 value={(() => {
                                                   const val = fixedPayments[c.id]?.[member.id];
+                                                  // Handle legacy or specific structure
                                                   if (typeof val === 'object' && val.amount !== undefined) return val.amount;
                                                   return '';
                                                 })()}
@@ -19889,15 +19624,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                   const txId = `fixed-${c.id}-${member.id}`;
 
                                                   if (val === '') {
-                                                    handleDeleteTransaction({ id: txId });
+                                                    // Remove Transaction
+                                                    setTransactions(prev => prev.filter(t => t.id !== txId));
                                                   } else {
                                                     setTransactions(prev => {
                                                       const index = prev.findIndex(t => t.id === txId);
                                                       if (index >= 0) {
+                                                        // Update
                                                         const updated = [...prev];
                                                         updated[index] = { ...updated[index], amount: isNaN(amount) ? 0 : amount };
                                                         return updated;
                                                       } else {
+                                                        // Create
                                                         return [...prev, {
                                                           id: txId,
                                                           type: 'income',
@@ -20139,11 +19877,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       amount: resolvingTransaction.amount,
                                       date: getLocalISODate(),
                                       description: `Reembolso de gasto: ${resolvingTransaction.description || resolvingTransaction.category} `,
-                                      paymentMethod: 'Efectivo',
+                                      paymentMethod: 'Efectivo', // Default
                                       status: 'official'
                                     };
 
                                     setTransactions(prev => {
+                                      // Update original to 'repaid' and add reimbursement
                                       return [
                                         ...prev.map(t => t.id === resolvingTransaction.id ? { ...t, status: 'repaid' } : t),
                                         reimbursement
@@ -20164,245 +19903,226 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     )
                   }
                 </>
-            })()}
-            })()}
+              )
+            }
 
             {/* Finance Form */}
             {
-              activeModule === 'finances' && showFinanceForm && (() => {
-                const accessLevel = getModuleAccessLevel('finances');
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Agregar Transacción</h3>
-                      <button onClick={() => { setShowFinanceForm(false); resetFinanceForm(); }} className="text-gray-500 hover:text-gray-700">
-                        <X className="w-6 h-6" />
-                      </button>
-                    </div>
+              activeModule === 'finances' && showFinanceForm && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white">Agregar Transacción</h3>
+                    <button onClick={() => { setShowFinanceForm(false); resetFinanceForm(); }} className="text-gray-500 hover:text-gray-700">
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Tipo <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="type"
-                          value={financeFormData.type}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                          <option value="income">Ingreso</option>
-                          <option value="expense">Gasto</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Categoría <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="category"
-                          value={financeFormData.category}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          className={`w-full px-4 py-2 border rounded-lg ${financeErrors.category ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                        >
-                          <option value="">Seleccionar Categoría...</option>
-                          {financeCategories
-                            .filter(c => c.type === financeFormData.type)
-                            .map(cat => (
-                              <option key={cat.id} value={cat.name}>{cat.name}</option>
-                            ))
-                          }
-                        </select>
-                        {financeErrors.category && <p className="text-red-500 text-sm mt-1">{financeErrors.category}</p>}
-                      </div>
-
-                      {financeFormData.type === 'expense' && (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Responsable (Directiva) <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                              name="responsibleId"
-                              value={financeFormData.responsibleId}
-                              onChange={handleFinanceInputChange}
-                              disabled={isReadOnly}
-                              className={`w-full px-4 py-2 border rounded-lg ${financeErrors.responsibleId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                            >
-                              <option value="">Seleccionar Responsable...</option>
-                              {members.filter(m => {
-                                // Check legacy position
-                                if (m.position && m.position.trim() !== '') return true;
-
-                                // Check new directiveRoles structure
-                                if (m.directiveRoles) {
-                                  return (
-                                    (m.directiveRoles.aventureros && m.directiveRoles.aventureros.length > 0) ||
-                                    (m.directiveRoles.conquistadores && m.directiveRoles.conquistadores.length > 0) ||
-                                    (m.directiveRoles.guiasMayores && m.directiveRoles.guiasMayores.length > 0)
-                                  );
-                                }
-
-                                return false;
-                              }).map(m => {
-                                // Determine display role
-                                let roleName = m.position ? translatePosition(m.position, m.gender) : '';
-
-                                if (!roleName && m.directiveRoles) {
-                                  const allRoles = [
-                                    ...(m.directiveRoles.aventureros || []),
-                                    ...(m.directiveRoles.conquistadores || []),
-                                    ...(m.directiveRoles.guiasMayores || [])
-                                  ];
-                                  if (allRoles.length > 0) {
-                                    roleName = translatePosition(allRoles[0].position, m.gender);
-                                    if (allRoles.length > 1) roleName += ' (Multiple)';
-                                  }
-                                }
-
-                                return (
-                                  <option key={m.id} value={m.id}>{m.firstName} {m.lastName}-{roleName || 'Directiva'}</option>
-                                );
-                              })}
-                            </select>
-                            {financeErrors.responsibleId && <p className="text-red-500 text-sm mt-1">{financeErrors.responsibleId}</p>}
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              Factura / Comprobante
-                            </label>
-                            <input
-                              type="file"
-                              accept="image/*,application/pdf"
-                              onChange={handleFinanceFileChange}
-                              disabled={isReadOnly}
-                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            />
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Obligatorio para oficializar. Si no se adjunta, quedará como pendiente (Deuda).</p>
-                          </div>
-                        </>
-                      )}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Monto <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          name="amount"
-                          value={financeFormData.amount}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          className={`w-full px-4 py-2 border rounded-lg ${financeErrors.amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                        />
-                        {financeErrors.amount && <p className="text-red-500 text-sm mt-1">{financeErrors.amount}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Fecha <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="date"
-                          name="date"
-                          value={financeFormData.date}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          className={`w-full px-4 py-2 border rounded-lg ${financeErrors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                        />
-                        {financeErrors.date && <p className="text-red-500 text-sm mt-1">{financeErrors.date}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Método de Pago <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="paymentMethod"
-                          value={financeFormData.paymentMethod}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          className={`w-full px-4 py-2 border rounded-lg ${financeErrors.paymentMethod ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
-                        >
-                          <option value="">Seleccionar</option>
-                          <option value="Cash">Efectivo</option>
-                          <option value="Bank Transfer">Transferencia Bancaria</option>
-                          <option value="Credit Card">Tarjeta de Crédito</option>
-                          <option value="Mobile Payment">Pago Móvil</option>
-                        </select>
-                        {financeErrors.paymentMethod && <p className="text-red-500 text-sm mt-1">{financeErrors.paymentMethod}</p>}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Miembro (Opcional)</label>
-                        <select
-                          name="memberId"
-                          value={financeFormData.memberId}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        >
-                          <option value="">Seleccionar (Opcional)</option>
-                          {members.map(m => (
-                            <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
-                        <textarea
-                          name="description"
-                          value={financeFormData.description}
-                          onChange={handleFinanceInputChange}
-                          disabled={isReadOnly}
-                          rows="3"
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4 mt-8">
-                      {!isReadOnly && (
-                        <button
-                          onClick={handleFinanceSubmit}
-                          disabled={isVerifyingReceipt}
-                          className={`flex-1 ${isVerifyingReceipt ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2`}
-                        >
-                          <Save className="w-5 h-5" />
-                          {isVerifyingReceipt ? 'Analizando con IA...' : 'Guardar Transacción'}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { setShowFinanceForm(false); resetFinanceForm(); }}
-                        className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Tipo <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="type"
+                        value={financeFormData.type}
+                        onChange={handleFinanceInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
-                        {isReadOnly ? 'Cerrar' : 'Cancelar'}
-                      </button>
+                        <option value="income">Ingreso</option>
+                        <option value="expense">Gasto</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Categoría <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="category"
+                        value={financeFormData.category}
+                        onChange={handleFinanceInputChange}
+                        className={`w-full px-4 py-2 border rounded-lg ${financeErrors.category ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                      >
+                        <option value="">Seleccionar Categoría...</option>
+                        {financeCategories
+                          .filter(c => c.type === financeFormData.type)
+                          .map(cat => (
+                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                          ))
+                        }
+                      </select>
+                      {financeErrors.category && <p className="text-red-500 text-sm mt-1">{financeErrors.category}</p>}
+                    </div>
+
+                    {financeFormData.type === 'expense' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Responsable (Directiva) <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="responsibleId"
+                            value={financeFormData.responsibleId}
+                            onChange={handleFinanceInputChange}
+                            className={`w-full px-4 py-2 border rounded-lg ${financeErrors.responsibleId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                          >
+                            <option value="">Seleccionar Responsable...</option>
+                            {members.filter(m => {
+                              // Check legacy position
+                              if (m.position && m.position.trim() !== '') return true;
+
+                              // Check new directiveRoles structure
+                              if (m.directiveRoles) {
+                                return (
+                                  (m.directiveRoles.aventureros && m.directiveRoles.aventureros.length > 0) ||
+                                  (m.directiveRoles.conquistadores && m.directiveRoles.conquistadores.length > 0) ||
+                                  (m.directiveRoles.guiasMayores && m.directiveRoles.guiasMayores.length > 0)
+                                );
+                              }
+
+                              return false;
+                            }).map(m => {
+                              // Determine display role
+                              let roleName = m.position ? translatePosition(m.position, m.gender) : '';
+
+                              if (!roleName && m.directiveRoles) {
+                                const allRoles = [
+                                  ...(m.directiveRoles.aventureros || []),
+                                  ...(m.directiveRoles.conquistadores || []),
+                                  ...(m.directiveRoles.guiasMayores || [])
+                                ];
+                                if (allRoles.length > 0) {
+                                  roleName = translatePosition(allRoles[0].position, m.gender);
+                                  if (allRoles.length > 1) roleName += ' (Multiple)';
+                                }
+                              }
+
+                              return (
+                                <option key={m.id} value={m.id}>{m.firstName} {m.lastName}-{roleName || 'Directiva'}</option>
+                              );
+                            })}
+                          </select>
+                          {financeErrors.responsibleId && <p className="text-red-500 text-sm mt-1">{financeErrors.responsibleId}</p>}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Factura / Comprobante
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={handleFinanceFileChange}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          />
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Obligatorio para oficializar. Si no se adjunta, quedará como pendiente (Deuda).</p>
+                        </div>
+                      </>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Monto <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="amount"
+                        value={financeFormData.amount}
+                        onChange={handleFinanceInputChange}
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        className={`w-full px-4 py-2 border rounded-lg ${financeErrors.amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                      />
+                      {financeErrors.amount && <p className="text-red-500 text-sm mt-1">{financeErrors.amount}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Date <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={financeFormData.date}
+                        onChange={handleFinanceInputChange}
+                        className={`w-full px-4 py-2 border rounded-lg ${financeErrors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                      />
+                      {financeErrors.date && <p className="text-red-500 text-sm mt-1">{financeErrors.date}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Método de Pago <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="paymentMethod"
+                        value={financeFormData.paymentMethod}
+                        onChange={handleFinanceInputChange}
+                        className={`w-full px-4 py-2 border rounded-lg ${financeErrors.paymentMethod ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                      >
+                        <option value="">Seleccionar</option>
+                        <option value="Cash">Efectivo</option>
+                        <option value="Bank Transfer">Transferencia Bancaria</option>
+                        <option value="Credit Card">Tarjeta de Crédito</option>
+                        <option value="Mobile Payment">Pago Móvil</option>
+                      </select>
+                      {financeErrors.paymentMethod && <p className="text-red-500 text-sm mt-1">{financeErrors.paymentMethod}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Miembro (Opcional)</label>
+                      <select
+                        name="memberId"
+                        value={financeFormData.memberId}
+                        onChange={handleFinanceInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="">Seleccionar (Opcional)</option>
+                        {members.map(m => (
+                          <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Descripción</label>
+                      <textarea
+                        name="description"
+                        value={financeFormData.description}
+                        onChange={handleFinanceInputChange}
+                        rows="3"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
                     </div>
                   </div>
-                );
-              })()
+
+                  <div className="flex gap-4 mt-8">
+                    <button
+                      onClick={handleFinanceSubmit}
+                      disabled={isVerifyingReceipt}
+                      className={`flex-1 ${isVerifyingReceipt ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2`}
+                    >
+                      <Save className="w-5 h-5" />
+                      {isVerifyingReceipt ? 'Analizando con IA...' : 'Guardar Transacción'}
+                    </button>
+                    <button
+                      onClick={() => { setShowFinanceForm(false); resetFinanceForm(); }}
+                      className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )
             }
 
             {/* Cuotas (Fees) Module */}
 
 
             {
-              activeModule === 'cuotas' && (() => {
-                const accessLevel = getModuleAccessLevel('cuotas');
-                if (accessLevel === ACCESS_NONE) return null;
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
-                  <>
+              activeModule === 'cuotas' && (
+                <>
                   {!cuotaSessionActive ? (
                     <div className="max-w-xl mx-auto mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
                       <div className="bg-green-600 p-6 text-white text-center">
@@ -20477,24 +20197,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </div>
                         </div>
 
-                        {!isReadOnly && (
-                          <button
-                            onClick={() => setCuotaSessionActive(true)}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
-                          >
-                            <CheckCircle className="w-6 h-6" />
-                            Comenzar Gestión
-                          </button>
-                        )}
-                        {isReadOnly && (
-                          <button
-                            onClick={() => setCuotaSessionActive(true)}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
-                          >
-                            <FileText className="w-6 h-6" />
-                            Ver Historial de Cuotas
-                          </button>
-                        )}
+                        <button
+                          onClick={() => setCuotaSessionActive(true)}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
+                        >
+                          <CheckCircle className="w-6 h-6" />
+                          Comenzar Gestión
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -20505,9 +20214,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <div className="flex items-center gap-2 mb-1">
                               <button
                                 onClick={() => setCuotaSessionActive(false)}
-                                disabled={isReadOnly}
-                                className={`text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                title={isReadOnly ? "No tienes permisos" : "Cambiar Fecha"}
+                                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                title="Cambiar Fecha"
                               >
                                 <ArrowLeft className="w-6 h-6" />
                               </button>
@@ -20538,24 +20246,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <TrendingDown className="w-5 h-5" />
                               {showDebtReport ? 'Ocultar' : 'Ver'} Deudores
                             </button>
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => setShowLatePaymentForm(true)}
-                                className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                              >
-                                Cargos por Mora
-                              </button>
-                            )}
-                            {!isReadOnly && (
-                              <button
-                                onClick={() => setShowDuesSettings(true)}
-                                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                                title="Configuración de Cuotas"
-                              >
-                                <Settings className="w-5 h-5" />
-                                Configuración
-                              </button>
-                            )}
+                            <button
+                              onClick={() => setShowLatePaymentForm(true)}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                            >
+                              Cargos por Mora
+                            </button>
+                            <button
+                              onClick={() => setShowDuesSettings(true)}
+                              className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                              title="Configuración de Cuotas"
+                            >
+                              <Settings className="w-5 h-5" />
+                              Configuración
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -20583,7 +20287,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     type="date"
                                     value={duesStartDate}
                                     onChange={(e) => setDuesStartDate(e.target.value)}
-                                    disabled={isReadOnly}
                                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                   />
                                 </div>
@@ -20600,21 +20303,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     type="date"
                                     value={selectedCuotaDate}
                                     onChange={(e) => setSelectedCuotaDate(e.target.value)}
-                                    disabled={isReadOnly}
                                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                   />
-                                  {!isReadOnly && (
-                                    <button
-                                      onClick={() => {
-                                        if (selectedCuotaDate && !skippedSaturdays.includes(selectedCuotaDate)) {
-                                          setSkippedSaturdays([...skippedSaturdays, selectedCuotaDate]);
-                                        }
-                                      }}
-                                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
-                                    >
-                                      Excluir
-                                    </button>
-                                  )}
+                                  <button
+                                    onClick={() => {
+                                      if (selectedCuotaDate && !skippedSaturdays.includes(selectedCuotaDate)) {
+                                        setSkippedSaturdays([...skippedSaturdays, selectedCuotaDate]);
+                                      }
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium"
+                                  >
+                                    Excluir
+                                  </button>
                                 </div>
 
                                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600">
@@ -20627,15 +20327,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <span className="text-sm font-medium text-gray-700 dark:text-white">
                                             {new Date(date).toLocaleDateString()}
                                           </span>
-                                          {!isReadOnly && (
-                                            <button
-                                              onClick={() => setSkippedSaturdays(skippedSaturdays.filter(d => d !== date))}
-                                              className="text-red-500 hover:text-red-700 p-1"
-                                              title="Eliminar de lista"
-                                            >
-                                              <Trash2 className="w-4 h-4" />
-                                            </button>
-                                          )}
+                                          <button
+                                            onClick={() => setSkippedSaturdays(skippedSaturdays.filter(d => d !== date))}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                            title="Eliminar de lista"
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </button>
                                         </li>
                                       ))}
                                     </ul>
@@ -20645,17 +20343,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
 
                             <div className="mt-8 flex justify-between items-center">
-                              {!isReadOnly && (
-                                <button
-                                  onClick={handleClearHistory}
-                                  className="text-red-600 hover:text-red-800 text-sm font-medium hover:underline"
-                                >
-                                  Borrar Historial Completo
-                                </button>
-                              )}
+                              <button
+                                onClick={handleClearHistory}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium hover:underline"
+                              >
+                                Borrar Historial Completo
+                              </button>
                               <button
                                 onClick={() => setShowDuesSettings(false)}
-                                className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium ml-auto"
+                                className="bg-gray-800 hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium"
                               >
                                 Cerrar
                               </button>
@@ -20725,30 +20421,26 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         </div>
                                       </td>
                                       <td className="px-6 py-4">
-                                        {!isReadOnly && (
-                                          <button
-                                            onClick={() => handleWaiveDebt(member)}
-                                            className="text-red-600 hover:text-red-900 font-medium ml-4"
-                                            title="Eliminar deuda (Exonerar)"
-                                          >
-                                            <Trash2 className="w-5 h-5" />
-                                          </button>
-                                        )}
+                                        <button
+                                          onClick={() => handleWaiveDebt(member)}
+                                          className="text-red-600 hover:text-red-900 font-medium ml-4"
+                                          title="Eliminar deuda (Exonerar)"
+                                        >
+                                          <Trash2 className="w-5 h-5" />
+                                        </button>
                                       </td>
                                     </tr>
                                   ))}
                                 </tbody>
                               </table>
                               <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border-t border-orange-100 dark:border-orange-900/30 flex justify-end">
-                                {!isReadOnly && (
-                                  <button
-                                    onClick={handleBulkSubmit}
-                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md flex items-center gap-2"
-                                  >
-                                    <DollarSign className="w-5 h-5" />
-                                    Registrar Pagos Masivos
-                                  </button>
-                                )}
+                                <button
+                                  onClick={handleBulkSubmit}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md flex items-center gap-2"
+                                >
+                                  <DollarSign className="w-5 h-5" />
+                                  Registrar Pagos Masivos
+                                </button>
                               </div>
                             </div>
                           )}
@@ -20817,16 +20509,14 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         day: 'numeric'
                                       })}
                                     </span>
-                                    {!isReadOnly && (
-                                      <button
-                                        onClick={() => {
-                                          recordCuotaPayment(latePaymentMember.id, cuotaAmount, date);
-                                        }}
-                                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm"
-                                      >
-                                        Pagar {formatCurrency(cuotaAmount)}
-                                      </button>
-                                    )}
+                                    <button
+                                      onClick={() => {
+                                        recordCuotaPayment(latePaymentMember.id, cuotaAmount, date);
+                                      }}
+                                      className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm"
+                                    >
+                                      Pagar {formatCurrency(cuotaAmount)}
+                                    </button>
                                   </div>
                                 ))}
                               </div>
@@ -20838,21 +20528,19 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     {formatCurrency(calculateMemberDebt(latePaymentMember.id).amountOwed)}
                                   </span>
                                 </div>
-                                {!isReadOnly && (
-                                  <button
-                                    onClick={() => {
-                                      const debt = calculateMemberDebt(latePaymentMember.id);
-                                      debt.missedDates.forEach(date => {
-                                        recordCuotaPayment(latePaymentMember.id, cuotaAmount, date);
-                                      });
-                                      setShowLatePaymentForm(false);
-                                      setLatePaymentMember(null);
-                                    }}
-                                    className="w-full mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-semibold"
-                                  >
-                                    Pagar Todo
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => {
+                                    const debt = calculateMemberDebt(latePaymentMember.id);
+                                    debt.missedDates.forEach(date => {
+                                      recordCuotaPayment(latePaymentMember.id, cuotaAmount, date);
+                                    });
+                                    setShowLatePaymentForm(false);
+                                    setLatePaymentMember(null);
+                                  }}
+                                  className="w-full mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-semibold"
+                                >
+                                  Pagar Todo
+                                </button>
                               </div>
                             </div>
                           )}
@@ -20910,7 +20598,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                               min="0"
                                               step="1"
                                               placeholder="0"
-                                              disabled={isReadOnly}
                                               className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                               value={bulkPayments[member.id] || ''}
                                               onChange={(e) => setBulkPayments({
@@ -20928,15 +20615,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               </tbody>
                             </table>
                             <div className="p-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600 flex justify-end">
-                              {!isReadOnly && (
-                                <button
-                                  onClick={handleBulkSubmit}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md flex items-center gap-2"
-                                >
-                                  <DollarSign className="w-5 h-5" />
-                                  Registrar Pagos Masivos
-                                </button>
-                              )}
+                              <button
+                                onClick={handleBulkSubmit}
+                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold shadow-md flex items-center gap-2"
+                              >
+                                <DollarSign className="w-5 h-5" />
+                                Registrar Pagos Masivos
+                              </button>
                             </div>
                           </div>
                         )}
@@ -20974,9 +20659,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         <td className="px-4 py-3 text-sm text-right">
                                           <button
                                             onClick={() => handleDeletePayment(payment.id)}
-                                            disabled={isReadOnly}
-                                            className={`text-gray-400 hover:text-red-600 transition-colors ${isReadOnly ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            title={isReadOnly ? "No tienes permisos" : "Eliminar registro"}
+                                            className="text-gray-400 hover:text-red-600 transition-colors"
+                                            title="Eliminar registro"
                                           >
                                             <Trash2 className="w-4 h-4" />
                                           </button>
@@ -20992,8 +20676,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </>
                   )}
                 </>
-              );
-            })()}
+              )
+            }
 
             {
               activeModule === 'birthdays' && (
@@ -21091,13 +20775,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     />
                   )}
                 </div>
-              )}
+              )
+            }
 
             {
-              (activeModule === 'activities' || activeModule === 'ranking') && !showActivityForm && (() => {
-                const accessLevel = getModuleAccessLevel(activeModule);
-                const isReadOnly = accessLevel === ACCESS_READ;
-                return (
+              (activeModule === 'activities' || activeModule === 'ranking') && !showActivityForm && (
+                <>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                     {activeModule === 'activities' ? (
                       <div className="flex items-center justify-between">
@@ -21158,18 +20841,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <Printer className="w-5 h-5" />
                             <span className="hidden sm:inline">Imprimir Calendario</span>
                           </button>
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => {
-                                setEditingActivity(null);
-                                setShowActivityForm(true);
-                              }}
-                              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                            >
-                              <Plus className="w-5 h-5" />
-                              Nueva Actividad
-                            </button>
-                          )}
+                          <button
+                            onClick={() => {
+                              setEditingActivity(null);
+                              setShowActivityForm(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                          >
+                            <Plus className="w-5 h-5" />
+                            Nueva Actividad
+                          </button>
                           <div className="text-right">
                             <div className="text-3xl font-bold text-blue-600">{activities.length}</div>
                             <div className="text-sm text-gray-500">Actividades Totales</div>
@@ -21194,215 +20875,202 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     )}
                   </div>
-                );
-              })()
+                </>
+              )
             }
 
 
             {/* PROGRAMS MODULE */}
             {
-              activeModule === 'programs' && (() => {
-                const accessLevel = getModuleAccessLevel('programs');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                          <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Programas de Actividades</h2>
-                          <p className="text-gray-600 dark:text-gray-400">Crea o sube itinerarios detallados para tus actividades.</p>
-                        </div>
+              activeModule === 'programs' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                        <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                       </div>
-                      {programViewMode !== 'list' && (
-                        <button
-                          onClick={() => {
-                            setProgramViewMode('list');
-                            setSelectedActivityForProgram(null);
-                          }}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg transition-colors"
-                        >
-                          <ArrowLeft className="w-4 h-4" />
-                          Volver a la lista
-                        </button>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Programas de Actividades</h2>
+                        <p className="text-gray-600 dark:text-gray-400">Crea o sube itinerarios detallados para tus actividades.</p>
+                      </div>
+                    </div>
+                    {programViewMode !== 'list' && (
+                      <button
+                        onClick={() => {
+                          setProgramViewMode('list');
+                          setSelectedActivityForProgram(null);
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg transition-colors"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Volver a la lista
+                      </button>
+                    )}
+                  </div>
+
+                  {programViewMode === 'list' ? (
+                    <div className="flex flex-col gap-3">
+                      {activities.filter(a => a.status !== 'Completado' && a.type === 'Local').length === 0 ? (
+                        <div className="py-12 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
+                          <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                          <p>No hay programas activos (Pendientes/Locales) registrados.</p>
+                        </div>
+                      ) : (
+                        activities
+                          .filter(a => a.status !== 'Completado' && a.type === 'Local')
+                          .map(activity => (
+                            <div
+                              key={activity.id}
+                              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-blue-300 dark:hover:border-blue-700 transition-all group flex flex-col md:flex-row md:items-center gap-4"
+                            >
+                              {/* Left: Info */}
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1 flex-wrap">
+                                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">{activity.title}</h3>
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activity.status === 'Completado' ? 'bg-green-100 text-green-700' :
+                                    activity.status === 'En curso' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-amber-100 text-amber-700'
+                                    }`}>
+                                    {activity.status}
+                                  </span>
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {activity.date}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{activity.description || 'Sin descripción'}</p>
+                                {activity.programFile && (
+                                  <div className="mt-1 flex items-center gap-2 text-xs text-blue-600 font-medium">
+                                    <FileText className="w-3 h-3" />
+                                    <span>{activity.programFile.name} subido</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Right: Actions */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <button
+                                  onClick={() => {
+                                    setSelectedActivityForProgram(activity);
+                                    setProgramEditorContent(activity.programText || '');
+                                    setProgramViewMode('edit');
+                                  }}
+                                  className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                  {activity.programText ? 'Editar' : 'Crear'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedActivityForProgram(activity);
+                                    setProgramViewMode('upload');
+                                  }}
+                                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                  title="Subir Archivo"
+                                >
+                                  <Upload className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))
                       )}
                     </div>
-
-                    {programViewMode === 'list' ? (
-                      <div className="flex flex-col gap-3">
-                        {activities.filter(a => a.status !== 'Completado' && a.type === 'Local').length === 0 ? (
-                          <div className="py-12 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-                            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                            <p>No hay programas activos (Pendientes/Locales) registrados.</p>
-                          </div>
-                        ) : (
-                          activities
-                            .filter(a => a.status !== 'Completado' && a.type === 'Local')
-                            .map(activity => (
-                              <div
-                                key={activity.id}
-                                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-blue-300 dark:hover:border-blue-700 transition-all group flex flex-col md:flex-row md:items-center gap-4"
-                              >
-                                {/* Left: Info */}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-1 flex-wrap">
-                                    <h3 className="text-lg font-bold text-gray-800 dark:text-white">{activity.title}</h3>
-                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activity.status === 'Completado' ? 'bg-green-100 text-green-700' :
-                                      activity.status === 'En curso' ? 'bg-blue-100 text-blue-700' :
-                                        'bg-amber-100 text-amber-700'
-                                      }`}>
-                                      {activity.status}
-                                    </span>
-                                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                                      <Calendar className="w-3 h-3" />
-                                      {activity.date}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{activity.description || 'Sin descripción'}</p>
-                                  {activity.programFile && (
-                                    <div className="mt-1 flex items-center gap-2 text-xs text-blue-600 font-medium">
-                                      <FileText className="w-3 h-3" />
-                                      <span>{activity.programFile.name} subido</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Right: Actions */}
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <button
-                                    onClick={() => {
-                                      setSelectedActivityForProgram(activity);
-                                      setProgramEditorContent(activity.programText || '');
-                                      setProgramViewMode('edit');
-                                    }}
-                                    className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                    {isReadOnly ? 'Ver' : (activity.programText ? 'Editar' : 'Crear')}
-                                  </button>
-                                  {!isReadOnly && (
-                                    <button
-                                      onClick={() => {
-                                        setSelectedActivityForProgram(activity);
-                                        setProgramViewMode('upload');
-                                      }}
-                                      className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                      title="Subir Archivo"
-                                    >
-                                      <Upload className="w-4 h-4" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))
-                        )}
+                  ) : programViewMode === 'edit' ? (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg flex items-center gap-3 border border-blue-100 dark:border-blue-900/20">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                          <Calendar className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-800 dark:text-white">{selectedActivityForProgram?.title}</h4>
+                          <p className="text-xs text-blue-700 dark:text-blue-400">{selectedActivityForProgram?.date} • {selectedActivityForProgram?.location}</p>
+                        </div>
                       </div>
-                    ) : programViewMode === 'edit' ? (
-                      <div className="space-y-4">
-                        <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg flex items-center gap-3 border border-blue-100 dark:border-blue-900/20">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                            <Calendar className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-800 dark:text-white">{selectedActivityForProgram?.title}</h4>
-                            <p className="text-xs text-blue-700 dark:text-blue-400">{selectedActivityForProgram?.date} • {selectedActivityForProgram?.location}</p>
-                          </div>
-                        </div>
 
-                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                          <ReactQuill
-                            theme="snow"
-                            value={programEditorContent}
-                            onChange={setProgramEditorContent}
-                            readOnly={isReadOnly}
-                            modules={isReadOnly ? { toolbar: false } : quillModules}
-                            className="h-80 dark:text-white"
-                          />
-                        </div>
+                      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <ReactQuill
+                          theme="snow"
+                          value={programEditorContent}
+                          onChange={setProgramEditorContent}
+                          modules={quillModules}
+                          className="h-80 dark:text-white"
+                        />
+                      </div>
 
-                        <div className="flex justify-end gap-3 mt-12">
-                          <button
-                            onClick={() => setProgramViewMode('list')}
-                            className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                          >
-                            {isReadOnly ? 'Volver' : 'Cancelar'}
-                          </button>
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => {
+                      <div className="flex justify-end gap-3 mt-12">
+                        <button
+                          onClick={() => setProgramViewMode('list')}
+                          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updatedActivities = activities.map(a =>
+                              a.id === selectedActivityForProgram.id
+                                ? { ...a, programText: programEditorContent, programSource: 'editor' }
+                                : a
+                            );
+                            setActivities(updatedActivities);
+                            setProgramViewMode('list');
+                            setSelectedActivityForProgram(null);
+                            alert('Programa guardado con éxito');
+                          }}
+                          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 shadow-sm transition-all"
+                        >
+                          <Save className="w-5 h-5" />
+                          Guardar Programa
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="max-w-2xl mx-auto py-12 text-center">
+                      <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 dark:text-blue-400">
+                        <Upload className="w-10 h-10" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Subir Programa (PDF/Word)</h3>
+                      <p className="text-gray-600 dark:text-gray-400 mb-8">Selecciona el archivo que contiene el itinerario de esta actividad.</p>
+
+                      <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-12 hover:border-blue-400 transition-colors mb-8 cursor-pointer relative">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const base64 = event.target.result;
                                 const updatedActivities = activities.map(a =>
                                   a.id === selectedActivityForProgram.id
-                                    ? { ...a, programText: programEditorContent, programSource: 'editor' }
+                                    ? { ...a, programFile: { name: file.name, data: base64, type: file.type }, programSource: 'file' }
                                     : a
                                 );
                                 setActivities(updatedActivities);
                                 setProgramViewMode('list');
                                 setSelectedActivityForProgram(null);
-                                alert('Programa guardado con éxito');
-                              }}
-                              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 shadow-sm transition-all"
-                            >
-                              <Save className="w-5 h-5" />
-                              Guardar Programa
-                            </button>
-                          )}
-                        </div>
+                                alert('Archivo subido con éxito');
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <p className="text-gray-500 dark:text-gray-400">Haz clic o arrastra un archivo aquí</p>
+                        <p className="text-xs text-gray-400 mt-2">Soporta PDF, DOC y DOCX</p>
                       </div>
-                    ) : (
-                      <div className="max-w-2xl mx-auto py-12 text-center">
-                        <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 dark:text-blue-400">
-                          <Upload className="w-10 h-10" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Subir Programa (PDF/Word)</h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-8">Selecciona el archivo que contiene el itinerario de esta actividad.</p>
 
-                        <div className={`border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-12 hover:border-blue-400 transition-colors mb-8 relative ${isReadOnly ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
-                          {!isReadOnly && (
-                            <input
-                              type="file"
-                              accept=".pdf,.doc,.docx"
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const base64 = event.target.result;
-                                    const updatedActivities = activities.map(a =>
-                                      a.id === selectedActivityForProgram.id
-                                        ? { ...a, programFile: { name: file.name, data: base64, type: file.type }, programSource: 'file' }
-                                        : a
-                                    );
-                                    setActivities(updatedActivities);
-                                    setProgramViewMode('list');
-                                    setSelectedActivityForProgram(null);
-                                    alert('Archivo subido con éxito');
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            />
-                          )}
-                          <p className="text-gray-500 dark:text-gray-400">
-                            {isReadOnly ? 'Carga de archivos deshabilitada' : 'Haz clic o arrastra un archivo aquí'}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-2">Soporta PDF, DOC y DOCX</p>
-                        </div>
-
-                        <button
-                          onClick={() => setProgramViewMode('list')}
-                          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium"
-                        >
-                          Cancelar y volver
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+                      <button
+                        onClick={() => setProgramViewMode('list')}
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium"
+                      >
+                        Cancelar y volver
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            }
 
             {/* ITINERARY MODULE */}
             {
@@ -21467,247 +21135,475 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
             {/* CLEANING TAB-RENDERED AS MODULE */}
             {
-              activeModule === 'cleaning' && (() => {
-                const accessLevel = getModuleAccessLevel('cleaning');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cronograma: Miércoles y Viernes</h3>
-                      <div className="flex gap-2 items-center">
-                        <label className="text-sm text-gray-600 dark:text-gray-400">Generar para:</label>
-                        <select
-                          className="border rounded px-2 py-1 bg-white dark:bg-gray-700 dark:text-white disabled:opacity-50"
-                          id="cleaningMonths"
-                          disabled={isReadOnly}
-                        >
-                          <option value="1">1 Mes</option>
-                          <option value="3">3 Meses</option>
-                          <option value="6">6 Meses</option>
-                        </select>
-                        <input
-                          type="date"
-                          id="cleaningStart"
-                          disabled={isReadOnly}
-                          defaultValue={(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; })()}
-                          className="border rounded px-2 py-1 bg-white dark:bg-gray-700 dark:text-white disabled:opacity-50"
-                        />
-                        {!isReadOnly && (
-                          <>
-                            <button
-                              onClick={() => {
-                                const months = parseInt(document.getElementById('cleaningMonths').value);
-                                const start = document.getElementById('cleaningStart').value;
-                                generateCleaningSchedule(start, months);
-                              }}
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                              Generar
-                            </button>
-                            <button
-                              onClick={() => {
-                                const months = parseInt(document.getElementById('cleaningMonths').value);
-                                const start = document.getElementById('cleaningStart').value;
-                                generateCleaningSchedule(start, months, true);
-                              }}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
-                              title="Generar itinerario sin miembros asignados"
-                            >
-                              <PlusCircle className="w-4 h-4" />
-                              Crear Vacío
-                            </button>
-                            <button
-                              onClick={handleClearAllSchedules}
-                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Eliminar Todos
-                            </button>
-                          </>
-                        )}
-                        <button
-                          onClick={() => setShowCleaningReport(true)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
-                        >
-                          <FileText className="w-4 h-4" />
-                          Reporte
-                        </button>
-                      </div>
+              activeModule === 'cleaning' && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cronograma: Miércoles y Viernes</h3>
+                    <div className="flex gap-2 items-center">
+                      <label className="text-sm text-gray-600 dark:text-gray-400">Generar para:</label>
+                      <select
+                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 dark:text-white"
+                        id="cleaningMonths"
+                      >
+                        <option value="1">1 Mes</option>
+                        <option value="3">3 Meses</option>
+                        <option value="6">6 Meses</option>
+                      </select>
+                      <input type="date" id="cleaningStart" defaultValue={(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; })()} className="border rounded px-2 py-1 bg-white dark:bg-gray-700 dark:text-white" />
+                      <button
+                        onClick={() => {
+                          const months = parseInt(document.getElementById('cleaningMonths').value);
+                          const start = document.getElementById('cleaningStart').value;
+                          generateCleaningSchedule(start, months);
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Generar
+                      </button>
+                      <button
+                        onClick={() => {
+                          const months = parseInt(document.getElementById('cleaningMonths').value);
+                          const start = document.getElementById('cleaningStart').value;
+                          generateCleaningSchedule(start, months, true);
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
+                        title="Generar itinerario sin miembros asignados"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        Crear Vacío
+                      </button>
+                      <button
+                        onClick={handleClearAllSchedules}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar Todos
+                      </button>
+                      <button
+                        onClick={() => setShowCleaningReport(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Reporte
+                      </button>
                     </div>
+                  </div>
 
-                    {/* Cleaning Report Modal */}
-                    {showCleaningReport && (
-                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-                          <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                            <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                              <ClipboardCheck className="w-6 h-6 text-blue-600" />
-                              Reporte de Asistencia a Limpieza
-                            </h3>
-                            <button onClick={() => setShowCleaningReport(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                              <X className="w-6 h-6" />
-                            </button>
-                          </div>
+                  {/* Cleaning Report Modal */}
+                  {showCleaningReport && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                        <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                          <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <ClipboardCheck className="w-6 h-6 text-blue-600" />
+                            Reporte de Asistencia a Limpieza
+                          </h3>
+                          <button onClick={() => setShowCleaningReport(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                            <X className="w-6 h-6" />
+                          </button>
+                        </div>
 
-                          <div className="p-6 overflow-y-auto flex-1">
-                            {(() => {
-                              // Calculate Stats
-                              const stats = {};
+                        <div className="p-6 overflow-y-auto flex-1">
+                          {(() => {
+                            // Calculate Stats
+                            const stats = {};
 
-                              cleaningSchedule.forEach(month => {
-                                month.weeks.forEach(week => {
-                                  const team = week.team || [];
-                                  const wednesdayAttendees = week.attendance?.wednesday || [];
-                                  const fridayAttendees = week.attendance?.friday || [];
+                            cleaningSchedule.forEach(month => {
+                              month.weeks.forEach(week => {
+                                const team = week.team || [];
+                                const wednesdayAttendees = week.attendance?.wednesday || [];
+                                const fridayAttendees = week.attendance?.friday || [];
 
-                                  team.forEach(memberId => {
-                                    if (!stats[memberId]) stats[memberId] = { assigned: 0, attended: 0 };
-                                    stats[memberId].assigned += 2; // Wed + Fri
+                                team.forEach(memberId => {
+                                  if (!stats[memberId]) stats[memberId] = { assigned: 0, attended: 0 };
+                                  stats[memberId].assigned += 2; // Wed + Fri
 
-                                    if (wednesdayAttendees.includes(memberId)) stats[memberId].attended += 1;
-                                    if (fridayAttendees.includes(memberId)) stats[memberId].attended += 1;
-                                  });
+                                  if (wednesdayAttendees.includes(memberId)) stats[memberId].attended += 1;
+                                  if (fridayAttendees.includes(memberId)) stats[memberId].attended += 1;
                                 });
                               });
+                            });
 
-                              const statsArray = Object.entries(stats).map(([id, data]) => {
-                                const member = members.find(m => m.id === id);
-                                return {
-                                  id,
-                                  name: member ? `${member.firstName} ${member.lastName}` : 'Miembro Eliminado',
-                                  unit: member?.unitId ? units.find(u => u.id === member.unitId)?.name : '-',
-                                  ...data,
-                                  percentage: data.assigned > 0 ? Math.round((data.attended / data.assigned) * 100) : 0
-                                };
-                              });
+                            const statsArray = Object.entries(stats).map(([id, data]) => {
+                              const member = members.find(m => m.id === id);
+                              return {
+                                id,
+                                name: member ? `${member.firstName} ${member.lastName}` : 'Miembro Eliminado',
+                                unit: member?.unitId ? units.find(u => u.id === member.unitId)?.name : '-',
+                                ...data,
+                                percentage: data.assigned > 0 ? Math.round((data.attended / data.assigned) * 100) : 0
+                              };
+                            }).sort((a, b) => b.percentage - a.percentage);
 
-                              return (
-                                <table className="w-full">
-                                  <thead>
-                                    <tr className="text-left text-gray-500 border-b">
-                                      <th className="pb-2">Miembro</th>
-                                      <th className="pb-2">Unidad</th>
-                                      <th className="pb-2">Asignaciones</th>
-                                      <th className="pb-2">Asistencias</th>
-                                      <th className="pb-2">%</th>
+                            if (statsArray.length === 0) {
+                              return <div className="text-center text-gray-500">No hay datos de asignaciones registrados.</div>;
+                            }
+
+                            return (
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="border-b dark:border-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+                                    <th className="pb-2">Miembro</th>
+                                    <th className="pb-2">Unidad</th>
+                                    <th className="pb-2 text-center">Asignaciones</th>
+                                    <th className="pb-2 text-center">Asistencias</th>
+                                    <th className="pb-2 text-center">Cumplimiento</th>
+                                    <th className="pb-2 text-center">Estado</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y dark:divide-gray-700">
+                                  {statsArray.map(stat => (
+                                    <tr key={stat.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                      <td className="py-3 font-medium text-gray-800 dark:text-white">{stat.name}</td>
+                                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400">{stat.unit}</td>
+                                      <td className="py-3 text-center text-gray-600 dark:text-gray-400">{stat.assigned} días</td>
+                                      <td className="py-3 text-center font-bold text-gray-800 dark:text-gray-200">{stat.attended}</td>
+                                      <td className="py-3 text-center">
+                                        <div className="flex items-center justify-center gap-2">
+                                          <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                            <div
+                                              className={`h-full rounded-full ${stat.percentage >= 80 ? 'bg-green-500' : stat.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                              style={{ width: `${stat.percentage}%` }}
+                                            ></div>
+                                          </div>
+                                          <span className="text-xs font-mono">{stat.percentage}%</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 text-center">
+                                        {stat.percentage >= 80 ? (
+                                          <span className="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Excelente</span>
+                                        ) : stat.percentage >= 50 ? (
+                                          <span className="px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">Regular</span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Crítico</span>
+                                        )}
+                                      </td>
                                     </tr>
-                                  </thead>
-                                  <tbody className="divide-y">
-                                    {statsArray.map(s => (
-                                      <tr key={s.id} className="text-gray-700 dark:text-gray-300">
-                                        <td className="py-2">{s.name}</td>
-                                        <td className="py-2">{s.unit}</td>
-                                        <td className="py-2">{s.assigned}</td>
-                                        <td className="py-2">{s.attended}</td>
-                                        <td className="py-2 font-bold text-blue-600">{s.percentage}%</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              );
-                            })()}
-                          </div>
+                                  ))}
+                                </tbody>
+                              </table>
+                            );
+                          })()}
+                        </div>
+                        <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end">
+                          <button
+                            onClick={() => setShowCleaningReport(false)}
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-gray-800 dark:text-white transition-colors"
+                          >
+                            Cerrar
+                          </button>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <div className="space-y-4">
-                      {cleaningSchedule.map((month, mIdx) => (
-                        <div key={mIdx} className="border dark:border-gray-700 rounded-lg overflow-hidden">
-                          <div className="bg-gray-100 dark:bg-gray-700 p-3 font-bold text-gray-700 dark:text-gray-200 capitalize">
-                            {month.monthName}
+                  {/* Manual Add Member Modal */}
+                  {cleaningAddTarget && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+                        <h3 className="text-lg font-bold mb-4 dark:text-white">Agregar miembro al equipo de limpieza</h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">Selecciona un miembro para añadirlo a esta semana.</p>
+
+                        <select
+                          id="manualCleaningMemberSelect"
+                          className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:text-white"
+                          autoFocus
+                        >
+                          <option value="">-- Seleccionar Miembro --</option>
+                          {[...members].sort((a, b) => a.firstName.localeCompare(b.firstName)).map(m => (
+                            <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
+                          ))}
+                        </select>
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setCleaningAddTarget(null)}
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={() => {
+                              const select = document.getElementById('manualCleaningMemberSelect');
+                              const memberId = select.value;
+                              if (!memberId) return;
+
+                              setCleaningSchedule(prev => prev.map(m => {
+                                if (m.id !== cleaningAddTarget.monthId) return m;
+                                return {
+                                  ...m,
+                                  weeks: m.weeks.map(w => {
+                                    if (w.id !== cleaningAddTarget.weekId) return w;
+                                    if (w.team.includes(memberId)) {
+                                      alert('Este miembro ya está en el equipo de esta semana.');
+                                      return w;
+                                    }
+                                    return { ...w, team: [...w.team, memberId] };
+                                  })
+                                };
+                              }));
+                              setCleaningAddTarget(null);
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                          >
+                            Agregar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Manual Save Button */}
+                  <div className="mb-4 flex justify-end">
+                    <button
+                      onClick={() => {
+                        localStorage.setItem(STORAGE_KEYS.CLEANING_SCHEDULE, JSON.stringify(cleaningSchedule));
+                        alert('Itinerario guardado exitosamente.');
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm"
+                    >
+                      <Save className="w-4 h-4" />
+                      Guardar Cambios
+                    </button>
+                  </div>
+
+                  <div className="space-y-8">
+                    {cleaningSchedule.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
+                        <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500 dark:text-gray-400">No hay cronograma de limpieza generado.</p>
+                        <p className="text-sm text-gray-400">Usa el botón de arriba para generar la rotación automática.</p>
+                      </div>
+                    ) : (
+                      cleaningSchedule.map(month => (
+                        <div key={month.id} className="border dark:border-gray-700 rounded-xl overflow-hidden">
+                          <div className="bg-gray-100 dark:bg-gray-700 p-4 flex justify-between items-center">
+                            <h4 className="text-lg font-bold text-indigo-900 dark:text-indigo-200 capitalize">
+                              {(() => { const [y, m] = month.month.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); })()}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setCleaningSchedule(prev => prev.filter(m => m.id !== month.id))}
+                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
+                                title="Eliminar este itinerario"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Supervisor:</span>
+                              <select
+                                value={month.supervisorId}
+                                onChange={(e) => {
+                                  const newVal = e.target.value;
+                                  setCleaningSchedule(prev => prev.map(m => m.id === month.id ? { ...m, supervisorId: newVal } : m));
+                                }}
+                                className="border rounded px-2 py-1 text-sm bg-white dark:bg-gray-600 dark:text-white dark:border-gray-500"
+                              >
+                                <option value="">-- Seleccionar Directivo --</option>
+                                {[...members].filter(m => getMemberAge(m) >= 18 || (m.position && m.position.trim() !== '' && m.position !== 'Ninguno')).sort((a, b) => a.firstName.localeCompare(b.firstName)).map(m => (
+                                  <option key={m.id} value={m.id}>{m.firstName} {m.lastName}{m.position && m.position !== 'Ninguno' && m.position !== '' ? ' (' + m.position + ')' : ''}</option>
+                                ))}
+                                {users.map(u => (
+                                  <option key={'u-' + u.username} value={'user-' + u.username}>{u.name} (Usuario)</option>
+                                ))}
+                              </select>
+                            </div>
                           </div>
-                          {month.weeks.map((week, wIdx) => (
-                            <div key={wIdx} className="grid grid-cols-[1fr,auto] items-center p-4 border-b last:border-0 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                              <div className="flex items-center gap-4">
-                                <div className="w-24 font-semibold text-sm text-gray-600 dark:text-gray-400">
-                                  Semana {week.weekNumber}
+
+                          <div className="divide-y dark:divide-gray-700">
+                            {month.weeks.map(week => (
+                              <div key={week.id} className="p-4 bg-white dark:bg-gray-800 flex flex-col md:flex-row items-center gap-4">
+                                <div className="w-full md:w-1/4">
+                                  <div className="flex items-center gap-2">
+                                    <div className="font-semibold text-gray-700 dark:text-gray-300">Semana {week.weekRange}</div>
+                                    <button
+                                      onClick={() => setCleaningAddTarget({ monthId: month.id, weekId: week.id })}
+                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded-full"
+                                      title="Agregar miembro manualmente"
+                                    >
+                                      <UserPlus className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                  <div className="text-xs text-gray-500">Miércoles y Viernes</div>
                                 </div>
-                                <div className="flex-1">
-                                  <div className="flex flex-wrap gap-2">
-                                    {members.map(member => {
-                                      const isAssigned = week.team.includes(member.id);
-                                      return isAssigned ? (
-                                        <div key={member.id} className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded text-xs text-blue-800 dark:text-blue-200">
-                                          {member.firstName}
-                                          <input
-                                            type="checkbox"
-                                            checked={week.attendance?.wednesday?.includes(member.id) || false}
-                                            onChange={() => {
-                                              if (isReadOnly) return;
-                                              setCleaningSchedule(prev => prev.map(m => ({
-                                                ...m,
-                                                weeks: m.weeks.map(w => w.id === week.id ? {
-                                                  ...w,
-                                                  attendance: {
-                                                    ...w.attendance,
-                                                    wednesday: w.attendance?.wednesday?.includes(member.id)
-                                                      ? w.attendance.wednesday.filter(id => id !== member.id)
-                                                      : [...(w.attendance?.wednesday || []), member.id]
-                                                  }
-                                                } : w)
-                                              })));
-                                            }}
-                                            className={`w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 ${isReadOnly ? 'cursor-not-allowed opacity-50' : ''}`}
-                                          />
-                                          <input
-                                            type="checkbox"
-                                            checked={week.attendance?.friday?.includes(member.id) || false}
-                                            onChange={() => {
-                                              if (isReadOnly) return;
-                                              setCleaningSchedule(prev => prev.map(m => ({
-                                                ...m,
-                                                weeks: m.weeks.map(w => w.id === week.id ? {
-                                                  ...w,
-                                                  attendance: {
-                                                    ...w.attendance,
-                                                    friday: w.attendance?.friday?.includes(member.id)
-                                                      ? w.attendance.friday.filter(id => id !== member.id)
-                                                      : [...(w.attendance?.friday || []), member.id]
-                                                  }
-                                                } : w)
-                                              })));
-                                            }}
-                                            className={`w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 ${isReadOnly ? 'cursor-not-allowed opacity-50' : ''}`}
-                                          />
-                                        </div>
-                                      ) : null;
-                                    })}
-                                    {week.team.length === 0 && (
-                                      <div className="text-center py-4 text-xs text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-                                        Arrastra miembros aquí
+
+                                <div
+                                  className={`flex-1 w-full min-h-[60px] p-2 rounded-lg border-2 border-dashed transition-colors ${draggedMember ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-900/10' : 'border-transparent'}`}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    if (!draggedMember) return;
+
+                                    const { memberId, sourceMonthId, sourceWeekId } = draggedMember;
+                                    const targetMonthId = month.id;
+                                    const targetWeekId = week.id;
+
+                                    if (sourceMonthId === targetMonthId && sourceWeekId === targetWeekId) return;
+
+                                    setCleaningSchedule(prev => {
+                                      const newSchedule = [...prev];
+
+                                      // Remove from source if same logic (optional, dependent on requirements. Assuming we move)
+                                      const sourceMonth = newSchedule.find(m => m.id === sourceMonthId);
+                                      if (sourceMonth) {
+                                        const sourceWeek = sourceMonth.weeks.find(w => w.id === sourceWeekId);
+                                        if (sourceWeek) {
+                                          sourceWeek.team = sourceWeek.team.filter(id => id !== memberId);
+                                        }
+                                      }
+
+                                      // Add to target
+                                      const targetMonth = newSchedule.find(m => m.id === targetMonthId);
+                                      if (targetMonth) {
+                                        const targetWeek = targetMonth.weeks.find(w => w.id === targetWeekId);
+                                        if (targetWeek && !targetWeek.team.includes(memberId)) {
+                                          targetWeek.team.push(memberId);
+                                        }
+                                      }
+
+                                      return newSchedule;
+                                    });
+                                    setDraggedMember(null);
+                                  }}
+                                >
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Wednesday Column */}
+                                    <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Miércoles</span>
                                       </div>
-                                    )}
+                                      <div className="space-y-2">
+                                        {week.team.map(memberId => {
+                                          const mem = members.find(m => m.id === memberId);
+                                          const isAttended = week.attendance?.wednesday?.includes(memberId);
+
+                                          return mem ? (
+                                            <div key={`wed-${memberId}`} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded shadow-sm">
+                                              <div
+                                                draggable
+                                                onDragStart={(e) => setDraggedMember({ memberId, sourceMonthId: month.id, sourceWeekId: week.id })}
+                                                className="cursor-move flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                                              >
+                                                <GripVertical className="w-3 h-3 text-gray-400" />
+                                                <span>{mem.firstName} {mem.lastName}</span>
+                                              </div>
+                                              <input
+                                                type="checkbox"
+                                                checked={!!isAttended}
+                                                onChange={(e) => {
+                                                  const checked = e.target.checked;
+                                                  setCleaningSchedule(prev => prev.map(m => {
+                                                    if (m.id !== month.id) return m;
+                                                    return {
+                                                      ...m,
+                                                      weeks: m.weeks.map(w => {
+                                                        if (w.id !== week.id) return w;
+                                                        const currentWed = w.attendance?.wednesday || [];
+                                                        const newWed = checked
+                                                          ? [...currentWed, memberId]
+                                                          : currentWed.filter(id => id !== memberId);
+                                                        return {
+                                                          ...w,
+                                                          attendance: { ...(w.attendance || {}), wednesday: newWed }
+                                                        };
+                                                      })
+                                                    };
+                                                  }));
+                                                }}
+                                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                              />
+                                            </div>
+                                          ) : null;
+                                        })}
+                                        {week.team.length === 0 && (
+                                          <div className="text-center py-4 text-xs text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+                                            Arrastra miembros aquí
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Friday Column */}
+                                    <div className="bg-purple-50/50 dark:bg-purple-900/10 p-3 rounded-lg border border-purple-100 dark:border-purple-800/30">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                        <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">Viernes</span>
+                                      </div>
+                                      <div className="space-y-2">
+                                        {week.team.map(memberId => {
+                                          const mem = members.find(m => m.id === memberId);
+                                          const isAttended = week.attendance?.friday?.includes(memberId);
+
+                                          return mem ? (
+                                            <div key={`fri-${memberId}`} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded shadow-sm">
+                                              <div
+                                                className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 opacity-75"
+                                              >
+                                                <span>{mem.firstName} {mem.lastName}</span>
+                                              </div>
+                                              <input
+                                                type="checkbox"
+                                                checked={!!isAttended}
+                                                onChange={(e) => {
+                                                  const checked = e.target.checked;
+                                                  setCleaningSchedule(prev => prev.map(m => {
+                                                    if (m.id !== month.id) return m;
+                                                    return {
+                                                      ...m,
+                                                      weeks: m.weeks.map(w => {
+                                                        if (w.id !== week.id) return w;
+                                                        const currentFri = w.attendance?.friday || [];
+                                                        const newFri = checked
+                                                          ? [...currentFri, memberId]
+                                                          : currentFri.filter(id => id !== memberId);
+                                                        return {
+                                                          ...w,
+                                                          attendance: { ...(w.attendance || {}), friday: newFri }
+                                                        };
+                                                      })
+                                                    };
+                                                  }));
+                                                }}
+                                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                                              />
+                                            </div>
+                                          ) : null;
+                                        })}
+                                        {week.team.length === 0 && (
+                                          <div className="text-center py-4 text-xs text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+                                            Arrastra miembros aquí
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              <div>
-                                <button
-                                  title="Marcar como Completado"
-                                  disabled={isReadOnly}
-                                  onClick={() => {
-                                    setCleaningSchedule(prev => prev.map(m => ({
-                                      ...m,
-                                      weeks: m.weeks.map(w => w.id === week.id ? { ...w, completed: !w.completed } : w)
-                                    })));
-                                  }}
-                                  className={`p-2 rounded-full ${week.completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'} ${isReadOnly ? 'cursor-not-allowed opacity-50' : ''}`}
-                                >
-                                  <CheckCircle className="w-5 h-5" />
-                                </button>
+                                <div>
+                                  <button
+                                    title="Marcar como Completado"
+                                    onClick={() => {
+                                      setCleaningSchedule(prev => prev.map(m => ({
+                                        ...m,
+                                        weeks: m.weeks.map(w => w.id === week.id ? { ...w, completed: !w.completed } : w)
+                                      })));
+                                    }}
+                                    className={`p-2 rounded-full ${week.completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                  >
+                                    <CheckCircle className="w-5 h-5" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    </div>
-                  </>)
-                })()
-              }
+                      ))
+                    )}
+                  </div>
+                </div>
+              )
+            }
 
             {/* Calendar Grid-Only for Activities */}
             {
@@ -21946,18 +21842,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
               )
             }
 
+            {/* Activity Form */}
             {/* Activity Form (Modal) */}
             {
-              (activeModule === 'activities' || activeModule === 'ranking') && showActivityForm && (() => {
-                const accessLevel = getModuleAccessLevel(activeModule);
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (
+              (activeModule === 'activities' || activeModule === 'ranking') && showActivityForm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity animate-in fade-in backdrop-blur-sm">
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                     <div className="sticky top-0 bg-white dark:bg-gray-800 p-6 border-b border-gray-100 dark:border-gray-700 z-10 flex items-center justify-between shrink-0">
                       <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
-                        {isReadOnly ? 'Ver Detalles de Actividad' : (editingActivity ? 'Editar Actividad' : 'Agregar Actividad')}
+                        {editingActivity ? 'Editar Actividad' : 'Agregar Actividad'}
                       </h3>
                       <button onClick={handleCancelActivity} className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition-colors">
                         <X className="w-6 h-6" />
@@ -21975,9 +21868,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="title"
                             value={activityFormData.title}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
                             placeholder="ej., Reunión Semanal, Campamento"
-                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                           />
                           {activityErrors.title && <p className="text-red-500 text-sm mt-1">{activityErrors.title}</p>}
                         </div>
@@ -21991,10 +21883,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               name="isCamp"
                               checked={activityFormData.isCamp}
                               onChange={(e) => setActivityFormData(prev => ({ ...prev, isCamp: e.target.checked }))}
-                              disabled={isReadOnly}
-                              className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 disabled:opacity-50"
+                              className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
                             />
-                            <label htmlFor="isCamp" className={`font-bold text-gray-800 dark:text-white flex items-center gap-2 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
+                            <label htmlFor="isCamp" className="font-bold text-gray-800 dark:text-white flex items-center gap-2 cursor-pointer">
                               <Tent className="w-5 h-5 text-indigo-600" />
                               Es Campamento
                             </label>
@@ -22013,10 +21904,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               name="isRanking"
                               checked={activityFormData.isRanking}
                               onChange={(e) => setActivityFormData(prev => ({ ...prev, isRanking: e.target.checked }))}
-                              disabled={isReadOnly}
-                              className="w-5 h-5 text-yellow-600 rounded focus:ring-yellow-500 disabled:opacity-50"
+                              className="w-5 h-5 text-yellow-600 rounded focus:ring-yellow-500"
                             />
-                            <label htmlFor="isRanking" className={`font-bold text-gray-800 dark:text-white flex items-center gap-2 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
+                            <label htmlFor="isRanking" className="font-bold text-gray-800 dark:text-white flex items-center gap-2 cursor-pointer">
                               <Trophy className="w-5 h-5 text-yellow-600" />
                               Incluir en el Sistema de Ranking del Club
                             </label>
@@ -22033,9 +21923,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   name="rankingScore"
                                   value={activityFormData.rankingScore}
                                   onChange={handleActivityInputChange}
-                                  disabled={isReadOnly}
                                   placeholder="e.g. 500"
-                                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 />
                               </div>
                               <div>
@@ -22047,8 +21936,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   name="rankingDeadline"
                                   value={activityFormData.rankingDeadline}
                                   onChange={handleActivityInputChange}
-                                  disabled={isReadOnly}
-                                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 />
                               </div>
                             </div>
@@ -22064,10 +21952,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               name="isMasterGuideRequirement"
                               checked={activityFormData.isMasterGuideRequirement || false}
                               onChange={(e) => setActivityFormData(prev => ({ ...prev, isMasterGuideRequirement: e.target.checked }))}
-                              disabled={isReadOnly}
-                              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 disabled:opacity-50"
+                              className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                             />
-                            <label htmlFor="isMasterGuideRequirement" className={`font-bold text-gray-800 dark:text-white flex items-center gap-2 ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
+                            <label htmlFor="isMasterGuideRequirement" className="font-bold text-gray-800 dark:text-white flex items-center gap-2 cursor-pointer">
                               <Star className="w-5 h-5 text-blue-600" />
                               Requisito Guía Mayor
                             </label>
@@ -22083,8 +21970,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               name="status"
                               value={activityFormData.status || 'Pendiente'}
                               onChange={handleActivityInputChange}
-                              disabled={isReadOnly}
-                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             >
                               <option value="Pendiente">Pendiente</option>
                               <option value="En curso" disabled>En curso (Auto)</option>
@@ -22099,8 +21985,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               name="type"
                               value={activityFormData.type}
                               onChange={handleActivityInputChange}
-                              disabled={isReadOnly}
-                              className={`w-full px-4 py-2 border rounded-lg ${activityErrors.type ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
+                              className={`w-full px-4 py-2 border rounded-lg ${activityErrors.type ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                             >
                               <option value="">Seleccionar</option>
                               <option value="Local">Local</option>
@@ -22123,8 +22008,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="date"
                             value={activityFormData.date}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
-                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                           />
                           {activityErrors.date && <p className="text-red-500 text-sm mt-1">{activityErrors.date}</p>}
                         </div>
@@ -22138,9 +22022,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="endDate"
                             value={activityFormData.endDate || ''}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
                             min={activityFormData.date} // Cannot be before start date
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
 
@@ -22153,8 +22036,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="time"
                             value={activityFormData.time}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
-                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.time ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.time ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                           />
                           {activityErrors.time && <p className="text-red-500 text-sm mt-1">{activityErrors.time}</p>}
                         </div>
@@ -22168,8 +22050,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="endTime"
                             value={activityFormData.endTime || ''}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
 
@@ -22182,9 +22063,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="location"
                             value={activityFormData.location}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
                             placeholder="ej., Salón de la Iglesia"
-                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.location ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isReadOnly ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            className={`w-full px-4 py-2 border rounded-lg ${activityErrors.location ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                           />
                           {activityErrors.location && <p className="text-red-500 text-sm mt-1">{activityErrors.location}</p>}
                         </div>
@@ -22195,8 +22075,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="uniform"
                             value={activityFormData.uniform}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           >
                             <option value="">Seleccionar (Opcional)</option>
                             <option value="Type A">Tipo A</option>
@@ -22223,9 +22102,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 name="cost"
                                 value={activityFormData.cost}
                                 onChange={handleActivityInputChange}
-                                disabled={isReadOnly}
                                 placeholder="0.00"
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               />
                             </div>
                             <div>
@@ -22237,9 +22115,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 name="transportation"
                                 value={activityFormData.transportation}
                                 onChange={handleActivityInputChange}
-                                disabled={isReadOnly}
                                 placeholder="ej. Autobús, Padres"
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               />
                             </div>
                             <div className="md:col-span-2">
@@ -22251,9 +22128,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 name="meetingPoint"
                                 value={activityFormData.meetingPoint}
                                 onChange={handleActivityInputChange}
-                                disabled={isReadOnly}
                                 placeholder="ej. Estacionamiento de la Iglesia"
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                               />
                             </div>
                           </div>
@@ -22267,25 +22143,23 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 <img src={activityFormData.image} alt="Preview" className="w-full h-full object-cover" />
                               </div>
                             )}
-                            {!isReadOnly && (
-                              <label className="flex-1">
-                                <div className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
-                                  <div className="flex flex-col items-center">
-                                    <ImageIcon className="w-5 h-5 text-gray-400 mb-1" />
-                                    <span className="text-xs text-gray-500 text-center">
-                                      {activityFormData.image ? 'Cambiar imagen' : 'Subir imagen'}
-                                    </span>
-                                  </div>
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                  />
+                            <label className="flex-1">
+                              <div className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
+                                <div className="flex flex-col items-center">
+                                  <ImageIcon className="w-5 h-5 text-gray-400 mb-1" />
+                                  <span className="text-xs text-gray-500 text-center">
+                                    {activityFormData.image ? 'Cambiar imagen' : 'Subir imagen'}
+                                  </span>
                                 </div>
-                              </label>
-                            )}
-                            {activityFormData.image && !isReadOnly && (
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                />
+                              </div>
+                            </label>
+                            {activityFormData.image && (
                               <button
                                 onClick={() => setActivityFormData(prev => ({ ...prev, image: '' }))}
                                 className="text-red-500 hover:text-red-700 p-2"
@@ -22293,11 +22167,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               >
                                 <Trash2 className="w-5 h-5" />
                               </button>
-                            )}
-                            {isReadOnly && !activityFormData.image && (
-                              <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700 text-center text-gray-500 text-sm italic">
-                                Sin imagen de portada
-                              </div>
                             )}
                           </div>
                         </div>
@@ -22308,10 +22177,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             name="description"
                             value={activityFormData.description}
                             onChange={handleActivityInputChange}
-                            disabled={isReadOnly}
                             rows="3"
                             placeholder="Detalles sobre la actividad..."
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
 
@@ -22323,16 +22191,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-50 dark:bg-gray-700">
                               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                 {members.map((member) => (
-                                  <label key={member.id} className={`flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded ${isReadOnly ? 'cursor-default' : 'cursor-pointer'}`}>
+                                  <label key={member.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded cursor-pointer">
                                     <input
                                       type="checkbox"
                                       checked={activityFormData.attendees.includes(member.id)}
-                                      onChange={() => {
-                                        if (isReadOnly) return;
-                                        handleAttendeeToggle(member.id);
-                                      }}
-                                      disabled={isReadOnly}
-                                      className="w-4 h-4 text-blue-600 disabled:opacity-50"
+                                      onChange={() => handleAttendeeToggle(member.id)}
+                                      className="w-4 h-4 text-blue-600"
                                     />
                                     <span className="text-sm text-gray-700 dark:text-gray-300">
                                       {member.firstName} {member.lastName}
@@ -22349,22 +22213,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
 
                       <div className="flex gap-4 mt-8">
-                        {!isReadOnly && (
-                          <button
-                            onClick={handleActivitySubmit}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-                          >
-                            <Save className="w-5 h-5" />
-                            {editingActivity ? 'Actualizar' : 'Guardar'}
-                          </button>
-                        )}
+                        <button
+                          onClick={handleActivitySubmit}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                        >
+                          <Save className="w-5 h-5" />
+                          {editingActivity ? 'Actualizar' : 'Guardar'}
+                        </button>
                         <button
                           onClick={handleCancelActivity}
-                          className={`px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 ${isReadOnly ? 'flex-1' : ''}`}
+                          className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
                         >
-                          {isReadOnly ? 'Cerrar' : 'Cancelar'}
+                          Cancelar
                         </button>
-                        {!isReadOnly && editingActivity && (
+                        {editingActivity && (
                           <button
                             onClick={() => handleDeleteActivity(editingActivity.id)}
                             className="px-6 py-3 border border-red-300 rounded-lg font-medium text-red-600 hover:bg-red-50 flex items-center justify-center gap-2"
@@ -22377,8 +22239,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   </div>
                 </div>
-                );
-              })()
+              )
             }
 
             {/* ID Cards Module */}
@@ -22839,41 +22700,40 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   })}
                               </div>
                             )}
-
-                  )}
+                          </div>
+                        </div>
                       </div>
-                  )}
-                  }
+                    );
+                  })()}
+                </div>
+              )
+            }
 
             {/* Master Guide Program Module */}
             {
-              activeModule === 'master_guide' && (() => {
-                const accessLevel = getModuleAccessLevel('master_guide');
-                const isReadOnly = accessLevel === ACCESS_READ;
-
-                return (<>
-                  <div>
-                    {/* Navigation / Header */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                            <Award className="w-7 h-7 text-amber-600 dark:text-amber-400" />
-                            Programa de Guía Mayor
-                          </h2>
-                          <p className="text-gray-600 dark:text-gray-400 mt-1">Gestión de requisitos y aspirantes</p>
-                        </div>
-                        {viewingGMDetail && (
-                          <button
-                            onClick={() => setViewingGMDetail(null)}
-                            className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                          >
-                            <ArrowLeft className="w-5 h-5" />
-                            Volver
-                          </button>
-                        )}
+              activeModule === 'master_guide' && (
+                <div>
+                  {/* Navigation / Header */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                          <Award className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+                          Programa de Guía Mayor
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">Gestión de requisitos y aspirantes</p>
                       </div>
+                      {viewingGMDetail && (
+                        <button
+                          onClick={() => setViewingGMDetail(null)}
+                          className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          <ArrowLeft className="w-5 h-5" />
+                          Volver
+                        </button>
+                      )}
                     </div>
+                  </div>
 
                   {/* VIEW: Requirements Management */}
                   {viewingGMDetail === 'requirements' ? (
@@ -22884,106 +22744,104 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </h3>
 
                       {/* Add Requirement Form */}
-                      {!isReadOnly && (
-                        <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-600 mb-8">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="font-semibold text-gray-700 dark:text-white">{editingRequirement ? 'Editar Requisito' : 'Agregar Nuevo Requisito'}</h4>
-                            {editingRequirement && (
-                              <button
-                                onClick={() => setEditingRequirement(null)}
-                                className="text-sm text-gray-500 hover:text-gray-700 underline"
-                              >
-                                Cancelar Edición
-                              </button>
-                            )}
-                          </div>
-                          <form onSubmit={(e) => {
-                            e.preventDefault();
-                            const formData = new FormData(e.target);
+                      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-600 mb-8">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-semibold text-gray-700 dark:text-white">{editingRequirement ? 'Editar Requisito' : 'Agregar Nuevo Requisito'}</h4>
+                          {editingRequirement && (
+                            <button
+                              onClick={() => setEditingRequirement(null)}
+                              className="text-sm text-gray-500 hover:text-gray-700 underline"
+                            >
+                              Cancelar Edición
+                            </button>
+                          )}
+                        </div>
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          const formData = new FormData(e.target);
 
-                            if (editingRequirement) {
-                              setMasterGuideData(prev => ({
-                                ...prev,
-                                requirements: prev.requirements.map(r => r.id === editingRequirement.id ? {
-                                  ...r,
-                                  text: formData.get('text'),
-                                  evidence: formData.get('evidence'),
-                                  evaluation: formData.get('evaluation'),
-                                  activityDate: formData.get('activityDate')
-                                } : r)
-                              }));
-                              setEditingRequirement(null);
-                            } else {
-                              const newReq = {
-                                id: Date.now().toString(),
+                          if (editingRequirement) {
+                            setMasterGuideData(prev => ({
+                              ...prev,
+                              requirements: prev.requirements.map(r => r.id === editingRequirement.id ? {
+                                ...r,
                                 text: formData.get('text'),
                                 evidence: formData.get('evidence'),
                                 evaluation: formData.get('evaluation'),
                                 activityDate: formData.get('activityDate')
-                              };
-                              setMasterGuideData(prev => ({
-                                ...prev,
-                                requirements: [...prev.requirements, newReq]
-                              }));
-                            }
-                            e.target.reset();
-                          }}>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                              <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Requisito</label>
-                                <textarea
-                                  name="text"
-                                  required
-                                  rows="3"
-                                  className="w-full px-3 py-2 border rounded-lg resize-y bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
-                                  placeholder="Ej: Leer el libro..."
-                                  defaultValue={editingRequirement?.text || ''}
-                                  key={editingRequirement ? `text-${editingRequirement.id} ` : 'text-new'}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Evaluación</label>
-                                <select
-                                  name="evaluation"
-                                  required
-                                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
-                                  defaultValue={editingRequirement?.evaluation || 'first'}
-                                  key={editingRequirement ? `eval-${editingRequirement.id} ` : 'eval-new'}
-                                >
-                                  <option value="first">Primera Evaluación</option>
-                                  <option value="second">Segunda Evaluación</option>
-                                  <option value="third">Tercera Evaluación</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Actividad (Opcional)</label>
-                                <input
-                                  name="activityDate"
-                                  type="date"
-                                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
-                                  defaultValue={editingRequirement?.activityDate || ''}
-                                  key={editingRequirement ? `date-${editingRequirement.id} ` : 'date-new'}
-                                />
-                              </div>
-                              <div className="md:col-span-3">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Forma de Evidencia</label>
-                                <input
-                                  name="evidence"
-                                  required
-                                  type="text"
-                                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
-                                  placeholder="Ej: Informe de lectura, Certificado..."
-                                  defaultValue={editingRequirement?.evidence || ''}
-                                  key={editingRequirement ? `evidence-${editingRequirement.id} ` : 'evidence-new'}
-                                />
-                              </div>
+                              } : r)
+                            }));
+                            setEditingRequirement(null);
+                          } else {
+                            const newReq = {
+                              id: Date.now().toString(),
+                              text: formData.get('text'),
+                              evidence: formData.get('evidence'),
+                              evaluation: formData.get('evaluation'),
+                              activityDate: formData.get('activityDate')
+                            };
+                            setMasterGuideData(prev => ({
+                              ...prev,
+                              requirements: [...prev.requirements, newReq]
+                            }));
+                          }
+                          e.target.reset();
+                        }}>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Requisito</label>
+                              <textarea
+                                name="text"
+                                required
+                                rows="3"
+                                className="w-full px-3 py-2 border rounded-lg resize-y bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
+                                placeholder="Ej: Leer el libro..."
+                                defaultValue={editingRequirement?.text || ''}
+                                key={editingRequirement ? `text-${editingRequirement.id} ` : 'text-new'}
+                              />
                             </div>
-                            <button type="submit" className={`px-4 py-2 text-white rounded-lg font-medium shadow-md ${editingRequirement ? 'bg-orange-600 hover:bg-orange-700' : 'bg-indigo-600 hover:bg-indigo-700'} `}>
-                              {editingRequirement ? 'Guardar Cambios' : 'Agregar Requisito'}
-                            </button>
-                          </form>
-                        </div>
-                      )}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Evaluación</label>
+                              <select
+                                name="evaluation"
+                                required
+                                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
+                                defaultValue={editingRequirement?.evaluation || 'first'}
+                                key={editingRequirement ? `eval-${editingRequirement.id} ` : 'eval-new'}
+                              >
+                                <option value="first">Primera Evaluación</option>
+                                <option value="second">Segunda Evaluación</option>
+                                <option value="third">Tercera Evaluación</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Actividad (Opcional)</label>
+                              <input
+                                name="activityDate"
+                                type="date"
+                                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
+                                defaultValue={editingRequirement?.activityDate || ''}
+                                key={editingRequirement ? `date-${editingRequirement.id} ` : 'date-new'}
+                              />
+                            </div>
+                            <div className="md:col-span-3">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Forma de Evidencia</label>
+                              <input
+                                name="evidence"
+                                required
+                                type="text"
+                                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white border-gray-300 dark:border-gray-500"
+                                placeholder="Ej: Informe de lectura, Certificado..."
+                                defaultValue={editingRequirement?.evidence || ''}
+                                key={editingRequirement ? `evidence-${editingRequirement.id} ` : 'evidence-new'}
+                              />
+                            </div>
+                          </div>
+                          <button type="submit" className={`px-4 py-2 text-white rounded-lg font-medium shadow-md ${editingRequirement ? 'bg-orange-600 hover:bg-orange-700' : 'bg-indigo-600 hover:bg-indigo-700'} `}>
+                            {editingRequirement ? 'Guardar Cambios' : 'Agregar Requisito'}
+                          </button>
+                        </form>
+                      </div>
 
                       {/* Requirements List */}
 
@@ -23038,31 +22896,29 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       <span className="text-xs bg-amber-700 px-2 py-1 rounded">{masterGuideData.evaluationDates[period]}</span>
                                     )}
                                   </div>
-                                  {!isReadOnly && (
-                                    <button
-                                      onClick={() => {
-                                        if (confirm(`¿Marcar TODA la ${idx + 1}ª evaluación como completada para ${member.firstName}?`)) {
-                                          setMasterGuideData(prev => {
-                                            const reqsInPeriod = prev.requirements.filter(r => r.evaluation === period);
-                                            const memberProgress = { ...(prev.progress[member.id] || {}) };
-  
-                                            reqsInPeriod.forEach(req => {
-                                              memberProgress[req.id] = { completed: true, date: new Date().toISOString() };
-                                            });
-  
-                                            return {
-                                              ...prev,
-                                              progress: { ...prev.progress, [member.id]: memberProgress }
-                                            };
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`¿Marcar TODA la ${idx + 1}ª evaluación como completada para ${member.firstName}?`)) {
+                                        setMasterGuideData(prev => {
+                                          const reqsInPeriod = prev.requirements.filter(r => r.evaluation === period);
+                                          const memberProgress = { ...(prev.progress[member.id] || {}) };
+
+                                          reqsInPeriod.forEach(req => {
+                                            memberProgress[req.id] = { completed: true, date: new Date().toISOString() };
                                           });
-                                        }
-                                      }}
-                                      className="text-xs bg-white text-amber-700 px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1 font-bold"
-                                      title="Marcar todo como completado"
-                                    >
-                                      <CheckCircle className="w-3 h-3" /> Completar
-                                    </button>
-                                  )}
+
+                                          return {
+                                            ...prev,
+                                            progress: { ...prev.progress, [member.id]: memberProgress }
+                                          };
+                                        });
+                                      }
+                                    }}
+                                    className="text-xs bg-white text-amber-700 px-2 py-1 rounded hover:bg-gray-100 flex items-center gap-1 font-bold"
+                                    title="Marcar todo como completado"
+                                  >
+                                    <CheckCircle className="w-3 h-3" /> Completar
+                                  </button>
                                 </div>
                                 <div className="p-4 space-y-4">
                                   {masterGuideData.requirements.filter(r => r.evaluation === period).map(req => {
@@ -23073,12 +22929,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <input
                                             type="checkbox"
                                             checked={!!isCompleted}
-                                            onChange={() => {
-                                              if (isReadOnly) return;
-                                              toggleRequirement(req.id);
-                                            }}
-                                            disabled={isReadOnly}
-                                            className={`w-5 h-5 text-amber-600 rounded focus:ring-amber-500 ${isReadOnly ? 'cursor-not-allowed opacity-50' : ''}`}
+                                            onChange={() => toggleRequirement(req.id)}
+                                            className="w-5 h-5 text-amber-600 rounded focus:ring-amber-500"
                                           />
                                         </div>
                                         <div>
@@ -23107,15 +22959,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                           <h3 className="text-lg font-bold text-gray-800 dark:text-white">Fechas de Evaluación</h3>
-                          {!isReadOnly && (
-                            <button
-                              onClick={() => setViewingGMDetail('requirements')}
-                              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                            >
-                              <Settings className="w-5 h-5" />
-                              Administrar Requisitos
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setViewingGMDetail('requirements')}
+                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                          >
+                            <Settings className="w-5 h-5" />
+                            Administrar Requisitos
+                          </button>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -23125,12 +22975,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <input
                                 type="date"
                                 value={masterGuideData.evaluationDates[period]}
-                                disabled={isReadOnly}
                                 onChange={(e) => setMasterGuideData(prev => ({
                                   ...prev,
                                   evaluationDates: { ...prev.evaluationDates, [period]: e.target.value }
                                 }))}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                               />
                             </div>
                           ))}
@@ -23274,51 +23123,26 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             )}
                         </div>
                       </div>
-
-                })()}
+                    </div>
+                  )}
                 </div>
-                  </>);
-                })()}
+              )
+            }
 
             {
               activeModule === 'settings' && (
                 <div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center justify-between">
                       <div>
                         <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                           <Settings className="w-7 h-7 text-gray-600 dark:text-gray-400" />
-                          Configuración del Sistema
+                          Configuración y Gestión de Datos
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">Configura la identidad, datos y permisos del club</p>
-                      </div>
-
-                      {/* Settings Tabs */}
-                      <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg self-start">
-                        <button
-                          onClick={() => setSettingsTab('identity')}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${settingsTab === 'identity' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:text-gray-800'} `}
-                        >
-                          Identidad
-                        </button>
-                        <button
-                          onClick={() => setSettingsTab('data')}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${settingsTab === 'data' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:text-gray-800'} `}
-                        >
-                          Datos
-                        </button>
-                        <button
-                          onClick={() => setSettingsTab('permissions')}
-                          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${settingsTab === 'permissions' ? 'bg-white dark:bg-gray-800 text-indigo-600 shadow-sm' : 'text-gray-600 dark:text-gray-300 hover:text-gray-800'} `}
-                        >
-                          Permisos
-                        </button>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">Respalda, restaura y configura tu sistema</p>
                       </div>
                     </div>
                   </div>
-
-                  {settingsTab === 'identity' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
 
 
 
@@ -23521,11 +23345,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
 
-                    </div>
-                  )}
+                  </div>
 
-                  {settingsTab === 'data' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {/* Data Management Section */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     {/* Local Storage Status */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
@@ -23698,101 +23520,31 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </div>
 
                   {/* Current Storage Info */}
-                    </div>
-                  )}
-
-                  {/* Permissions Tab */}
-                  {settingsTab === 'permissions' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-6">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                        <div className="flex items-center gap-3 mb-6">
-                          <Lock className="w-6 h-6 text-indigo-600" />
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-800 dark:text-white">Gestión de Permisos por Rol</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Define qué puede ver y editar cada perfil de la directiva.</p>
-                          </div>
-                        </div>
-
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm text-left">
-                            <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs">
-                              <tr>
-                                <th className="px-4 py-3 sticky left-0 bg-gray-50 dark:bg-gray-900/50 z-10 w-48">Módulo / Sección</th>
-                                {[
-                                  { id: 'Subdirector', label: 'Subdirector/a' },
-                                  { id: 'Secretario', label: 'Secretario/a' },
-                                  { id: 'Tesorera', label: 'Tesorera/o' },
-                                  { id: 'DUMC', label: 'DUMC' },
-                                  { id: 'Consejero', label: 'Consejero/Instructor' }
-                                ].map(role => (
-                                  <th key={role.id} className="px-4 py-3 text-center">{role.label}</th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                              {menuItems.filter(m => m.id !== 'dashboard' && m.id !== 'settings').map(module => (
-                                <tr key={module.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white sticky left-0 bg-white dark:bg-gray-800 z-10">
-                                    <div className="flex items-center gap-2">
-                                      <module.icon className="w-4 h-4 text-gray-400" />
-                                      {module.label}
-                                    </div>
-                                  </td>
-                                  {[
-                                    'Subdirector',
-                                    'Secretario',
-                                    'Tesorera',
-                                    'DUMC',
-                                    'Consejero'
-                                  ].map(roleId => {
-                                    const currentLevel = (clubSettings.rolePermissions && clubSettings.rolePermissions[roleId] && clubSettings.rolePermissions[roleId][module.id])
-                                      ? clubSettings.rolePermissions[roleId][module.id]
-                                      : getModuleAccessLevel({ position: roleId }, module.id); // Get default if not set
-
-                                    return (
-                                      <td key={roleId} className="px-4 py-3">
-                                        <select
-                                          value={currentLevel}
-                                          onChange={(e) => {
-                                            const newLevel = e.target.value;
-                                            setClubSettings(prev => ({
-                                              ...prev,
-                                              rolePermissions: {
-                                                ...prev.rolePermissions,
-                                                [roleId]: {
-                                                  ...(prev.rolePermissions?.[roleId] || {}),
-                                                  [module.id]: newLevel
-                                                }
-                                              }
-                                            }));
-                                          }}
-                                          className={`w-full text-xs p-1.5 rounded border ${currentLevel === ACCESS_FULL ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800' :
-                                              currentLevel === ACCESS_READ ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800' :
-                                                'bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700'
-                                            }`}
-                                        >
-                                          <option value={ACCESS_FULL}>Acceso Total</option>
-                                          <option value={ACCESS_READ}>Solo Lectura</option>
-                                          <option value={ACCESS_NONE}>Oculto</option>
-                                        </select>
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 flex items-start gap-3">
-                          <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-                          <div className="text-sm text-amber-800 dark:text-amber-200">
-                            <strong>Nota:</strong> Como Director/Administrador, siempre tendrás acceso total a todos los módulos y a esta configuración, independientemente de lo que se asigne aquí.
-                          </div>
-                        </div>
+                  <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Configuración Actual</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Método de Almacenamiento</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">Almacenamiento Local</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Basado en el navegador</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Sincronización en Nube</p>
+                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">No Configurado</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sigue los pasos arriba para habilitar</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Autoguardado</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">Habilitado</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cambios guardados automáticamente</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Versión</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">1.0</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sistema TriClub Manager</p>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )
             }
@@ -24057,11 +23809,25 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         >
                           Cerrar
                         </button>
-                  )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-          )})})})}
+// Render the application
 
-        );
+const ClubVencedoresApp = () => (
+  <ErrorBoundary>
+    <ClubVencedoresSystem />
+  </ErrorBoundary>
+);
 
-      };
-
+export default ClubVencedoresApp;
