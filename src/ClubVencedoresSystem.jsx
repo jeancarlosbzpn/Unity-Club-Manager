@@ -5838,7 +5838,13 @@ const ClubVencedoresSystem = () => {
                             onClick={() => {
                               if (confirm(`¿Estás seguro de que deseas eliminar el reporte de ${group.label}?\n\nSe borrarán los datos de inspección de este grupo para hoy.`)) {
                                 // Logic to identify members of the group
-                                const isDirective = (m) => m.position && m.position.trim() !== '' && m.position !== 'Ninguno';
+                                const isDirective = (m) => {
+                                  if (m.position && m.position.trim() !== '' && m.position !== 'Ninguno') return true;
+                                  if (m.directiveRoles) {
+                                    return Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+                                  }
+                                  return false;
+                                };
                                 const getAge = (m) => {
                                   if (!m.dateOfBirth) return 0;
                                   return Math.abs(new Date(Date.now() - new Date(m.dateOfBirth).getTime()).getUTCFullYear() - 1970);
@@ -5892,7 +5898,7 @@ const ClubVencedoresSystem = () => {
                 {(() => {
                   // 1. Separate Directive vs Regular
                   const directiveMembers = members
-                    .filter(m => m.position && m.position.trim() !== '' && m.position !== 'Ninguno')
+                    .filter(isDirective)
                     .sort((a, b) => {
                       const roleOrder = {
                         'Director': 1, 'Directora': 1,
@@ -5911,7 +5917,7 @@ const ClubVencedoresSystem = () => {
                       return getHierarchicalLevel(a.position) - getHierarchicalLevel(b.position);
                     });
 
-                  const allRegularMembers = members.filter(m => !m.position || m.position.trim() === '' || m.position === 'Ninguno');
+                  const allRegularMembers = members.filter(m => !isDirective(m));
 
                   const getMemberAge = (m) => {
                     if (!m.dateOfBirth) return 0;
