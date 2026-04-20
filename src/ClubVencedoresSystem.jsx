@@ -16178,6 +16178,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 );
               })()}
 
+            })()
+  
             {
               activeModule === 'qualifications' && (() => {
                 const accessLevel = getModuleAccessLevel('qualifications');
@@ -16674,7 +16676,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   </div>
                 )}
-
+  
+            })()}
 
             {/* Medical Records Module */}
             {
@@ -21697,10 +21700,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-              })()
-            }
+                    </div>
+                  </>)
+                })()
+              }
 
             {/* Calendar Grid-Only for Activities */}
             {
@@ -21799,7 +21802,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </div>
                 </div>
               )
-            })()}
+            }
 
             {
               activeModule === 'activities' && (
@@ -24057,8 +24060,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
               </div>
             )}
           </div>
-  );
-};
+        ));
+      };
 
 const ClubVencedoresApp = () => (
   <ErrorBoundary>
