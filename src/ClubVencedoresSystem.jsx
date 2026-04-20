@@ -3602,27 +3602,27 @@ const ClubVencedoresSystem = () => {
         <head>
           <title>${reportTitle}</title>
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; line-height: 1.4; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4f46e5; padding-bottom: 15px; }
-            .header h1 { margin: 0; font-size: 26px; color: #1e1b4b; }
-            .header p { margin: 5px 0 0; color: #4b5563; font-size: 15px; font-weight: 500; }
-            .section { margin-bottom: 40px; page-break-inside: avoid; }
-            .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; color: #4f46e5; background: #f5f3ff; padding: 8px 12px; border-radius: 6px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 13px; }
-            th { text-align: left; background-color: #f9fafb; padding: 12px 10px; border-bottom: 2px solid #e5e7eb; color: #374151; }
-            td { padding: 10px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
-            .progress-container { width: 100px; height: 12px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin-top: 4px; border: 1px solid #d1d5db; }
-            .progress-bar { height: 100%; background: linear-gradient(90deg, #10b981, #059669); }
-            .percent-text { font-size: 11px; font-weight: bold; color: #065f46; margin-top: 2px; }
-            .item-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-            .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
-            .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+            @media print {
+              @page { margin: 10mm; }
+              body { padding: 0; }
+            }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.3; -webkit-print-color-adjust: exact; }
+            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
+            .header h1 { margin: 0; font-size: 22px; color: #1e1b4b; }
+            .header p { margin: 2px 0 0; color: #4b5563; font-size: 13px; font-weight: 500; }
+            .section { margin-bottom: 25px; page-break-inside: avoid; }
+            .section-title { font-size: 15px; font-weight: 800; margin-bottom: 10px; color: #4f46e5; background: #f5f3ff; padding: 6px 10px; border-radius: 4px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 11px; }
+            th { text-align: left; background-color: #f9fafb; padding: 10px 8px; border-bottom: 2px solid #e5e7eb; color: #374151; }
+            td { padding: 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+            .progress-container { width: 80px; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; margin-top: 2px; border: 1px solid #d1d5db; position: relative; }
+            .progress-bar { height: 100%; background: #10b981 !important; width: 0; }
+            .percent-text { font-size: 10px; font-weight: bold; color: #065f46; margin-top: 1px; }
+            .owned-list { color: #6b7280; font-size: 10px; line-height: 1.2; }
+            .missing-list { display: flex; flex-wrap: wrap; gap: 3px; }
+            .badge { padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 600; text-transform: uppercase; }
             .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
             .member-row:nth-child(even) { background-color: #fafafa; }
-            .summary-box { display: flex; justify-content: space-around; background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
-            .stat { text-align: center; }
-            .stat-val { font-size: 20px; font-weight: bold; color: #1e293b; }
-            .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; }
           </style>
         </head>
         <body>
@@ -3674,16 +3674,16 @@ const ClubVencedoresSystem = () => {
                         <div class="progress-container">
                           <div class="progress-bar" style="width: ${m.percent}%"></div>
                         </div>
-                        <div class="percent-text">${m.percent}% Completo</div>
+                        <div class="percent-text">${m.percent}%</div>
                       </td>
                       <td>
-                        <div class="item-list">
-                          ${m.ownedItems.map(i => `<span class="badge badge-green">${i}</span>`).join('')}
-                          ${m.ownedItems.length === 0 ? '<span style="color: #94a3b8; font-style: italic; font-size: 11px;">Ninguno</span>' : ''}
+                        <div class="owned-list">
+                          ${m.ownedItems.join(', ')}
+                          ${m.ownedItems.length === 0 ? '<span style="font-style: italic;">Ninguno</span>' : ''}
                         </div>
                       </td>
                       <td>
-                        <div class="item-list">
+                        <div class="missing-list">
                           ${m.missingItems.map(i => `<span class="badge badge-red">${i}</span>`).join('')}
                           ${m.missingItems.length === 0 ? '<span style="color: #10b981; font-weight: bold; font-size: 11px;">✓ Todo completo</span>' : ''}
                         </div>
@@ -6325,21 +6325,25 @@ const ClubVencedoresSystem = () => {
                                   <head>
                                     <title>Reporte de Uniformidad - ${title}</title>
                                     <style>
-                                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #333; line-height: 1.4; }
-                                      .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #4f46e5; padding-bottom: 15px; }
-                                      .header h1 { margin: 0; font-size: 26px; color: #1e1b4b; }
-                                      .header p { margin: 5px 0 0; color: #4b5563; font-size: 15px; font-weight: 500; }
-                                      .section { margin-bottom: 40px; page-break-inside: avoid; }
-                                      .section-title { font-size: 18px; font-weight: 800; margin-bottom: 15px; color: #4f46e5; background: #f5f3ff; padding: 8px 12px; border-radius: 6px; }
-                                      table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 13px; }
-                                      th { text-align: left; background-color: #f9fafb; padding: 12px 10px; border-bottom: 2px solid #e5e7eb; color: #374151; }
-                                      td { padding: 10px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
-                                      .progress-container { width: 100px; height: 12px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin-top: 4px; border: 1px solid #d1d5db; }
-                                      .progress-bar { height: 100%; background: linear-gradient(90deg, #10b981, #059669); }
-                                      .percent-text { font-size: 11px; font-weight: bold; color: #065f46; margin-top: 2px; }
-                                      .item-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-                                      .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
-                                      .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+                                      @media print {
+                                        @page { margin: 10mm; }
+                                        body { padding: 0; }
+                                      }
+                                      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; line-height: 1.3; -webkit-print-color-adjust: exact; }
+                                      .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #4f46e5; padding-bottom: 10px; }
+                                      .header h1 { margin: 0; font-size: 22px; color: #1e1b4b; }
+                                      .header p { margin: 2px 0 0; color: #4b5563; font-size: 13px; font-weight: 500; }
+                                      .section { margin-bottom: 25px; page-break-inside: avoid; }
+                                      .section-title { font-size: 15px; font-weight: 800; margin-bottom: 10px; color: #4f46e5; background: #f5f3ff; padding: 6px 10px; border-radius: 4px; }
+                                      table { width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 11px; }
+                                      th { text-align: left; background-color: #f9fafb; padding: 10px 8px; border-bottom: 2px solid #e5e7eb; color: #374151; }
+                                      td { padding: 8px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+                                      .progress-container { width: 80px; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; margin-top: 2px; border: 1px solid #d1d5db; position: relative; }
+                                      .progress-bar { height: 100%; background: #10b981 !important; width: 0; }
+                                      .percent-text { font-size: 10px; font-weight: bold; color: #065f46; margin-top: 1px; }
+                                      .owned-list { color: #6b7280; font-size: 10px; line-height: 1.2; }
+                                      .missing-list { display: flex; flex-wrap: wrap; gap: 3px; }
+                                      .badge { padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 600; text-transform: uppercase; }
                                       .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
                                     </style>
                                   </head>
@@ -6368,11 +6372,16 @@ const ClubVencedoresSystem = () => {
                                                 <td><div style="font-weight: 700; color: #1e293b;">${m.name}</div></td>
                                                 <td>
                                                   <div class="progress-container"><div class="progress-bar" style="width: ${m.percent}%"></div></div>
-                                                  <div class="percent-text">${m.percent}% Completo</div>
+                                                  <div class="percent-text">${m.percent}%</div>
                                                 </td>
-                                                <td><div class="item-list">${m.ownedItems.map(i => `<span class="badge badge-green">${i}</span>`).join('')}</div></td>
                                                 <td>
-                                                  <div class="item-list">
+                                                  <div class="owned-list">
+                                                    ${m.ownedItems.join(', ')}
+                                                    ${m.ownedItems.length === 0 ? '<span style="font-style: italic;">Ninguno</span>' : ''}
+                                                  </div>
+                                                </td>
+                                                <td>
+                                                  <div class="missing-list">
                                                     ${m.missingItems.map(i => `<span class="badge badge-red">${i}</span>`).join('')}
                                                     ${m.missingItems.length === 0 ? '<span style="color: #10b981; font-weight: bold; font-size: 11px;">✓ Todo completo</span>' : ''}
                                                   </div>
