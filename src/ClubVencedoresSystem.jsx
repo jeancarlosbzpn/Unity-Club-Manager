@@ -6354,7 +6354,7 @@ const ClubVencedoresSystem = () => {
                       {(selectedInspectionGroup === 'all' || selectedInspectionGroup === 'guias_mayores') && renderInspectionTable(sortedGuiasMayores, "Guías Mayores (16+)", <GuiasIcon className="w-5 h-5" />, "text-yellow-700 dark:text-yellow-300", "bg-yellow-50 dark:bg-yellow-900/20")}
                     </>
                   );
-                }
+                )}
 
         {/* INVENTORY VIEW */}
         {
@@ -24057,7 +24057,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
               </div>
             )}
           </div>
-        )));
+        ));
       };
     };
 
