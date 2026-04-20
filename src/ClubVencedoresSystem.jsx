@@ -11023,29 +11023,42 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </label>
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {[
+                              // Módulos Principales
                               { id: 'dashboard', label: 'Inicio' },
+                              { id: 'attendance', label: 'Asistencia' },
                               { id: 'activities', label: 'Calendario y Actividades' },
-                              { id: 'ranking', label: 'Ranking' },
-                              { id: 'master_guide', label: 'Guía Mayor' },
-                              { id: 'birthdays', label: 'Cumpleaños' },
-                              { id: 'directive', label: 'Directiva' },
-                              { id: 'members', label: 'Miembros' },
-                              { id: 'classes', label: 'Clases' },
-                              { id: 'units', label: 'Unidades' },
-                              { id: 'medical', label: 'Registros Médicos' },
-                              { id: 'parents', label: 'Padres' },
-                              { id: 'finances', label: 'Finanzas' },
-                              { id: 'cuotas', label: 'Cuotas' },
-                              { id: 'inventory', label: 'Inventario' },
-                              { id: 'inventory_tents', label: 'Inventario: Carpas' },
-
-                              { id: 'uniformity', label: 'Uniformidad' },
+                              { id: 'directive', label: 'Directiva y Cargos' },
+                              { id: 'members', label: 'Gestión de Miembros' },
+                              { id: 'finances', label: 'Finanzas y Gastos' },
+                              { id: 'inventory', label: 'Inventario General' },
+                              { id: 'uniformity', label: 'Uniformidad e Inspección' },
+                              { id: 'discipline', label: 'Faltas y Disciplina' },
+                              { id: 'points', label: 'Puntaje del Club' },
                               { id: 'reports', label: 'Reportes y Estadísticas' },
-                              { id: 'idcards', label: 'Reportes: Carnets' },
+                              { id: 'camps', label: 'Logística de Campamentos' },
+                              { id: 'reminders', label: 'Recordatorios y Alertas' },
+                              { id: 'settings', label: 'Configuración del Sistema' },
+                              
+                              // Submódulos de Calendario
+                              { id: 'ranking', label: 'Calendario: Ranking' },
+                              { id: 'master_guide', label: 'Calendario: Guía Mayor' },
+                              { id: 'birthdays', label: 'Calendario: Cumpleaños' },
+                              { id: 'programs', label: 'Calendario: Programas' },
+                              { id: 'itinerary', label: 'Calendario: Itinerarios' },
+                              { id: 'cleaning', label: 'Calendario: Limpieza' },
+                              
+                              // Submódulos de Miembros
+                              { id: 'classes', label: 'Miembros: Clases' },
+                              { id: 'units', label: 'Miembros: Unidades' },
+                              { id: 'medical', label: 'Miembros: Registro Médico' },
+                              { id: 'parents', label: 'Miembros: Padres' },
                               { id: 'achievements', label: 'Miembros: Galardones' },
                               { id: 'qualifications', label: 'Miembros: Calificaciones' },
-                              { id: 'points', label: 'Puntaje' },
-                              { id: 'settings', label: 'Configuración' }
+                              
+                              // Otros Submódulos
+                              { id: 'cuotas', label: 'Finanzas: Cuotas' },
+                              { id: 'inventory_tents', label: 'Inventario: Carpas' },
+                              { id: 'idcards', label: 'Reportes: Carnets' }
                             ].map(module => (
                               <label key={module.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600 cursor-pointer transition-colors">
                                 <input
