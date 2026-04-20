@@ -9440,7 +9440,7 @@ const ClubVencedoresSystem = () => {
   };
 
   // Save Personal Account Settings
-  const handleSaveAccountSettings = () => {
+  const handleSaveAccountSettings = async () => {
     const errors = {};
     if (!accountFormData.name.trim()) errors.name = 'El nombre es obligatorio';
     if (!accountFormData.username.trim()) errors.username = 'El nombre de usuario es obligatorio';
@@ -9464,33 +9464,45 @@ const ClubVencedoresSystem = () => {
       return;
     }
 
-    // Update internal users array
-    const updatedUsers = users.map(u => {
-      if (u.username === currentUser.username || (u.email && u.email === currentUser.email)) {
-        return {
-          ...u,
-          name: accountFormData.name,
-          username: accountFormData.username,
-          password: accountFormData.newPassword || u.password,
-          position: accountFormData.position
-        };
-      }
-      return u;
-    });
+    try {
+      setSyncStatus('saving');
+      
+      // Update internal users array
+      const updatedUsers = users.map(u => {
+        if (u.username === currentUser.username || (u.email && u.email === currentUser.email)) {
+          return {
+            ...u,
+            name: accountFormData.name,
+            username: accountFormData.username,
+            password: accountFormData.newPassword || u.password,
+            position: accountFormData.position
+          };
+        }
+        return u;
+      });
 
-    setUsers(updatedUsers);
-    
-    // Update active currentUser
-    setCurrentUser(prev => ({
-      ...prev,
-      name: accountFormData.name,
-      username: accountFormData.username,
-      password: accountFormData.newPassword || prev.password,
-      position: accountFormData.position
-    }));
+      // FORCE IMMEDIATE CLOUD SAVE FOR PROFILE
+      await dataService.writeData('users', updatedUsers);
 
-    setShowAccountSettings(false);
-    alert('✅ Perfil actualizado correctamente');
+      setUsers(updatedUsers);
+      
+      // Update active currentUser
+      setCurrentUser(prev => ({
+        ...prev,
+        name: accountFormData.name,
+        username: accountFormData.username,
+        password: accountFormData.newPassword || prev.password,
+        position: accountFormData.position
+      }));
+
+      setSyncStatus('saved');
+      setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      setShowAccountSettings(false);
+      alert('✅ Perfil actualizado correctamente');
+    } catch (error) {
+      console.error("Error saving account settings:", error);
+      setSyncStatus('error');
+    }
   };
 
   const handleAddUser = () => {
