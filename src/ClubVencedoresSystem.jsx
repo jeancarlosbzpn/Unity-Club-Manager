@@ -344,6 +344,7 @@ const ClubVencedoresSystem = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Authentication observer
   useEffect(() => {
@@ -817,7 +818,6 @@ const ClubVencedoresSystem = () => {
   });
 
   // Data Safety State
-  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Communication Module State
   const [whatsappGroups, setWhatsappGroups] = useState([
