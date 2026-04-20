@@ -3,7 +3,7 @@ import { auth } from '../firebase-config';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
 
-const Login = ({ onLoginSuccess }) => {
+const Login = ({ onLoginSuccess, users = [] }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,6 +19,21 @@ const Login = ({ onLoginSuccess }) => {
       if (isRegistering) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
+        // 1. Check if it's a local/internal username login
+        // Either the identifier doesn't have an @ or we find a match in the internal users list
+        const localUser = users.find(u => 
+          (u.username && u.username.toLowerCase() === email.toLowerCase()) || 
+          (u.email && u.email.toLowerCase() === email.toLowerCase())
+        );
+
+        if (localUser && localUser.password === password) {
+          console.log('✅ Local user detected, bypassing Firebase Auth');
+          localStorage.setItem('clubvencedores_current_user', JSON.stringify(localUser));
+          onLoginSuccess();
+          return;
+        }
+
+        // 2. Otherwise use standard Firebase Auth
         await signInWithEmailAndPassword(auth, email, password);
       }
       onLoginSuccess();
@@ -63,14 +78,14 @@ const Login = ({ onLoginSuccess }) => {
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block">Correo Electrónico</label>
+            <label className="text-sm font-medium text-gray-700 block">Usuario o Correo</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
-                type="email"
+                type="text"
                 required
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="ejemplo@club.com"
+                placeholder="soybaex o ejemplo@club.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
