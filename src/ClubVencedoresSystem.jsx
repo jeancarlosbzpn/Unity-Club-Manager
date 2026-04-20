@@ -394,21 +394,15 @@ const ClubVencedoresSystem = () => {
   const [newUserErrors, setNewUserErrors] = useState({});
   const [selectedBirthdayMember, setSelectedBirthdayMember] = useState(null);
 
-  // Users database (including admin and other users)
-  const [users, setUsers] = useState([
-    {
-      username: 'soybaex',
-      password: 'Baez240080',
-      role: 'administrator',
-      name: 'Administrator',
-      position: 'Director'
-    }
-  ]);
+  // Users database (starts empty, filled from Cloud/Local storage)
+  const [users, setUsers] = useState([]);
 
   // NEW: Identity Sync Effect - Link Firebase Auth user to internal profile roles/positions
   // Positioned here AFTER 'users' and 'currentUser' state are defined
   useEffect(() => {
-    if (isAuthenticated && currentUser && users.length > 0) {
+    // CRITICAL: Only sync identity if we have actually loaded data from cloud
+    // to avoid syncing with the initial empty state.
+    if (isAuthenticated && currentUser && dataLoaded && users.length > 0) {
       const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
       const isMaster = masterEmails.includes(currentUser.email);
 
@@ -446,19 +440,20 @@ const ClubVencedoresSystem = () => {
           updatedUser.role = 'administrator';
           changed = true;
         }
-        // Fallback name if nothing found
+        // NO FALLBACK NAME HERE: Allow cloud name to win. 
+        // Only if name is absolutely empty, we set a temporary one.
         if (!updatedUser.name) {
-          updatedUser.name = 'Director General';
+          updatedUser.name = currentUser.displayName || currentUser.email?.split('@')[0] || 'Director General';
           changed = true;
         }
       }
 
       if (changed) {
-        console.log('🔗 Syncing identity state with DB profile data...');
+        console.log('🔗 Identity synced with Cloud profile');
         setCurrentUser(updatedUser);
       }
     }
-  }, [users, isAuthenticated, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.role]);
+  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.role]);
 
   // Admin credentials (reference to main admin)
   const [adminUser, setAdminUser] = useState(users[0]);
