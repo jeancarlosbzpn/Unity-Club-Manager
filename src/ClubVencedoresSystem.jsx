@@ -409,16 +409,24 @@ const ClubVencedoresSystem = () => {
   // Positioned here AFTER 'users' and 'currentUser' state are defined
   useEffect(() => {
     if (isAuthenticated && currentUser && users.length > 0) {
-      // 1. HARDCODED BYPASS FOR OWNER AND MASTER ADMIN
       const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
-      if (masterEmails.includes(currentUser.email) && currentUser.position !== 'Director') {
-        console.log('👑 Master Admin detected, assigning Director role automatically');
-        setCurrentUser(prev => ({ ...prev, role: 'administrator', position: 'Director', name: 'Director General' }));
-        return;
+      const isMaster = masterEmails.includes(currentUser.email);
+
+      // 1. HARDCODED BYPASS FOR OWNER AND MASTER ADMIN
+      if (isMaster) {
+        if (currentUser.position !== 'Director' || currentUser.role !== 'administrator') {
+          console.log('👑 Master Admin detected, forcing Director role & stopping sync');
+          setCurrentUser(prev => ({ 
+            ...prev, 
+            role: 'administrator', 
+            position: 'Director', 
+            name: prev.name || 'Director General' 
+          }));
+        }
+        return; // CRITICAL: Stop here for master accounts so DB profile doesn't overwrite permissions
       }
 
-      // 2. SEARCH IN INTERNAL USERS LIST
-      // Find internal profile by email (case-insensitive) or username
+      // 2. SEARCH IN INTERNAL USERS LIST FOR REGULAR USERS
       const profile = users.find(u =>
         (u.email && u.email.toLowerCase() === (currentUser.email?.toLowerCase())) ||
         (u.username && currentUser.email && u.username.toLowerCase() === currentUser.email.split('@')[0].toLowerCase())
