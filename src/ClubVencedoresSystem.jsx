@@ -2056,7 +2056,7 @@ const ClubVencedoresSystem = () => {
     const explicitModules = currentUser.allowedModules || [];
     if (explicitModules.length > 0) {
       if (!explicitModules.includes(moduleId)) {
-        return 'none'; // Not in the explicitly allowed list
+        return 'none'; // Strictly follow the explicitly allowed list if provided
       }
     }
 
@@ -2102,12 +2102,12 @@ const ClubVencedoresSystem = () => {
     const writers = writeAccess[moduleId] || [];
     if (writers.includes(pos)) return 'write';
 
-    // Modules that are HIDDEN (not visible at all) for unauthorized users
-    const hiddenModules = new Set(['finances','cuotas','points','reminders','settings','directive']);
+    // Modules that are CRITICAL and should be hidden from regular members (Read access denied)
+    const restrictedModules = new Set(['finances','cuotas','points','reminders','settings','directive','inventory']);
 
-    if (hiddenModules.has(moduleId)) return 'none';
+    if (restrictedModules.has(moduleId)) return 'none';
 
-    // Default to read access only for safe modules if not filtered by allowedModules
+    // Default: Allow all authenticated members to READ non-sensitive club data
     return 'read';
   };
 
