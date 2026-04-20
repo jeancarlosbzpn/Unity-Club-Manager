@@ -4588,7 +4588,7 @@ const ClubVencedoresSystem = () => {
                         };
 
                         return (
-                          <label key={member.id} className={`flex items-center p-3 rounded border cursor-pointer hover:bg-gray-50 dark: hover:bg-gray-700 / 50 transition-colors ${isAssignedHere ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-700'} `}>
+                          <label key={member.id} className={`flex items-center p-3 rounded border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isAssignedHere ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-700'} `}>
                             <input
                               type="checkbox"
                               checked={isAssignedHere}
@@ -5416,7 +5416,7 @@ const ClubVencedoresSystem = () => {
                                 };
 
                                 return (
-                                  <label key={member.id} className={`flex items-center p-3 rounded border cursor-pointer hover:bg-gray-50 dark: hover:bg-gray-700 / 50 transition-colors ${isAssignedHere ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-700'} ${isAssignedElsewhere ? 'opacity-50' : ''} `}>
+                                  <label key={member.id} className={`flex items-center p-3 rounded border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isAssignedHere ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'border-gray-200 dark:border-gray-700'} ${isAssignedElsewhere ? 'opacity-50' : ''} `}>
                                     <input
                                       type="checkbox"
                                       checked={isAssignedHere}
@@ -5960,7 +5960,7 @@ const ClubVencedoresSystem = () => {
 
 
                                 return (
-                                  <tr key={member.id} className={`hover:bg-gray-50 dark: hover:bg-gray-700 / 50 ${isComplete ? '' : 'bg-red-50/30 dark:bg-red-900/10'} `}>
+                                  <tr key={member.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${isComplete ? '' : 'bg-red-50/30 dark:bg-red-900/10'} `}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                       <div className="flex items-center">
                                         <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
