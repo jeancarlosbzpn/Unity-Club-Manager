@@ -508,11 +508,9 @@ const ClubVencedoresSystem = () => {
     else if (moduleId === 'units') { label = 'Unidades'; Icon = Grid; }
     else if (moduleId === 'reminders') { label = 'Recordatorios'; Icon = Bell; }
     else if (moduleId === 'activities') { label = 'Actividades'; Icon = Calendar; }
-    else if (moduleId === 'programs') { label = 'Programas'; Icon = ClipboardList; }
     else if (moduleId === 'inventory') { label = 'Inventario'; Icon = Package; }
     else if (moduleId === 'directive') { label = 'Directiva'; Icon = Award; }
     else if (moduleId === 'profile') { label = 'Perfil'; Icon = UserPlus; }
-    else if (moduleId === 'cleaning') { label = 'Limpieza'; Icon = RefreshCw; }
     else if (moduleId === 'attendance') { label = 'Asistencia'; Icon = ClipboardList; }
     else { label = moduleId.charAt(0).toUpperCase() + moduleId.slice(1); }
 
@@ -542,9 +540,7 @@ const ClubVencedoresSystem = () => {
   };
 
   // Programs State
-  const [selectedActivityForProgram, setSelectedActivityForProgram] = useState(null);
-  const [programEditorContent, setProgramEditorContent] = useState('');
-  const [programViewMode, setProgramViewMode] = useState('list'); // 'list', 'edit', 'upload'
+
 
   const quillModules = React.useMemo(() => ({
     toolbar: [
@@ -671,13 +667,9 @@ const ClubVencedoresSystem = () => {
   const [financeErrors, setFinanceErrors] = useState({});
   const [financeTab, setFinanceTab] = useState('summary'); // 'summary', 'fixed_payments'
 
-
-
   // Activities state
   const [activities, setActivities] = useState([]);
-  const [cleaningSchedule, setCleaningSchedule] = useState([]); // [{ id, month, supervisorId, weeks: [] }]
-  const [draggedMember, setDraggedMember] = useState(null); // For DnD in Cleaning Module
-  const [activityTab, setActivityTab] = useState('events'); // 'events' or 'cleaning'
+  const [activityTab, setActivityTab] = useState('events'); // 'events'
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
 
@@ -878,237 +870,7 @@ const ClubVencedoresSystem = () => {
     return dateToLocalISO(d);
   };
 
-  // Cleaning Schedule Generator
-  const generateCleaningSchedule = (startDate, monthsToGenerate = 1, isEmpty = false) => {
-    console.log('generateCleaningSchedule called with:', { startDate, monthsToGenerate, isEmpty });
-    // 1. Get pool of assignable members (Conquistadores only, maybe verify age/class?)
-    // Filter active members and separate by gender
-    // EXCLUDE DIRECTIVE MEMBERS (Board) who are 18+ years old
-    // Younger directive members (under 18) should still participate in cleaning
 
-    const eligibleMembers = members.filter(m => {
-      if (!m.gender) return false;
-      const pos = m.position || '';
-
-      // Regular members: only if under 18
-      const age = getMemberAge(m);
-      if (age >= 18) return false;
-
-      // Directive members: already excluded by age check above, but for clarity:
-      if (pos !== '' && pos !== 'Member' && pos !== 'Miembro') {
-        return age < 18;
-      }
-
-      return true;
-    });
-    // Unified helper to organize lists respecting sibling relationships (same gender and mixed gender)
-    const generateCleaningLists = (allMembers) => {
-      const groups = {};
-      allMembers.forEach(m => {
-        const key = m.lastName ? m.lastName.trim().toLowerCase() : 'unknown';
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(m);
-      });
-
-      const mixedPairs = [];
-      const malePool = [];
-      const femalePool = [];
-
-      // 1. Extract Mixed Sibling Pairs
-      Object.entries(groups).forEach(([key, group]) => {
-        if (key === 'unknown' || key === '') {
-          // Unknowns go straight to pools
-          group.forEach(m => (m.gender === 'Male' || m.gender === 'M') ? malePool.push(m) : femalePool.push(m));
-          return;
-        }
-
-        const groupMales = group.filter(m => m.gender === 'Male' || m.gender === 'M');
-        const groupFemales = group.filter(m => m.gender === 'Female' || m.gender === 'F');
-
-        // Pair up Mixed Siblings
-        while (groupMales.length > 0 && groupFemales.length > 0) {
-          mixedPairs.push({ m: groupMales.pop(), f: groupFemales.pop() });
-        }
-
-        // Returns remainder to specific pools (to be paired by same-gender later)
-        groupMales.forEach(m => malePool.push(m));
-        groupFemales.forEach(m => femalePool.push(m));
-      });
-
-      // Shuffle Mixed Pairs
-      for (let i = mixedPairs.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [mixedPairs[i], mixedPairs[j]] = [mixedPairs[j], mixedPairs[i]];
-      }
-
-      const startMales = mixedPairs.map(p => p.m);
-      const startFemales = mixedPairs.map(p => p.f);
-
-      // Helper to pair same-gender leftovers
-      const processGenderPool = (pool) => {
-        // Re-group by name (since we flattened them, but they are siblings)
-        const localGroups = {};
-        pool.forEach(m => {
-          const key = m.lastName ? m.lastName.trim().toLowerCase() : 'unknown';
-          if (!localGroups[key]) localGroups[key] = [];
-          localGroups[key].push(m);
-        });
-
-        const pairs = [];
-        const singles = [];
-
-        Object.values(localGroups).forEach(g => {
-          while (g.length >= 2) pairs.push([g.pop(), g.pop()]);
-          if (g.length) singles.push(g[0]);
-        });
-
-        // Shuffle Singles
-        for (let i = singles.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [singles[i], singles[j]] = [singles[j], singles[i]];
-        }
-        // Pair singles
-        let i = 0;
-        while (i < singles.length - 1) {
-          pairs.push([singles[i], singles[i + 1]]);
-          i += 2;
-        }
-        let remainder = (i < singles.length) ? singles[i] : null;
-
-        // Shuffle Pairs
-        for (let k = pairs.length - 1; k > 0; k--) {
-          const j = Math.floor(Math.random() * (k + 1));
-          [pairs[k], pairs[j]] = [pairs[j], pairs[k]];
-        }
-
-        const result = [];
-        pairs.forEach(p => result.push(...p));
-        if (remainder) result.push(remainder);
-        return result;
-      };
-
-      return {
-        males: [...startMales, ...processGenderPool(malePool)],
-        females: [...startFemales, ...processGenderPool(femalePool)]
-      };
-    };
-
-    // Move this logic inside the loop to support "fresh shuffle" while keeping siblings together
-    // const { males, females } = generateCleaningLists(eligibleMembers); 
-
-    // Initial check just for total count validity
-    if (!isEmpty) {
-      const preCheck = generateCleaningLists(eligibleMembers);
-      if (preCheck.males.length < 2 || preCheck.females.length < 2) {
-        alert('No hay suficientes varones o hembras para generar la rotación (mínimo 2 de cada uno).');
-        return;
-      }
-    }
-
-    // Parse startDate in local time to avoid UTC timezone shift (e.g. '2026-03-01' UTC = Feb 28 local for UTC-4)
-    let start;
-    if (typeof startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      const [sy, sm, sd] = startDate.split('-').map(Number);
-      start = new Date(sy, sm - 1, sd); // local midnight
-    } else {
-      const s = new Date(startDate);
-      start = new Date(s.getFullYear(), s.getMonth(), s.getDate());
-    }
-    const newSchedule = []; // Array of months
-
-    for (let i = 0; i < monthsToGenerate; i++) {
-      const monthDate = new Date(start);
-      monthDate.setMonth(start.getMonth() + i);
-      const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-
-      // 1. Calculate Weeks
-      const weeksInMonthDates = [];
-      const currentIterDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-      const lastDayOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
-      let weekStart = new Date(currentIterDate);
-
-      // Adjust to Monday
-      const day = weekStart.getDay();
-      const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
-      weekStart.setDate(diff);
-
-      while (weekStart <= lastDayOfMonth) {
-        const wednesday = new Date(weekStart);
-        wednesday.setDate(weekStart.getDate() + 2);
-        const friday = new Date(weekStart);
-        friday.setDate(weekStart.getDate() + 4);
-
-        if (wednesday.getMonth() === monthDate.getMonth() || friday.getMonth() === monthDate.getMonth()) {
-          weeksInMonthDates.push({ wed: new Date(wednesday), fri: new Date(friday) });
-        }
-        weekStart.setDate(weekStart.getDate() + 7);
-        if (weekStart.getFullYear() > monthDate.getFullYear() + 1) break;
-      }
-
-      if (weeksInMonthDates.length === 0) continue;
-
-      // 2. Generate Fresh Lists (Siblings are paired within these lists)
-      // This ensures a new random order every month but PRESERVES sibling structure
-      const { males: monthMales, females: monthFemales } = !isEmpty
-        ? generateCleaningLists(eligibleMembers)
-        : { males: [], females: [] };
-
-      // 3. Bucket Distribution (Sequential-No Repeats)
-      // Helper to distribute N items into K buckets
-      const getChunkSize = (totalItems, totalBuckets, bucketIndex) => {
-        const base = Math.floor(totalItems / totalBuckets);
-        const remainder = totalItems % totalBuckets;
-        return base + (bucketIndex < remainder ? 1 : 0);
-      };
-
-      let maleOffset = 0;
-      let femaleOffset = 0;
-
-      const weeksInMonth = weeksInMonthDates.map((dates, weekIdx) => {
-        const team = [];
-
-        // Males
-        const maleCount = getChunkSize(monthMales.length, weeksInMonthDates.length, weekIdx);
-        for (let j = 0; j < maleCount; j++) {
-          if (maleOffset < monthMales.length) {
-            team.push(monthMales[maleOffset].id);
-            maleOffset++;
-          }
-        }
-
-        // Females
-        const femaleCount = getChunkSize(monthFemales.length, weeksInMonthDates.length, weekIdx);
-        for (let k = 0; k < femaleCount; k++) {
-          if (femaleOffset < monthFemales.length) {
-            team.push(monthFemales[femaleOffset].id);
-            femaleOffset++;
-          }
-        }
-
-        return {
-          id: Date.now() + Math.random().toString(),
-          weekRange: `${dates.wed.getDate()}/${dates.wed.getMonth() + 1} (Mié)-${dates.fri.getDate()}/${dates.fri.getMonth() + 1} (Vie)`,
-          team: team,
-          completed: false
-        };
-      });
-
-      newSchedule.push({
-        id: Date.now() + i,
-        month: monthKey,
-        supervisorId: '',
-        weeks: weeksInMonth
-      });
-    }
-
-    setCleaningSchedule(prev => {
-      // Merge or replace? Let's append new months, avoiding duplicates
-      const filtered = prev.filter(s => !newSchedule.some(ns => ns.month === s.month));
-      return [...filtered, ...newSchedule].sort((a, b) => a.month.localeCompare(b.month));
-    });
-
-    alert('Cronograma de limpieza generado exitosamente.');
-  };
 
   const handleAutoFillUnits = () => {
     if (!window.confirm('¿Estás seguro de reasignar AUTOMÁTICAMENTE a todos los miembros? Esto borrará las asignaciones actuales de unidades.')) {
@@ -1201,19 +963,14 @@ const ClubVencedoresSystem = () => {
     alert('Asignación automática completada. Se han distribuido los miembros por edad y género.');
   };
 
-  const handleClearAllSchedules = () => {
-    if (window.confirm('¿Estás seguro de eliminar TODOS los itinerarios de limpieza? Esta acción no se puede deshacer.')) {
-      setCleaningSchedule([]);
-    }
-  };
+
 
   const [bgDate, setBgDate] = useState(getLocalISODate);
 
   // Profile View State
   const [viewingMember, setViewingMember] = useState(null);
   const [lastActiveModule, setLastActiveModule] = useState('dashboard');
-  const [showCleaningReport, setShowCleaningReport] = useState(false);
-  const [cleaningAddTarget, setCleaningAddTarget] = useState(null); // { monthId, weekId }
+
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activityFormData, setActivityFormData] = useState({
@@ -1375,8 +1132,7 @@ const ClubVencedoresSystem = () => {
     insuranceProvider: '',
     insuranceNumber: '',
     specialNotes: '',
-    // Achievements
-    achievements: [], // Array of { achievementId, dateObtained }
+
     regularGrade: '',
     advancedGrade: '',
     signature: ''
@@ -1491,35 +1247,7 @@ const ClubVencedoresSystem = () => {
   const guiasMayoresClassesList = pathfinderClasses.slice(6); // Aspirante and Investido
 
   // Achievements structure
-  const availableAchievements = [
-    // Regular Classes
-    { id: 'friend', name: 'Friend', nameES: 'Amigo', category: 'class', level: 1, color: 'bg-blue-500' },
-    { id: 'companion', name: 'Companion', nameES: 'Compañero', category: 'class', level: 2, color: 'bg-red-500' },
-    { id: 'explorer', name: 'Explorer', nameES: 'Explorador', category: 'class', level: 3, color: 'bg-green-500' },
-    { id: 'ranger', name: 'Ranger', nameES: 'Orientador', category: 'class', level: 4, color: 'bg-gray-500' },
-    { id: 'voyager', name: 'Voyager', nameES: 'Viajero', category: 'class', level: 5, color: 'bg-rose-500' },
-    { id: 'guide', name: 'Guide', nameES: 'Guía', category: 'class', level: 6, color: 'bg-yellow-500' },
 
-    // Advanced Classes (with bars)
-    { id: 'friend-advanced', name: 'Friend Advanced', nameES: 'Amigo Avanzado', category: 'class-advanced', level: 1, color: 'bg-blue-600', includesBar: true },
-    { id: 'companion-advanced', name: 'Companion Advanced', nameES: 'Compañero Avanzado', category: 'class-advanced', level: 2, color: 'bg-red-600', includesBar: true },
-    { id: 'explorer-advanced', name: 'Explorer Advanced', nameES: 'Explorador Avanzado', category: 'class-advanced', level: 3, color: 'bg-green-600', includesBar: true },
-    { id: 'ranger-advanced', name: 'Ranger Advanced', nameES: 'Orientador Avanzado', category: 'class-advanced', level: 4, color: 'bg-gray-600', includesBar: true },
-    { id: 'voyager-advanced', name: 'Voyager Advanced', nameES: 'Viajero Avanzado', category: 'class-advanced', level: 5, color: 'bg-rose-600', includesBar: true },
-    { id: 'guide-advanced', name: 'Guide Advanced', nameES: 'Guía Avanzado', category: 'class-advanced', level: 6, color: 'bg-yellow-600', includesBar: true },
-
-    // Maximum Achievement
-    { id: 'master-guide', name: 'Master Guide', nameES: 'Guía Mayor', category: 'master', level: 7, color: 'bg-purple-600' },
-
-    // Medals
-    { id: 'medal-silver', name: 'Silver Medal', nameES: 'Medallón de Plata', category: 'medal', color: 'bg-gray-300 text-gray-800' },
-    { id: 'medal-gold', name: 'Gold Medal', nameES: 'Medallón de Oro', category: 'medal', color: 'bg-yellow-400 text-yellow-900' },
-
-    // Special Bars
-    { id: 'bar-excellence', name: 'Excellence Bar', nameES: 'Barra de Excelencia', category: 'bar', color: 'bg-indigo-500' },
-    { id: 'bar-march', name: 'March Bar', nameES: 'Barra de Marcha', category: 'bar', color: 'bg-teal-500' },
-    { id: 'bar-bible', name: 'Bible Bar', nameES: 'Barra de Biblia', category: 'bar', color: 'bg-amber-600' }
-  ];
 
   // Phone formatter helper
   const formatPhone = (value) => {
@@ -1555,7 +1283,6 @@ const ClubVencedoresSystem = () => {
     TENTS: 'clubvencedores_tents',
     TENT_ASSIGNMENTS: 'clubvencedores_tent_assignments',
     QUALIFICATIONS: 'clubvencedores_qualifications',
-    CLEANING_SCHEDULE: 'clubvencedores_cleaning_schedule',
     ATTENDANCE_RECORDS: 'clubvencedores_attendance_records',
     FIRST_AID: 'clubvencedores_first_aid',
     CLUB_SETTINGS: 'clubvencedores_settings',
@@ -1588,7 +1315,7 @@ const ClubVencedoresSystem = () => {
           'units', 'users', 'inventory', 'cuotaAmount', 'masterGuideData', 
           'financeCategories', 'inventoryCategories', 'tents', 'tentAssignments', 
           'uniformInspections', 'memberUniforms', 'uniformItems', 'uniformCategories', 
-          'clubSettings', 'duesConfig', 'qualifications', 'cleaningSchedule', 
+          'clubSettings', 'duesConfig', 'qualifications', 
           'attendanceRecords', 'firstAidItems', 'disciplineRecords'
         ];
         
@@ -1662,7 +1389,6 @@ const ClubVencedoresSystem = () => {
         financeCategories: financeCategories || [],
         tents: tents || [],
         tentAssignments: tentAssignments || {},
-        cleaningSchedule: cleaningSchedule || [],
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -1796,7 +1522,6 @@ const ClubVencedoresSystem = () => {
           if (importedData.financeCategories) setFinanceCategories(importedData.financeCategories);
           if (importedData.tents) setTents(importedData.tents);
           if (importedData.tentAssignments) setTentAssignments(importedData.tentAssignments);
-          if (importedData.cleaningSchedule) setCleaningSchedule(importedData.cleaningSchedule);
 
           console.log('✅ Data imported successfully');
           alert('✅ Data imported successfully!');
@@ -1839,7 +1564,6 @@ const ClubVencedoresSystem = () => {
         setMembers([]);
         setTransactions([]);
         setActivities([]);
-        setCleaningSchedule([]);
         setPoints([]);
         setLockedSaturdays([]);
         setUnits([]);
@@ -2025,7 +1749,7 @@ const ClubVencedoresSystem = () => {
         if (allData.requirementSections) setRequirementSections(allData.requirementSections);
         if (allData.firstAidItems) setFirstAidItems(allData.firstAidItems);
         if (allData.disciplineRecords) setDisciplineRecords(allData.disciplineRecords);
-        if (allData.cleaningSchedule) setCleaningSchedule(allData.cleaningSchedule);
+
 
         setDataLoaded(true); // Enable auto-save now that we have loaded data
         console.log('✅ Data loaded successfully!');
@@ -2085,8 +1809,7 @@ const ClubVencedoresSystem = () => {
         evaluationGroups,
         memberProgress,
         requirementSections,
-        firstAidItems,
-        cleaningSchedule
+        firstAidItems
       };
 
       try {
@@ -2107,7 +1830,7 @@ const ClubVencedoresSystem = () => {
     const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
-  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, cleaningSchedule, memberUniforms, uniformInspections, reminders]);
+  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders]);
 
   // ========================================
 
@@ -2140,16 +1863,12 @@ const ClubVencedoresSystem = () => {
       'ranking':      ['Director','Subdirector','Secretario','Secretary'],
       'master_guide': ['Director','Subdirector','Secretario','Secretary'],
       'birthdays':    ['Director','Subdirector','Secretario','Secretary'],
-      'programs':     ['Director','Subdirector','Secretario','Secretary'],
-      'itinerary':    ['Director','Subdirector','Secretario','Secretary'],
-      'cleaning':     ['Director','Subdirector','Secretario','Secretary'],
       'directive':    ['Director','Subdirector'],
       'members':      ['Director','Subdirector','Secretario','Secretary'],
       'classes':      ['Director','Subdirector','Secretario','Secretary'],
       'units':        ['Director','Subdirector','Secretario','Secretary'],
       'medical':      ['Director','Subdirector','Secretario','Secretary'],
       'parents':      ['Director','Subdirector','Secretario','Secretary'],
-      'achievements': ['Director','Subdirector','Secretario','Secretary'],
       'qualifications':['Director','Subdirector','Secretario','Secretary'],
       'finances':     ['Director','Tesorera','Treasurer'],
       'cuotas':       ['Director','Tesorera','Treasurer'],
@@ -2194,10 +1913,7 @@ const ClubVencedoresSystem = () => {
       submenu: [
         { id: 'ranking', label: 'Ranking', icon: Trophy, available: true },
         { id: 'master_guide', label: 'Programa de Guía Mayor', icon: Award, available: true },
-        { id: 'birthdays', label: 'Cumpleaños', icon: Gift, available: true },
-        { id: 'programs', label: 'Programas', icon: Package, available: true },
-        { id: 'itinerary', label: 'Itinerarios', icon: ClipboardList, available: true },
-        { id: 'cleaning', label: 'Limpieza', icon: RefreshCw, available: true }
+        { id: 'birthdays', label: 'Cumpleaños', icon: Gift, available: true }
       ]
     },
     { id: 'directive', label: 'Directiva', icon: Award, available: true },
@@ -2211,7 +1927,6 @@ const ClubVencedoresSystem = () => {
         { id: 'units', label: 'Unidades', icon: Grid, available: true },
         { id: 'medical', label: 'Registros Médicos', icon: Heart, available: true },
         { id: 'parents', label: 'Padres', icon: UserPlus, available: true },
-        { id: 'achievements', label: 'Galardones', icon: Award, available: true },
         { id: 'qualifications', label: 'Calificaciones', icon: BookOpen, available: true }
       ]
     },
@@ -8408,15 +8123,6 @@ const ClubVencedoresSystem = () => {
     printWindow.document.close();
   };
 
-  // Function to generate meeting itineraries
-  const generateClubItinerary = (clubType) => {
-    const isAventureros = clubType === 'aventureros';
-    const clubName = isAventureros ? 'Club de Aventureros' : 'Club de Conquistadores';
-    const title = `Programa de Sábado-${clubName} `;
-    const date = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
   < html >
         <head>
           <title>Itinerario ${clubName}</title>
@@ -10550,7 +10256,6 @@ const ClubVencedoresSystem = () => {
     directive:      getModuleAccessLevel('directive'),
     parents:        getModuleAccessLevel('parents'),
     units:          getModuleAccessLevel('units'),
-    achievements:   getModuleAccessLevel('achievements'),
     qualifications: getModuleAccessLevel('qualifications'),
     medical:        getModuleAccessLevel('medical'),
     classes:        getModuleAccessLevel('classes'),
@@ -10560,9 +10265,6 @@ const ClubVencedoresSystem = () => {
     activities:     getModuleAccessLevel('activities'),
     ranking:        getModuleAccessLevel('ranking'),
     birthdays:      getModuleAccessLevel('birthdays'),
-    programs:       getModuleAccessLevel('programs'),
-    itinerary:      getModuleAccessLevel('itinerary'),
-    cleaning:       getModuleAccessLevel('cleaning'),
     inventory:      getModuleAccessLevel('inventory'),
     reports:        getModuleAccessLevel('reports'),
     idcards:        getModuleAccessLevel('idcards'),
@@ -11043,16 +10745,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               { id: 'ranking', label: 'Calendario: Ranking' },
                               { id: 'master_guide', label: 'Calendario: Guía Mayor' },
                               { id: 'birthdays', label: 'Calendario: Cumpleaños' },
-                              { id: 'programs', label: 'Calendario: Programas' },
-                              { id: 'itinerary', label: 'Calendario: Itinerarios' },
-                              { id: 'cleaning', label: 'Calendario: Limpieza' },
                               
                               // Submódulos de Miembros
                               { id: 'classes', label: 'Miembros: Clases' },
                               { id: 'units', label: 'Miembros: Unidades' },
                               { id: 'medical', label: 'Miembros: Registro Médico' },
                               { id: 'parents', label: 'Miembros: Padres' },
-                              { id: 'achievements', label: 'Miembros: Galardones' },
                               { id: 'qualifications', label: 'Miembros: Calificaciones' },
                               
                               // Otros Submódulos
@@ -15857,385 +15555,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
 
 
-            {/* Achievements Module */}
-            {
-              activeModule === 'achievements' && (
-                <div>
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                          <Award className="w-7 h-7 text-yellow-600 dark:text-yellow-500" />
-                          Logros y Honores
-                        </h2>
-                        <p className="text-gray-600 dark:text-gray-300 mt-1">Seguimiento de clases, barras y medallas para cada miembro</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-3xl font-bold text-yellow-600">{members.length}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">Total Miembros</div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Statistics Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/40 rounded-lg p-4 border-2 border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-purple-600 dark:text-purple-300 text-sm font-semibold">Guías Mayores</p>
-                          <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'master-guide')).length}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-purple-400" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 rounded-lg p-4 border-2 border-yellow-200 dark:border-yellow-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-yellow-600 dark:text-yellow-300 text-sm font-semibold">Medallas de Oro</p>
-                          <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'medal-gold')).length}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-yellow-400" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-600">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold">Medallas de Plata</p>
-                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {members.filter(m => m.achievements?.some(a => a.achievementId === 'medal-silver')).length}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-gray-400" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40 rounded-lg p-4 border-2 border-indigo-200 dark:border-indigo-800">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-indigo-600 dark:text-indigo-300 text-sm font-semibold">Total Logros</p>
-                          <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
-                            {members.reduce((sum, m) => sum + (m.achievements?.length || 0), 0)}
-                          </p>
-                        </div>
-                        <Award className="w-10 h-10 text-indigo-400" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Members Grid */}
-                  {members.length === 0 ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
-                      <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg">No hay miembros registrados aún</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {sortedMembers.map((member) => {
-                        const memberAchievements = member.achievements || [];
-
-                        return (
-                          <div key={member.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                            {/* Member Header */}
-                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 p-4 border-b border-yellow-100 dark:border-yellow-900/30">
-                              <div className="flex items-center gap-3">
-                                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                  {member.photo ? (
-                                    <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <Users className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-                                    {member.firstName} {member.lastName}
-                                  </h3>
-                                  <div className="flex gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                    <span>Edad: {member.age}</span>
-                                    <span>•</span>
-                                    <span className="font-semibold text-yellow-700 dark:text-yellow-400">{memberAchievements.length} Logro{memberAchievements.length !== 1 ? 's' : ''}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Achievements Display */}
-                            <div className="p-4">
-                              {memberAchievements.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">
-                                  <Award className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                  <p className="text-sm">Sin logros aún</p>
-                                </div>
-                              ) : (
-                                <div className="space-y-4">
-                                  {/* Classes */}
-                                  {(() => {
-                                    const classes = memberAchievements.filter(a => {
-                                      const achievement = availableAchievements.find(aa => aa.id === a.achievementId);
-                                      return achievement && (achievement.category === 'class' || achievement.category === 'class-advanced' || achievement.category === 'master');
-                                    });
-
-                                    if (classes.length === 0) return null;
-
-                                    return (
-                                      <div>
-                                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Clases:</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                          {classes.map((a) => {
-                                            const achievement = availableAchievements.find(aa => aa.id === a.achievementId);
-                                            if (!achievement) return null;
-                                            return (
-                                              <div key={a.achievementId} className="relative group">
-                                                <div className={`${achievement.color} text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1`}>
-                                                  {achievement.includesBar && <span className="text-yellow-300">⭐</span>}
-                                                  {achievement.nameES}
-                                                </div>
-                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                                                  {new Date(a.dateObtained).toLocaleDateString()}
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Medals */}
-                                  {(() => {
-                                    const medals = memberAchievements.filter(a => {
-                                      const achievement = availableAchievements.find(aa => aa.id === a.achievementId);
-                                      return achievement && achievement.category === 'medal';
-                                    });
-
-                                    if (medals.length === 0) return null;
-
-                                    return (
-                                      <div>
-                                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Medallas:</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                          {medals.map((a) => {
-                                            const achievement = availableAchievements.find(aa => aa.id === a.achievementId);
-                                            if (!achievement) return null;
-                                            return (
-                                              <div key={a.achievementId} className="relative group">
-                                                <div className={`${achievement.color} px-3 py-1 rounded-full text-xs font-semibold border-2`}>
-                                                  🏅 {achievement.nameES}
-                                                </div>
-                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                                                  {new Date(a.dateObtained).toLocaleDateString()}
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-
-                                  {/* Special Bars */}
-                                  {(() => {
-                                    const bars = memberAchievements.filter(a => {
-                                      const achievement = availableAchievements.find(aa => aa.id === a.achievementId);
-                                      return achievement && achievement.category === 'bar';
-                                    });
-
-                                    if (bars.length === 0) return null;
-
-                                    return (
-                                      <div>
-                                        <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Barras Especiales:</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                          {bars.map((a) => {
-                                            const achievement = availableAchievements.find(aa => aa.id === a.achievementId);
-                                            if (!achievement) return null;
-                                            return (
-                                              <div key={a.achievementId} className="relative group">
-                                                <div className={`${achievement.color} text-white px-3 py-1 rounded text-xs font-semibold`}>
-                                                  {achievement.nameES}
-                                                </div>
-                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                                                  {new Date(a.dateObtained).toLocaleDateString()}
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                              )}
-
-                              {/* Add/Remove Achievements */}
-                              <div className="mt-4 pt-4 border-t dark:border-gray-700">
-                                <details className="group">
-                                  <summary className="cursor-pointer list-none flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Gestionar Logros</span>
-                                    <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400 group-open:rotate-180 transition-transform" />
-                                  </summary>
-
-                                  <div className="mt-3 space-y-3 max-h-96 overflow-y-auto">
-                                    {/* Classes Section */}
-                                    <div>
-                                      <h5 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2 uppercase">Clases:</h5>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {availableAchievements
-                                          .filter(a => a.category === 'class' || a.category === 'class-advanced' || a.category === 'master')
-                                          .map((achievement) => {
-                                            const hasAchievement = memberAchievements.some(ma => ma.achievementId === achievement.id);
-                                            return (
-                                              <button
-                                                key={achievement.id}
-                                                onClick={() => {
-                                                  const updatedMembers = members.map(m => {
-                                                    if (m.id === member.id) {
-                                                      if (hasAchievement) {
-                                                        return {
-                                                          ...m,
-                                                          achievements: (m.achievements || []).filter(a => a.achievementId !== achievement.id)
-                                                        };
-                                                      } else {
-                                                        return {
-                                                          ...m,
-                                                          achievements: [
-                                                            ...(m.achievements || []),
-                                                            {
-                                                              achievementId: achievement.id,
-                                                              dateObtained: new Date().toISOString()
-                                                            }
-                                                          ]
-                                                        };
-                                                      }
-                                                    }
-                                                    return m;
-                                                  });
-                                                  setMembers(updatedMembers);
-                                                }}
-                                                className={`text-xs p-2 rounded border-2 transition-all ${hasAchievement
-                                                  ? `${achievement.color} text-white border-transparent`
-                                                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                                                  } `}
-                                              >
-                                                {hasAchievement ? '✓ ' : ''}{achievement.nameES}
-                                              </button>
-                                            );
-                                          })}
-                                      </div>
-                                    </div>
-
-                                    {/* Medals Section */}
-                                    <div>
-                                      <h5 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2 uppercase">Medallas:</h5>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {availableAchievements
-                                          .filter(a => a.category === 'medal')
-                                          .map((achievement) => {
-                                            const hasAchievement = memberAchievements.some(ma => ma.achievementId === achievement.id);
-                                            return (
-                                              <button
-                                                key={achievement.id}
-                                                onClick={() => {
-                                                  const updatedMembers = members.map(m => {
-                                                    if (m.id === member.id) {
-                                                      if (hasAchievement) {
-                                                        return {
-                                                          ...m,
-                                                          achievements: (m.achievements || []).filter(a => a.achievementId !== achievement.id)
-                                                        };
-                                                      } else {
-                                                        return {
-                                                          ...m,
-                                                          achievements: [
-                                                            ...(m.achievements || []),
-                                                            {
-                                                              achievementId: achievement.id,
-                                                              dateObtained: new Date().toISOString()
-                                                            }
-                                                          ]
-                                                        };
-                                                      }
-                                                    }
-                                                    return m;
-                                                  });
-                                                  setMembers(updatedMembers);
-                                                }}
-                                                className={`text-xs p-2 rounded border-2 transition-all ${hasAchievement
-                                                  ? `${achievement.color} border-transparent`
-                                                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                                                  } `}
-                                              >
-                                                {hasAchievement ? '✓ ' : ''}🏅 {achievement.nameES}
-                                              </button>
-                                            );
-                                          })}
-                                      </div>
-                                    </div>
-
-                                    {/* Special Bars Section */}
-                                    <div>
-                                      <h5 className="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2 uppercase">Barras Especiales:</h5>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {availableAchievements
-                                          .filter(a => a.category === 'bar')
-                                          .map((achievement) => {
-                                            const hasAchievement = memberAchievements.some(ma => ma.achievementId === achievement.id);
-                                            return (
-                                              <button
-                                                key={achievement.id}
-                                                onClick={() => {
-                                                  const updatedMembers = members.map(m => {
-                                                    if (m.id === member.id) {
-                                                      if (hasAchievement) {
-                                                        return {
-                                                          ...m,
-                                                          achievements: (m.achievements || []).filter(a => a.achievementId !== achievement.id)
-                                                        };
-                                                      } else {
-                                                        return {
-                                                          ...m,
-                                                          achievements: [
-                                                            ...(m.achievements || []),
-                                                            {
-                                                              achievementId: achievement.id,
-                                                              dateObtained: new Date().toISOString()
-                                                            }
-                                                          ]
-                                                        };
-                                                      }
-                                                    }
-                                                    return m;
-                                                  });
-                                                  setMembers(updatedMembers);
-                                                }}
-                                                className={`text-xs p-2 rounded border-2 transition-all ${hasAchievement
-                                                  ? `${achievement.color} text-white border-transparent`
-                                                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400'
-                                                  } `}
-                                              >
-                                                {hasAchievement ? '✓ ' : ''}{achievement.nameES}
-                                              </button>
-                                            );
-                                          })}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </details>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            }
 
             {/* Qualifications Module */}
             {
@@ -21129,730 +20449,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             }
 
 
-            {/* PROGRAMS MODULE */}
-            {
-              activeModule === 'programs' && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                        <Package className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Programas de Actividades</h2>
-                        <p className="text-gray-600 dark:text-gray-400">Crea o sube itinerarios detallados para tus actividades.</p>
-                      </div>
-                    </div>
-                    {programViewMode !== 'list' && (
-                      <button
-                        onClick={() => {
-                          setProgramViewMode('list');
-                          setSelectedActivityForProgram(null);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-white rounded-lg transition-colors"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        Volver a la lista
-                      </button>
-                    )}
-                  </div>
 
-                  {programViewMode === 'list' ? (
-                    <div className="flex flex-col gap-3">
-                      {activities.filter(a => a.status !== 'Completado' && a.type === 'Local').length === 0 ? (
-                        <div className="py-12 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
-                          <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                          <p>No hay programas activos (Pendientes/Locales) registrados.</p>
-                        </div>
-                      ) : (
-                        activities
-                          .filter(a => a.status !== 'Completado' && a.type === 'Local')
-                          .map(activity => (
-                            <div
-                              key={activity.id}
-                              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:border-blue-300 dark:hover:border-blue-700 transition-all group flex flex-col md:flex-row md:items-center gap-4"
-                            >
-                              {/* Left: Info */}
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-1 flex-wrap">
-                                  <h3 className="text-lg font-bold text-gray-800 dark:text-white">{activity.title}</h3>
-                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${activity.status === 'Completado' ? 'bg-green-100 text-green-700' :
-                                    activity.status === 'En curso' ? 'bg-blue-100 text-blue-700' :
-                                      'bg-amber-100 text-amber-700'
-                                    }`}>
-                                    {activity.status}
-                                  </span>
-                                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" />
-                                    {activity.date}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{activity.description || 'Sin descripción'}</p>
-                                {activity.programFile && (
-                                  <div className="mt-1 flex items-center gap-2 text-xs text-blue-600 font-medium">
-                                    <FileText className="w-3 h-3" />
-                                    <span>{activity.programFile.name} subido</span>
-                                  </div>
-                                )}
-                              </div>
 
-                              {/* Right: Actions */}
-                              <div className="flex items-center gap-2 shrink-0">
-                                <button
-                                  onClick={() => {
-                                    setSelectedActivityForProgram(activity);
-                                    setProgramEditorContent(activity.programText || '');
-                                    setProgramViewMode('edit');
-                                  }}
-                                  className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                  {activity.programText ? 'Editar' : 'Crear'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedActivityForProgram(activity);
-                                    setProgramViewMode('upload');
-                                  }}
-                                  className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                  title="Subir Archivo"
-                                >
-                                  <Upload className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          ))
-                      )}
-                    </div>
-                  ) : programViewMode === 'edit' ? (
-                    <div className="space-y-4">
-                      <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg flex items-center gap-3 border border-blue-100 dark:border-blue-900/20">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                          <Calendar className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-800 dark:text-white">{selectedActivityForProgram?.title}</h4>
-                          <p className="text-xs text-blue-700 dark:text-blue-400">{selectedActivityForProgram?.date} • {selectedActivityForProgram?.location}</p>
-                        </div>
-                      </div>
 
-                      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                        <ReactQuill
-                          theme="snow"
-                          value={programEditorContent}
-                          onChange={setProgramEditorContent}
-                          modules={quillModules}
-                          className="h-80 dark:text-white"
-                        />
-                      </div>
 
-                      <div className="flex justify-end gap-3 mt-12">
-                        <button
-                          onClick={() => setProgramViewMode('list')}
-                          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={() => {
-                            const updatedActivities = activities.map(a =>
-                              a.id === selectedActivityForProgram.id
-                                ? { ...a, programText: programEditorContent, programSource: 'editor' }
-                                : a
-                            );
-                            setActivities(updatedActivities);
-                            setProgramViewMode('list');
-                            setSelectedActivityForProgram(null);
-                            alert('Programa guardado con éxito');
-                          }}
-                          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium flex items-center gap-2 shadow-sm transition-all"
-                        >
-                          <Save className="w-5 h-5" />
-                          Guardar Programa
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="max-w-2xl mx-auto py-12 text-center">
-                      <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600 dark:text-blue-400">
-                        <Upload className="w-10 h-10" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Subir Programa (PDF/Word)</h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-8">Selecciona el archivo que contiene el itinerario de esta actividad.</p>
 
-                      <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-12 hover:border-blue-400 transition-colors mb-8 cursor-pointer relative">
-                        <input
-                          type="file"
-                          accept=".pdf,.doc,.docx"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const base64 = event.target.result;
-                                const updatedActivities = activities.map(a =>
-                                  a.id === selectedActivityForProgram.id
-                                    ? { ...a, programFile: { name: file.name, data: base64, type: file.type }, programSource: 'file' }
-                                    : a
-                                );
-                                setActivities(updatedActivities);
-                                setProgramViewMode('list');
-                                setSelectedActivityForProgram(null);
-                                alert('Archivo subido con éxito');
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        <p className="text-gray-500 dark:text-gray-400">Haz clic o arrastra un archivo aquí</p>
-                        <p className="text-xs text-gray-400 mt-2">Soporta PDF, DOC y DOCX</p>
-                      </div>
-
-                      <button
-                        onClick={() => setProgramViewMode('list')}
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium"
-                      >
-                        Cancelar y volver
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            }
-
-            {/* ITINERARY MODULE */}
-            {
-              activeModule === 'itinerary' && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl">
-                      <ClipboardList className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Generador de Itinerarios</h2>
-                      <p className="text-gray-600 dark:text-gray-400">Crea programas detallados para las reuniones de los sábados.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Aventureros Card */}
-                    <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-xl p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow">
-                      <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4">
-                        <Users className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-xl font-bold text-yellow-800 dark:text-yellow-200 mb-2">Aventureros</h3>
-                      <p className="text-yellow-700 dark:text-yellow-400/80 mb-6 text-sm">Programa diseñado para niños de 6 a 9 años. Incluye actividades lúdicas y formativas adaptadas a su edad.</p>
-                      <button
-                        onClick={() => generateClubItinerary('aventureros')}
-                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <Printer className="w-5 h-5" />
-                        Imprimir Itinerario Aventureros
-                      </button>
-                    </div>
-
-                    {/* Conquistadores Card */}
-                    <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 rounded-xl p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow">
-                      <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
-                        <Users className="w-8 h-8" />
-                      </div>
-                      <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">Conquistadores</h3>
-                      <p className="text-red-700 dark:text-red-400/80 mb-6 text-sm">Programa formal para adolescentes de 10 a 15 años. Enfocado en liderazgo, civismo y habilidades prácticas.</p>
-                      <button
-                        onClick={() => generateClubItinerary('conquistadores')}
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <Printer className="w-5 h-5" />
-                        Imprimir Itinerario Conquistadores
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/20 flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-1">Nota Informativa</h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-400">
-                        Los itinerarios generados son plantillas base basadas en el Manual Administrativo de Clubes. Puedes imprimir estas hojas para compartirlas con tu directiva y asegurar una organización fluida el sábado.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )
-            }
-
-            {/* CLEANING TAB-RENDERED AS MODULE */}
-            {
-              activeModule === 'cleaning' && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white">Cronograma: Miércoles y Viernes</h3>
-                    <div className="flex gap-2 items-center">
-                      <label className="text-sm text-gray-600 dark:text-gray-400">Generar para:</label>
-                      <select
-                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 dark:text-white"
-                        id="cleaningMonths"
-                      >
-                        <option value="1">1 Mes</option>
-                        <option value="3">3 Meses</option>
-                        <option value="6">6 Meses</option>
-                      </select>
-                      <input type="date" id="cleaningStart" defaultValue={(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; })()} className="border rounded px-2 py-1 bg-white dark:bg-gray-700 dark:text-white" />
-                      <button
-                        onClick={() => {
-                          const months = parseInt(document.getElementById('cleaningMonths').value);
-                          const start = document.getElementById('cleaningStart').value;
-                          generateCleaningSchedule(start, months);
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                        Generar
-                      </button>
-                      <button
-                        onClick={() => {
-                          const months = parseInt(document.getElementById('cleaningMonths').value);
-                          const start = document.getElementById('cleaningStart').value;
-                          generateCleaningSchedule(start, months, true);
-                        }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
-                        title="Generar itinerario sin miembros asignados"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        Crear Vacío
-                      </button>
-                      <button
-                        onClick={handleClearAllSchedules}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Eliminar Todos
-                      </button>
-                      <button
-                        onClick={() => setShowCleaningReport(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 ml-2 whitespace-nowrap"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Reporte
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Cleaning Report Modal */}
-                  {showCleaningReport && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-                        <div className="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                          <h3 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                            <ClipboardCheck className="w-6 h-6 text-blue-600" />
-                            Reporte de Asistencia a Limpieza
-                          </h3>
-                          <button onClick={() => setShowCleaningReport(false)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                            <X className="w-6 h-6" />
-                          </button>
-                        </div>
-
-                        <div className="p-6 overflow-y-auto flex-1">
-                          {(() => {
-                            // Calculate Stats
-                            const stats = {};
-
-                            cleaningSchedule.forEach(month => {
-                              month.weeks.forEach(week => {
-                                const team = week.team || [];
-                                const wednesdayAttendees = week.attendance?.wednesday || [];
-                                const fridayAttendees = week.attendance?.friday || [];
-
-                                team.forEach(memberId => {
-                                  if (!stats[memberId]) stats[memberId] = { assigned: 0, attended: 0 };
-                                  stats[memberId].assigned += 2; // Wed + Fri
-
-                                  if (wednesdayAttendees.includes(memberId)) stats[memberId].attended += 1;
-                                  if (fridayAttendees.includes(memberId)) stats[memberId].attended += 1;
-                                });
-                              });
-                            });
-
-                            const statsArray = Object.entries(stats).map(([id, data]) => {
-                              const member = members.find(m => m.id === id);
-                              return {
-                                id,
-                                name: member ? `${member.firstName} ${member.lastName}` : 'Miembro Eliminado',
-                                unit: member?.unitId ? units.find(u => u.id === member.unitId)?.name : '-',
-                                ...data,
-                                percentage: data.assigned > 0 ? Math.round((data.attended / data.assigned) * 100) : 0
-                              };
-                            }).sort((a, b) => b.percentage - a.percentage);
-
-                            if (statsArray.length === 0) {
-                              return <div className="text-center text-gray-500">No hay datos de asignaciones registrados.</div>;
-                            }
-
-                            return (
-                              <table className="w-full text-left border-collapse">
-                                <thead>
-                                  <tr className="border-b dark:border-gray-700 text-gray-500 dark:text-gray-400 text-sm">
-                                    <th className="pb-2">Miembro</th>
-                                    <th className="pb-2">Unidad</th>
-                                    <th className="pb-2 text-center">Asignaciones</th>
-                                    <th className="pb-2 text-center">Asistencias</th>
-                                    <th className="pb-2 text-center">Cumplimiento</th>
-                                    <th className="pb-2 text-center">Estado</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y dark:divide-gray-700">
-                                  {statsArray.map(stat => (
-                                    <tr key={stat.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                      <td className="py-3 font-medium text-gray-800 dark:text-white">{stat.name}</td>
-                                      <td className="py-3 text-sm text-gray-600 dark:text-gray-400">{stat.unit}</td>
-                                      <td className="py-3 text-center text-gray-600 dark:text-gray-400">{stat.assigned} días</td>
-                                      <td className="py-3 text-center font-bold text-gray-800 dark:text-gray-200">{stat.attended}</td>
-                                      <td className="py-3 text-center">
-                                        <div className="flex items-center justify-center gap-2">
-                                          <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                            <div
-                                              className={`h-full rounded-full ${stat.percentage >= 80 ? 'bg-green-500' : stat.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                              style={{ width: `${stat.percentage}%` }}
-                                            ></div>
-                                          </div>
-                                          <span className="text-xs font-mono">{stat.percentage}%</span>
-                                        </div>
-                                      </td>
-                                      <td className="py-3 text-center">
-                                        {stat.percentage >= 80 ? (
-                                          <span className="px-2 py-0.5 rounded text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">Excelente</span>
-                                        ) : stat.percentage >= 50 ? (
-                                          <span className="px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">Regular</span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 rounded text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">Crítico</span>
-                                        )}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            );
-                          })()}
-                        </div>
-                        <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end">
-                          <button
-                            onClick={() => setShowCleaningReport(false)}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-gray-800 dark:text-white transition-colors"
-                          >
-                            Cerrar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Manual Add Member Modal */}
-                  {cleaningAddTarget && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-                        <h3 className="text-lg font-bold mb-4 dark:text-white">Agregar miembro al equipo de limpieza</h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">Selecciona un miembro para añadirlo a esta semana.</p>
-
-                        <select
-                          id="manualCleaningMemberSelect"
-                          className="w-full border rounded p-2 mb-4 dark:bg-gray-700 dark:text-white"
-                          autoFocus
-                        >
-                          <option value="">-- Seleccionar Miembro --</option>
-                          {[...members].sort((a, b) => a.firstName.localeCompare(b.firstName)).map(m => (
-                            <option key={m.id} value={m.id}>{m.firstName} {m.lastName}</option>
-                          ))}
-                        </select>
-
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => setCleaningAddTarget(null)}
-                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            onClick={() => {
-                              const select = document.getElementById('manualCleaningMemberSelect');
-                              const memberId = select.value;
-                              if (!memberId) return;
-
-                              setCleaningSchedule(prev => prev.map(m => {
-                                if (m.id !== cleaningAddTarget.monthId) return m;
-                                return {
-                                  ...m,
-                                  weeks: m.weeks.map(w => {
-                                    if (w.id !== cleaningAddTarget.weekId) return w;
-                                    if (w.team.includes(memberId)) {
-                                      alert('Este miembro ya está en el equipo de esta semana.');
-                                      return w;
-                                    }
-                                    return { ...w, team: [...w.team, memberId] };
-                                  })
-                                };
-                              }));
-                              setCleaningAddTarget(null);
-                            }}
-                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                          >
-                            Agregar
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Manual Save Button */}
-                  <div className="mb-4 flex justify-end">
-                    <button
-                      onClick={() => {
-                        localStorage.setItem(STORAGE_KEYS.CLEANING_SCHEDULE, JSON.stringify(cleaningSchedule));
-                        alert('Itinerario guardado exitosamente.');
-                      }}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm"
-                    >
-                      <Save className="w-4 h-4" />
-                      Guardar Cambios
-                    </button>
-                  </div>
-
-                  <div className="space-y-8">
-                    {cleaningSchedule.length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
-                        <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 dark:text-gray-400">No hay cronograma de limpieza generado.</p>
-                        <p className="text-sm text-gray-400">Usa el botón de arriba para generar la rotación automática.</p>
-                      </div>
-                    ) : (
-                      cleaningSchedule.map(month => (
-                        <div key={month.id} className="border dark:border-gray-700 rounded-xl overflow-hidden">
-                          <div className="bg-gray-100 dark:bg-gray-700 p-4 flex justify-between items-center">
-                            <h4 className="text-lg font-bold text-indigo-900 dark:text-indigo-200 capitalize">
-                              {(() => { const [y, m] = month.month.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }); })()}
-                            </h4>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setCleaningSchedule(prev => prev.filter(m => m.id !== month.id))}
-                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors"
-                                title="Eliminar este itinerario"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Supervisor:</span>
-                              <select
-                                value={month.supervisorId}
-                                onChange={(e) => {
-                                  const newVal = e.target.value;
-                                  setCleaningSchedule(prev => prev.map(m => m.id === month.id ? { ...m, supervisorId: newVal } : m));
-                                }}
-                                className="border rounded px-2 py-1 text-sm bg-white dark:bg-gray-600 dark:text-white dark:border-gray-500"
-                              >
-                                <option value="">-- Seleccionar Directivo --</option>
-                                {[...members].filter(m => getMemberAge(m) >= 18 || (m.position && m.position.trim() !== '' && m.position !== 'Ninguno')).sort((a, b) => a.firstName.localeCompare(b.firstName)).map(m => (
-                                  <option key={m.id} value={m.id}>{m.firstName} {m.lastName}{m.position && m.position !== 'Ninguno' && m.position !== '' ? ' (' + m.position + ')' : ''}</option>
-                                ))}
-                                {users.map(u => (
-                                  <option key={'u-' + u.username} value={'user-' + u.username}>{u.name} (Usuario)</option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
-
-                          <div className="divide-y dark:divide-gray-700">
-                            {month.weeks.map(week => (
-                              <div key={week.id} className="p-4 bg-white dark:bg-gray-800 flex flex-col md:flex-row items-center gap-4">
-                                <div className="w-full md:w-1/4">
-                                  <div className="flex items-center gap-2">
-                                    <div className="font-semibold text-gray-700 dark:text-gray-300">Semana {week.weekRange}</div>
-                                    <button
-                                      onClick={() => setCleaningAddTarget({ monthId: month.id, weekId: week.id })}
-                                      className="p-1 text-blue-600 hover:bg-blue-50 rounded-full"
-                                      title="Agregar miembro manualmente"
-                                    >
-                                      <UserPlus className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                  <div className="text-xs text-gray-500">Miércoles y Viernes</div>
-                                </div>
-
-                                <div
-                                  className={`flex-1 w-full min-h-[60px] p-2 rounded-lg border-2 border-dashed transition-colors ${draggedMember ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-900/10' : 'border-transparent'}`}
-                                  onDragOver={(e) => e.preventDefault()}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    if (!draggedMember) return;
-
-                                    const { memberId, sourceMonthId, sourceWeekId } = draggedMember;
-                                    const targetMonthId = month.id;
-                                    const targetWeekId = week.id;
-
-                                    if (sourceMonthId === targetMonthId && sourceWeekId === targetWeekId) return;
-
-                                    setCleaningSchedule(prev => {
-                                      const newSchedule = [...prev];
-
-                                      // Remove from source if same logic (optional, dependent on requirements. Assuming we move)
-                                      const sourceMonth = newSchedule.find(m => m.id === sourceMonthId);
-                                      if (sourceMonth) {
-                                        const sourceWeek = sourceMonth.weeks.find(w => w.id === sourceWeekId);
-                                        if (sourceWeek) {
-                                          sourceWeek.team = sourceWeek.team.filter(id => id !== memberId);
-                                        }
-                                      }
-
-                                      // Add to target
-                                      const targetMonth = newSchedule.find(m => m.id === targetMonthId);
-                                      if (targetMonth) {
-                                        const targetWeek = targetMonth.weeks.find(w => w.id === targetWeekId);
-                                        if (targetWeek && !targetWeek.team.includes(memberId)) {
-                                          targetWeek.team.push(memberId);
-                                        }
-                                      }
-
-                                      return newSchedule;
-                                    });
-                                    setDraggedMember(null);
-                                  }}
-                                >
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Wednesday Column */}
-                                    <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                        <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Miércoles</span>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {week.team.map(memberId => {
-                                          const mem = members.find(m => m.id === memberId);
-                                          const isAttended = week.attendance?.wednesday?.includes(memberId);
-
-                                          return mem ? (
-                                            <div key={`wed-${memberId}`} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded shadow-sm">
-                                              <div
-                                                draggable
-                                                onDragStart={(e) => setDraggedMember({ memberId, sourceMonthId: month.id, sourceWeekId: week.id })}
-                                                className="cursor-move flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
-                                              >
-                                                <GripVertical className="w-3 h-3 text-gray-400" />
-                                                <span>{mem.firstName} {mem.lastName}</span>
-                                              </div>
-                                              <input
-                                                type="checkbox"
-                                                checked={!!isAttended}
-                                                onChange={(e) => {
-                                                  const checked = e.target.checked;
-                                                  setCleaningSchedule(prev => prev.map(m => {
-                                                    if (m.id !== month.id) return m;
-                                                    return {
-                                                      ...m,
-                                                      weeks: m.weeks.map(w => {
-                                                        if (w.id !== week.id) return w;
-                                                        const currentWed = w.attendance?.wednesday || [];
-                                                        const newWed = checked
-                                                          ? [...currentWed, memberId]
-                                                          : currentWed.filter(id => id !== memberId);
-                                                        return {
-                                                          ...w,
-                                                          attendance: { ...(w.attendance || {}), wednesday: newWed }
-                                                        };
-                                                      })
-                                                    };
-                                                  }));
-                                                }}
-                                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                                              />
-                                            </div>
-                                          ) : null;
-                                        })}
-                                        {week.team.length === 0 && (
-                                          <div className="text-center py-4 text-xs text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-                                            Arrastra miembros aquí
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Friday Column */}
-                                    <div className="bg-purple-50/50 dark:bg-purple-900/10 p-3 rounded-lg border border-purple-100 dark:border-purple-800/30">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                                        <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">Viernes</span>
-                                      </div>
-                                      <div className="space-y-2">
-                                        {week.team.map(memberId => {
-                                          const mem = members.find(m => m.id === memberId);
-                                          const isAttended = week.attendance?.friday?.includes(memberId);
-
-                                          return mem ? (
-                                            <div key={`fri-${memberId}`} className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded shadow-sm">
-                                              <div
-                                                className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 opacity-75"
-                                              >
-                                                <span>{mem.firstName} {mem.lastName}</span>
-                                              </div>
-                                              <input
-                                                type="checkbox"
-                                                checked={!!isAttended}
-                                                onChange={(e) => {
-                                                  const checked = e.target.checked;
-                                                  setCleaningSchedule(prev => prev.map(m => {
-                                                    if (m.id !== month.id) return m;
-                                                    return {
-                                                      ...m,
-                                                      weeks: m.weeks.map(w => {
-                                                        if (w.id !== week.id) return w;
-                                                        const currentFri = w.attendance?.friday || [];
-                                                        const newFri = checked
-                                                          ? [...currentFri, memberId]
-                                                          : currentFri.filter(id => id !== memberId);
-                                                        return {
-                                                          ...w,
-                                                          attendance: { ...(w.attendance || {}), friday: newFri }
-                                                        };
-                                                      })
-                                                    };
-                                                  }));
-                                                }}
-                                                className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                                              />
-                                            </div>
-                                          ) : null;
-                                        })}
-                                        {week.team.length === 0 && (
-                                          <div className="text-center py-4 text-xs text-gray-400 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-                                            Arrastra miembros aquí
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <button
-                                    title="Marcar como Completado"
-                                    onClick={() => {
-                                      setCleaningSchedule(prev => prev.map(m => ({
-                                        ...m,
-                                        weeks: m.weeks.map(w => w.id === week.id ? { ...w, completed: !w.completed } : w)
-                                      })));
-                                    }}
-                                    className={`p-2 rounded-full ${week.completed ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                                  >
-                                    <CheckCircle className="w-5 h-5" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )
-            }
 
             {/* Calendar Grid-Only for Activities */}
             {
