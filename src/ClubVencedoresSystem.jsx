@@ -10,7 +10,6 @@ import { saveCollectionToFirestore, loadCollectionFromFirestore, storage, ref, u
 import { onAuthStateChanged } from 'firebase/auth';
 import { dataService } from './services/dataService';
 import Login from './components/Login';
-import MigrationTool from './components/MigrationTool';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import CarnetFront from './assets/Carnet/frontal.svg';
@@ -287,7 +286,6 @@ class ErrorBoundary extends React.Component {
 
 const ClubVencedoresSystem = () => {
   // Authentication state
-  const dataclubesWebviewRef = useRef(null);
   const [activityViewMode, setActivityViewMode] = useState('calendar'); // 'calendar' | 'list'
   const [attendanceTypeMarking, setAttendanceTypeMarking] = useState('satPM'); // 'friday', 'satAM', 'satPM'
   const [attendanceReportView, setAttendanceReportView] = useState('satPM'); // 'friday', 'satAM', 'satPM'
@@ -312,34 +310,6 @@ const ClubVencedoresSystem = () => {
     };
   }, []);
 
-  const handleAutoFillDataClubes = () => {
-    const webview = dataclubesWebviewRef.current;
-    if (webview) {
-      webview.executeJavaScript(`
-        (function() {
-          const userField = document.querySelector('input[name="login[usuario]"]');
-          const passField = document.querySelector('input[name="login[clave]"]');
-          const btn = document.querySelector('#submitLog');
-          
-          if (userField && passField) {
-            userField.value = 'DO1902340';
-            passField.value = 'Baez240080';
-            
-            // Trigger events to ensure frameworks pick up changes
-            userField.dispatchEvent(new Event('input', { bubbles: true }));
-            passField.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            if (btn) {
-               // Optional: Click automatically or just highlight
-               btn.click();
-            }
-          } else {
-            console.log('Inputs not found');
-          }
-        })();
-      `);
-    }
-  };
 
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -370,7 +340,6 @@ const ClubVencedoresSystem = () => {
     return () => unsubscribe();
   }, []);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
-  const [showMigration, setShowMigration] = useState(false);
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -534,7 +503,7 @@ const ClubVencedoresSystem = () => {
 
     // Simple lookup based on ID (we can refine this)
     if (moduleId === 'dashboard') { label = 'Inicio'; Icon = Home; }
-    else if (moduleId === 'dataclubes') { label = 'DataClubes'; Icon = Globe; }
+
     else if (moduleId === 'members') { label = 'Miembros'; Icon = Users; }
     else if (moduleId === 'units') { label = 'Unidades'; Icon = Grid; }
     else if (moduleId === 'reminders') { label = 'Recordatorios'; Icon = Bell; }
@@ -817,25 +786,7 @@ const ClubVencedoresSystem = () => {
     notes: ''
   });
 
-  // Data Safety State
 
-  // Communication Module State
-  const [whatsappGroups, setWhatsappGroups] = useState([
-    { id: '1', name: 'Directiva', link: 'https://chat.whatsapp.com/example1', description: 'Canal oficial para líderes' },
-    { id: '2', name: 'Padres', link: '', description: 'Comunicados para padres' },
-    { id: '3', name: 'Aventureros', link: '', description: 'Grupo general para niños pequeños' },
-    { id: '4', name: 'Conquistadores', link: '', description: 'Grupo para adolescentes' },
-    { id: '5', name: 'Guías Mayores', link: '', description: 'Liderazgo avanzado' },
-  ]);
-  const [editingGroup, setEditingGroup] = useState(null); // For editing WhatsApp group links
-
-  const messageTemplates = [
-    { id: 'payment', title: 'Recordatorio de Pago', icon: 'DollarSign', text: 'Hola {name}, te recordamos que tienes un pago pendiente de cuota. Por favor regularizarlo pronto. Bendiciones.' },
-    { id: 'meeting', title: 'Recordatorio de Reunión', icon: 'Bell', text: 'Hola {name}, recuerda nuestra reunión del club este sábado a las 3:00 PM. No faltes!' },
-    { id: 'absence', title: 'Notificación de Ausencia', icon: 'UserMinus', text: 'Hola {name}, notamos tu ausencia en la última reunión. Esperamos verte la próxima semana.' }
-  ];
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [customMessage, setCustomMessage] = useState('');
 
   const [campSearchTerm, setCampSearchTerm] = useState('');
 
@@ -1438,7 +1389,7 @@ const ClubVencedoresSystem = () => {
   const [selectedQualificationYear, setSelectedQualificationYear] = useState(new Date().getFullYear());
 
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-  const [whatsappUrl, setWhatsappUrl] = useState('https://web.whatsapp.com');
+
 
   const pathfinderClasses = [
     { value: 'friend', label: 'Amigo', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800' },
@@ -2211,10 +2162,6 @@ const ClubVencedoresSystem = () => {
       'attendance':   ['Director','Subdirector','Secretario','Secretary'],
       'reminders':    ['Director','Subdirector','Secretario','Secretary'],
       'settings':     ['Director'],
-      'communication':['Director','Subdirector','Secretario','Secretary'],
-      'comm_groups':  ['Director','Subdirector','Secretario','Secretary'],
-      'comm_messaging':['Director','Subdirector','Secretario','Secretary'],
-      'comm_whatsapp':['Director','Subdirector','Secretario','Secretary'],
     };
 
     // Check for write access
@@ -2238,7 +2185,6 @@ const ClubVencedoresSystem = () => {
   // Navigation menu items
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: Home, available: true },
-    { id: 'dataclubes', label: 'DataClubes', icon: Globe, available: true },
     { id: 'discipline', label: 'Faltas', icon: AlertTriangle, available: true },
     {
       id: 'activities',
@@ -2289,17 +2235,6 @@ const ClubVencedoresSystem = () => {
       label: 'Campamentos',
       icon: Tent, // Reuse Tent icon
       available: true
-    },
-    {
-      id: 'communication',
-      label: 'Comunicación',
-      icon: MessageCircle,
-      available: true,
-      submenu: [
-        { id: 'comm_groups', label: 'Grupos', icon: Users, available: true },
-        { id: 'comm_messaging', label: 'Mensajería Rápida', icon: MessageSquare, available: true },
-        { id: 'comm_whatsapp', label: 'WhatsApp Web', icon: MessageCircle, available: true }
-      ]
     },
     {
       id: 'uniformity',
@@ -10843,7 +10778,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
           </button>
         </div>
         {/* Header */}
-        {/* Header-Hidden when using WhatsApp Web */}
+
         {/* Header-Always visible */}
         <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 px-6 py-4 flex items-center justify-between transition-colors duration-200">
           <div>
@@ -10901,38 +10836,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
         {/* Content */}
         <div className="flex-1 overflow-auto">
-          <div className={activeModule === 'comm_whatsapp' ? "h-full" : "max-w-7xl mx-auto px-6 py-8"}>
-            {/* User Management Modal */}
-            {/* Communication Dashboard (Landing Page) */}
-            {activeModule === 'communication' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { id: 'comm_groups', label: 'Grupos', icon: Users, desc: 'Gestionar grupos de WhatsApp' },
-                  { id: 'comm_messaging', label: 'Mensajería Rápida', icon: MessageSquare, desc: 'Enviar mensajes predefinidos' },
-                  { id: 'comm_whatsapp', label: 'WhatsApp Web', icon: MessageCircle, desc: 'Abrir WhatsApp Web' }
-                ].map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setActiveModule(item.id);
-                      if (item.id === 'camps') {
-                        setCampViewMode('dashboard');
-                        setActiveCamp(null);
-                      }
-                    }}
-                    className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md hover:shadow-lg transition-all flex flex-col items-center text-center gap-4 group border border-transparent hover:border-red-500"
-                  >
-                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-full text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
-                      <item.icon className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-white">{item.label}</h3>
-                      <p className="text-gray-500 dark:text-gray-400 mt-2">{item.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="max-w-7xl mx-auto px-6 py-8">
+
 
             {/* Profile View */}
             {activeModule === 'attendance' && renderAttendanceModule()}
@@ -11133,7 +11038,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               { id: 'cuotas', label: 'Cuotas' },
                               { id: 'inventory', label: 'Inventario' },
                               { id: 'inventory_tents', label: 'Inventario: Carpas' },
-                              { id: 'communication', label: 'Comunicación' },
+
                               { id: 'uniformity', label: 'Uniformidad' },
                               { id: 'reports', label: 'Reportes y Estadísticas' },
                               { id: 'idcards', label: 'Reportes: Carnets' },
@@ -11370,248 +11275,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
             {/* Uniformity Module */}
             {activeModule === 'uniformity' && renderUniformityModule()}
-
-            {/* Communication: Groups Module */}
-            {activeModule === 'comm_groups' && (
-              <div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                    <Users className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-                    Grupos de WhatsApp
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-300 mt-1">Gestiona los enlaces de invitación a los grupos del club.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {whatsappGroups.map(group => (
-                    <div key={group.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col items-start hover:shadow-md transition-shadow">
-                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 dark:text-green-400 mb-4">
-                        <Users className="w-6 h-6" />
-                      </div>
-                      <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-1">{group.name}</h3>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm mb-4 flex-grow">{group.description}</p>
-
-                      {group.link ? (
-                        <a
-                          href={group.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                        >
-                          <MessageCircle className="w-5 h-5" />
-                          Unirme al Grupo
-                        </a>
-                      ) : (
-                        <button className="w-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 font-medium py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-                          <MessageCircle className="w-5 h-5" />
-                          Sin Enlace
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setEditingGroup(group)}
-                        className="mt-2 text-xs text-gray-400 hover:text-gray-600 w-full text-center"
-                      >
-                        Editar Enlace
-                      </button>
-                    </div>
-                  ))}
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700 p-6 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
-                    <PlusCircle className="w-12 h-12 text-gray-300 mb-2" />
-                    <span className="text-gray-500 dark:text-gray-400 font-medium">Agregar Nuevo Grupo</span>
-                  </div>
-                </div>
-
-                {/* Edit Group Modal */}
-                {editingGroup && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-                      <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Editar Grupo de WhatsApp</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Grupo</label>
-                          <input
-                            type="text"
-                            value={editingGroup.name}
-                            onChange={(e) => setEditingGroup({ ...editingGroup, name: e.target.value })}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enlace de Invitación</label>
-                          <input
-                            type="text"
-                            value={editingGroup.link}
-                            onChange={(e) => setEditingGroup({ ...editingGroup, link: e.target.value })}
-                            placeholder="https://chat.whatsapp.com/..."
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                          <textarea
-                            value={editingGroup.description}
-                            onChange={(e) => setEditingGroup({ ...editingGroup, description: e.target.value })}
-                            rows="3"
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          ></textarea>
-                        </div>
-                      </div>
-                      <div className="flex gap-4 mt-6 justify-end">
-                        <button
-                          onClick={() => setEditingGroup(null)}
-                          className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={() => {
-                            const updatedGroups = whatsappGroups.map(g => g.id === editingGroup.id ? editingGroup : g);
-                            setWhatsappGroups(updatedGroups);
-                            setEditingGroup(null);
-                          }}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
-                        >
-                          Guardar Cambios
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Communication: Messaging Module */}
-            {activeModule === 'comm_messaging' && (
-              <div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                    <MessageSquare className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
-                    Mensajería Rápida
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-300 mt-1">Envía mensajes de WhatsApp predefinidos a los miembros.</p>
-                </div>
-
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="p-4 border-b bg-gray-50 dark:bg-gray-900/50 dark:border-gray-700 flex justify-between items-center">
-                    <h3 className="font-bold text-gray-700 dark:text-gray-300">Miembros del Club ({members.length})</h3>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input
-                        type="text"
-                        placeholder="Buscar miembro..."
-                        className="pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto h-[600px] overflow-y-auto">
-                    <table className="w-full text-sm text-left">
-                      <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-bold uppercase text-xs sticky top-0">
-                        <tr>
-                          <th className="px-6 py-3 bg-gray-50 dark:bg-gray-800">Nombre</th>
-                          <th className="px-6 py-3 bg-gray-50 dark:bg-gray-800">Teléfono</th>
-                          <th className="px-6 py-3 text-right bg-gray-50 dark:bg-gray-800">Enviar Mensaje</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {(() => {
-                          // Helper logic to determine absence based on selected Points Saturday
-                          const getMemberAbsence = (memberId) => {
-                            if (!selectedSaturday || !selectedPointsMonth) return false;
-                            const record = points.find(p => p.memberId === memberId && p.month === selectedPointsMonth);
-                            if (!record || !record.saturdays || !record.saturdays[selectedSaturday]) return false;
-                            // Absent if attendance is explicitly unchecked (false) or not marked present?
-                            // Based on logic: attendance checkbox sets it to true/false.
-                            // If it exists and is not true, they are absent.
-                            return record.saturdays[selectedSaturday].attendance !== true;
-                          };
-
-                          // Sort members: Absent ones first
-                          const sortedMembers = [...members].sort((a, b) => {
-                            const absentA = getMemberAbsence(a.id);
-                            const absentB = getMemberAbsence(b.id);
-                            if (absentA && !absentB) return -1;
-                            if (!absentA && absentB) return 1;
-                            return a.firstName.localeCompare(b.firstName);
-                          });
-
-                          return sortedMembers.map(member => {
-                            const isAbsent = getMemberAbsence(member.id);
-                            return (
-                              <tr key={member.id} className={`${isAbsent ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'} `}>
-                                <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                                  {member.firstName} {member.lastName}
-                                  {isAbsent && (
-                                    <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border border-red-200 dark:border-red-800">
-                                      Ausente
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono">
-                                  {member.primaryContact ? formatPhone(member.primaryContact) : <span className="text-gray-300 italic">Sin número</span>}
-                                </td>
-                                <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                  {messageTemplates.map(template => (
-                                    <button
-                                      key={template.id}
-                                      onClick={() => {
-                                        if (!member.primaryContact) return;
-                                        const phone = member.primaryContact.replace(/\D/g, '');
-                                        const text = encodeURIComponent(template.text.replace('{name}', member.firstName));
-                                        const url = `https://web.whatsapp.com/send?phone=${phone}&text=${text}`;
-
-                                        setWhatsappUrl(url);
-                                        setActiveModule('comm_whatsapp');
-                                      }}
-                                      title={template.title}
-                                      disabled={!member.primaryContact}
-                                      className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${!member.primaryContact ? 'opacity-30 cursor-not-allowed text-gray-400' : ''} ${template.icon === 'UserMinus' && isAbsent ? 'bg-red-100 text-red-600 animate-pulse border border-red-200' : 'text-gray-600 dark:text-gray-400'}`}
-                                    >
-                                      {template.icon === 'DollarSign' && <DollarSign className="w-4 h-4 text-green-600" />}
-                                      {template.icon === 'Bell' && <MessageCircle className="w-4 h-4 text-blue-600" />}
-                                      {template.icon === 'UserMinus' && <AlertCircle className={`w-4 h-4 ${isAbsent ? 'text-red-600' : 'text-orange-600'}`} />}
-                                    </button >
-                                  ))}
-                                </td >
-                              </tr >
-                            );
-                          });
-                        })()}
-                      </tbody >
-                    </table >
-                  </div >
-                </div >
-              </div >
-            )}
-
-            {/* Persistent Global Components */}
-
-            {/* WhatsApp Web-Globally Persistent, Visible only when active module */}
-            {/* WhatsApp Web-Globally Persistent, Visible only when active module */}
-            <div style={{ display: activeModule === 'comm_whatsapp' ? 'flex' : 'none' }} className={`w-full flex-col bg-white dark:bg-gray-900 ${activeModule === 'comm_whatsapp' ? 'h-full' : 'hidden'}`}>
-              <div className="bg-green-500 text-white px-4 py-2 flex justify-between items-center shrink-0">
-                <span className="font-bold flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5" />
-                  WhatsApp Web
-                  {activeModule === 'comm_whatsapp' && (
-                    <button
-                      onClick={() => setActiveModule('communication')}
-                      className="ml-4 bg-green-700 hover:bg-green-800 text-white text-xs px-2 py-1 rounded transition-colors"
-                    >
-                      Volver
-                    </button>
-                  )}
-                </span>
-                <span className="text-xs bg-green-600 px-2 py-1 rounded">Sesión Segura & Persistente</span>
-              </div>
-              <div className="flex-1 bg-gray-100 dark:bg-gray-900 relative">
-                <webview
-                  src={whatsappUrl}
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                  allowpopups="true"
-                  useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                />
-              </div>
-            </div>
 
             {/* Inventory Module */}
             {
@@ -12851,60 +12514,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
 
             {/* Dashboard View-Truncated due to length */}
-            {/* DataClubes Module-PERSISTENT RENDERING */}
-            <div style={{ display: activeModule === 'dataclubes' ? 'flex' : 'none', height: 'calc(100vh - 120px)' }} className="w-full bg-white rounded-lg shadow-lg overflow-hidden flex-col">
-              <div className="bg-gray-100 dark:bg-gray-800 p-2 border-b flex justify-between items-center px-4">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Portal DataClubes</span>
-                <button
-                  onClick={handleAutoFillDataClubes}
-                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1.5 rounded-md shadow flex items-center gap-2"
-                >
-                  <Globe className="w-4 h-4" />
-                  Rellenar mis Datos (DO1902340)
-                </button>
-              </div>
-              <webview
-                ref={dataclubesWebviewRef}
-                src="https://dataclubes.azurewebsites.net/Portal/login"
-                style={{ width: '100%', height: '100%' }}
-                allowpopups="true"
-              ></webview>
-            </div>
+
 
             {
               activeModule === 'dashboard' && (
                 <div className="flex flex-col gap-8 pb-12">
-                  {/* Migration Banner (only for administrators in Desktop app) */}
-                  {!showMigration && (
-                    <div className="bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border border-blue-200 dark:border-blue-900/40 p-6 rounded-2xl flex items-center justify-between">
-                      {console.log("Migration Banner Rendered - electronAPI:", !!window.electronAPI)}
-                      <div className="flex items-center gap-4">
-                        <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-xl">
-                          <Cloud className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-800 dark:text-white">¿Listo para ir a la nube?</h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Ahora puedes sincronizar todos tus datos para usarlos desde cualquier navegador.</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setShowMigration(true)}
-                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-95"
-                      >
-                        Migrar Datos
-                      </button>
-                    </div>
-                  )}
 
-                  {showMigration && (
-                    <div className="max-w-2xl mx-auto w-full">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300">Sincronización Cloud</h3>
-                        <button onClick={() => setShowMigration(false)} className="text-sm text-gray-500 hover:text-gray-700 underline">Cerrar</button>
-                      </div>
-                      <MigrationTool onComplete={() => setTimeout(() => { setShowMigration(false); window.location.reload(); }, 3000)} />
-                    </div>
-                  )}
+
                   
                   <div className="mb-6">
                     <h2 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
