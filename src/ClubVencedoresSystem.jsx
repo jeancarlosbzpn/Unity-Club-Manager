@@ -15084,8 +15084,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     );
                   })()}
                 </>);
-              })()
-            }
+              })()}
+
             {/* Parents Module */}
             {
               activeModule === 'parents' && (() => {
@@ -15276,8 +15276,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </>
                   )}
                 </>);
-              })()
-            }
+              })()}
+
 
 
 
@@ -15803,8 +15803,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   )}
                 </>);
-              })()
-            }
+              })()}
+
 
 
             {/* Achievements Module */}
@@ -15841,6 +15841,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </p>
                         </div>
                         <Award className="w-10 h-10 text-purple-400" />
+          </div>
                       </div>
                     </div>
 
@@ -15854,6 +15855,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </p>
                         </div>
                         <Award className="w-10 h-10 text-yellow-400" />
+          </div>
                       </div>
                     </div>
 
@@ -16192,7 +16194,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </>
                 );
               })()}
-                    })()}
+
+            {
+              activeModule === 'qualifications' && (() => {
                 const accessLevel = getModuleAccessLevel('qualifications');
                 const isReadOnly = accessLevel === ACCESS_READ;
 
@@ -16687,8 +16691,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   </div>
                 </>);
-              })()
-            }
+              })()}
+
 
             {/* Medical Records Module */}
             {
@@ -16873,8 +16877,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   )}
                 </>);
-              })()
-            }
+              })()}
+
             {/* Classes Module */}
             {
               activeModule === 'classes' && (() => {
@@ -17413,8 +17417,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     );
                   })()}
                 </>);
-              })()
-            }
+              })()}
+
             {/* Points System Module */}
             {
                activeModule === 'points' && (() => {
