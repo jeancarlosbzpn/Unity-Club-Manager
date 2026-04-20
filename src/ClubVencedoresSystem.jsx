@@ -6591,6 +6591,35 @@ const ClubVencedoresSystem = () => {
                   </tbody>
                 </table>
               </div>
+              
+              {/* Data Maintenance Section */}
+              <div className="mt-12 pt-8 border-t border-red-100 dark:border-red-900/30">
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+                  <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full">
+                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold text-red-800 dark:text-red-200">Zona de Peligro: Mantenimiento de Datos</h4>
+                    <p className="text-sm text-red-700/80 dark:text-red-300/60 mt-1 max-w-xl">
+                      Esta herramienta permite reiniciar el módulo de uniformidad. Se eliminarán permanentemente todos los informes guardados en el historial y se desmarcarán todos los miembros.
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (confirm("¿Estás SEGURO de que deseas eliminar TODOS los informes de uniformidad de la historia y desmarcar a todos los miembros?\n\nEsta acción es definitiva y no se puede deshacer.")) {
+                          if (confirm("ÚLTIMA CONFIRMACIÓN:\n\nConfirma que deseas borrar absolutamente todo el historial de inspecciones.")) {
+                            setUniformInspections([]);
+                            alert("Se ha reiniciado el módulo de uniformidad correctamente.");
+                          }
+                        }
+                      }}
+                      className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-all hover:scale-105 shadow-md active:scale-95"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                      Eliminar Todo el Historial y Reiniciar
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )
         }
