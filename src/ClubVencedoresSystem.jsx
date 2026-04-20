@@ -458,6 +458,7 @@ const ClubVencedoresSystem = () => {
   const [memberSortOrder, setMemberSortOrder] = useState('asc');
   const [memberViewMode, setMemberViewMode] = useState('table'); // 'table' or 'grid'
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'saving', 'saved', 'error'
 
   // Reminders State
   const [reminders, setReminders] = useState([]);
@@ -2034,11 +2035,17 @@ const ClubVencedoresSystem = () => {
       };
 
       try {
+        setSyncStatus('saving');
         // SANITIZATION STEP:
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await saveToElectron(cleanData);
+        setSyncStatus('saved');
+        
+        // Return to idle after a few seconds
+        setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
       } catch (err) {
         console.error("Error sanitizing/saving data:", err);
+        setSyncStatus('error');
       }
     };
 
@@ -10391,6 +10398,33 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             <p className="text-sm text-gray-500 dark:text-gray-400">Sistema de Gestión Integral</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Sync Status Indicator */}
+            {syncStatus !== 'idle' && (
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 animate-in fade-in slide-in-from-right-4 ${
+                syncStatus === 'saving' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                syncStatus === 'saved' ? 'bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+              }`}>
+                {syncStatus === 'saving' && (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span className="hidden sm:inline">Guardando...</span>
+                  </>
+                )}
+                {syncStatus === 'saved' && (
+                  <>
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Sincronizado</span>
+                  </>
+                )}
+                {syncStatus === 'error' && (
+                  <>
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Reintentando...</span>
+                  </>
+                )}
+              </div>
+            )}
             <button
               onClick={() => window.location.reload()}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-blue-400 transition-colors"
