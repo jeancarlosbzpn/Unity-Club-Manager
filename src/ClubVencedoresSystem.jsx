@@ -9686,7 +9686,10 @@ const ClubVencedoresSystem = () => {
   }
 
   if (!isAuthenticated) {
-    return <Login onLoginSuccess={() => setIsAuthenticated(true)} users={users} />;
+    return <Login onLoginSuccess={(u) => {
+      if (u) setCurrentUser(u);
+      setIsAuthenticated(true);
+    }} users={users} />;
   }
 
   // Calendar functions

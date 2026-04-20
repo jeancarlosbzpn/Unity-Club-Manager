@@ -29,7 +29,7 @@ const Login = ({ onLoginSuccess, users = [] }) => {
         if (localUser && localUser.password === password) {
           console.log('✅ Local user detected, bypassing Firebase Auth');
           localStorage.setItem('clubvencedores_current_user', JSON.stringify(localUser));
-          onLoginSuccess();
+          onLoginSuccess(localUser);
           return;
         }
 
