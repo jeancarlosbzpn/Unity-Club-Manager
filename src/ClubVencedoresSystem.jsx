@@ -1794,7 +1794,7 @@ const ClubVencedoresSystem = () => {
     if (isManual) setIsSyncingPortal(true);
     try {
       console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización de portal...`);
-      const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members', 'attendanceRecords'];
+      const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members', 'attendanceRecords', 'qualifications'];
       for (const key of keysToMigrate) {
         const dataToMigrate = {
           'points': points,
@@ -1802,7 +1802,8 @@ const ClubVencedoresSystem = () => {
           'disciplineRecords': disciplineRecords,
           'announcements': announcements,
           'members': members,
-          'attendanceRecords': attendanceRecords
+          'attendanceRecords': attendanceRecords,
+          'qualifications': qualifications
         }[key];
         
         if (!dataToMigrate) continue;
@@ -1814,12 +1815,29 @@ const ClubVencedoresSystem = () => {
         if (hasData) {
           console.log(`📦 Sincronizando '${key}'...`);
           let normalizedData = dataToMigrate;
-          if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
+
+          // SPECIAL HANDLING: Deep flattening for points (Legacy format: { memberId: { month: { ... } } })
+          if (key === 'points' && !Array.isArray(dataToMigrate)) {
+            normalizedData = Object.entries(dataToMigrate).flatMap(([mId, monthlyData]) => {
+              if (monthlyData && typeof monthlyData === 'object') {
+                return Object.entries(monthlyData).map(([month, record]) => {
+                  if (typeof record === 'object' && record !== null) {
+                    return { ...record, memberId: mId, monthKey: month, id: `${mId}-${month}` };
+                  }
+                  return { memberId: mId, monthKey: month, value: record, id: `${mId}-${month}` };
+                });
+              }
+              return [{ memberId: mId, value: monthlyData, id: mId }];
+            });
+          } 
+          // Other objects (members, units if indexed by ID)
+          else if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
             normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
               if (typeof val === 'object' && val !== null) return { ...val, id };
               return { id, value: val };
             });
           }
+          
           await dataService.writeData(key, normalizedData);
         }
       }
@@ -9977,6 +9995,7 @@ const ClubVencedoresSystem = () => {
         clubSettings={clubSettings}
         transactions={transactions}
         qualifications={qualifications}
+        attendanceRecords={attendanceRecords}
         pathfinderClasses={pathfinderClasses}
       />
     );
@@ -23028,6 +23047,7 @@ const MemberPortal = ({
   clubSettings = {},
   transactions = [],
   qualifications = [],
+  attendanceRecords = [],
   pathfinderClasses = []
 }) => {
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
@@ -23104,6 +23124,7 @@ const MemberPortal = ({
   let totalAttendables = 0;
   let attendedCount = 0;
 
+  // 1. ADD Legacy Attendance (from points)
   myPointsRecords.forEach(monthRecord => {
     if (monthRecord.saturdays) {
       Object.values(monthRecord.saturdays).forEach(day => {
@@ -23124,6 +23145,15 @@ const MemberPortal = ({
           if (isPresent(statusPM)) attendedCount++;
         }
       });
+    }
+  });
+
+  // 2. ADD New Attendance (from attendanceRecords)
+  const myDirectAttendance = attendanceRecords.filter(r => isThisMember(r.memberId));
+  myDirectAttendance.forEach(record => {
+    if (record.status) {
+      totalAttendables++;
+      if (isPresent(record.status)) attendedCount++;
     }
   });
 
