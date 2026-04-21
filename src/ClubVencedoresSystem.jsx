@@ -9889,7 +9889,10 @@ const ClubVencedoresSystem = () => {
 
   if (portalMember) {
     // Resolve up-to-date member object from global state if available (prevents stale data from login)
-    const liveMember = members.find(m => m.id == portalMember.id) || portalMember;
+    const liveMember = members.find(m => 
+      String(m.id) === String(portalMember.id) || 
+      (m.portalAccessCode && String(m.portalAccessCode) === String(portalMember.id))
+    ) || portalMember;
 
     return (
       <MemberPortal
