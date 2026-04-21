@@ -22945,13 +22945,23 @@ const MemberPortal = ({
   qualifications = [],
   pathfinderClasses = []
 }) => {
-  // Find member's unit
-  const myUnit = units.find(u => String(u.id) === String(member.unitId));
+  // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
+  const isThisMember = (idInRecord) => {
+    if (!idInRecord) return false;
+    const rid = String(idInRecord);
+    const mid = String(member.id);
+    const mcode = member.portalAccessCode ? String(member.portalAccessCode) : null;
+    return rid === mid || (mcode && rid === mcode);
+  };
+
+  // Find member's unit (with fallback to name match if ID fails)
+  const myUnit = units.find(u => String(u.id) === String(member.unitId)) || 
+                 units.find(u => member.unitId && String(u.name).toLowerCase() === String(member.unitId).toLowerCase());
   
   // Filter announcements for this member
   const filteredAnnouncements = announcements.filter(a => {
     if (a.target === 'Global') return true;
-    if (a.target === 'Unit' && String(a.unitId) === String(member.unitId)) return true;
+    if (a.target === 'Unit' && (String(a.unitId) === String(member.unitId) || (myUnit && String(a.unitId) === String(myUnit.id)))) return true;
     
     // Check club section targeting
     const age = member.age || (member.dateOfBirth ? (new Date().getFullYear() - new Date(member.dateOfBirth).getFullYear()) : 0);
@@ -22963,7 +22973,7 @@ const MemberPortal = ({
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
   // Calculate Stats
-  const myPointsRecords = points.filter(p => String(p.memberId) === String(member.id));
+  const myPointsRecords = points.filter(p => isThisMember(p.memberId));
   let totalAttendables = 0;
   let attendedCount = 0;
 
@@ -22996,25 +23006,25 @@ const MemberPortal = ({
     
   const myScore = meritEntries
     .filter(e => {
-      if (String(e.memberId) === String(member.id)) return true;
-      if (e.memberIds && e.memberIds.some(id => String(id) === String(member.id))) return true;
+      if (isThisMember(e.memberId)) return true;
+      if (e.memberIds && e.memberIds.some(id => isThisMember(id))) return true;
       return false;
     })
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
   // Financial Stats
-  const myTransactions = transactions.filter(t => String(t.memberId) === String(member.id));
+  const myTransactions = transactions.filter(t => isThisMember(t.memberId));
   const totalPaid = myTransactions
     .filter(t => ['income', 'Ingreso', 'Ingresos'].includes(t.type) || !t.type)
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
   // Class Info
-  const myQual = qualifications.find(q => String(q.memberId) === String(member.id));
+  const myQual = qualifications.find(q => isThisMember(q.memberId));
   const myClassName = pathfinderClasses.find(c => String(c.value) === String(member.currentClass))?.label || member.currentClass || 'No asignada';
 
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
-    .filter(m => String(m.unitId) === String(member.unitId) && String(m.id) !== String(member.id))
+    .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))) && String(m.id) !== String(member.id))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
   return (
