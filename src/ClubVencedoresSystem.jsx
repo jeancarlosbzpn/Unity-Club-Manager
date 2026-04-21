@@ -1910,15 +1910,75 @@ const ClubVencedoresSystem = () => {
         }
         
         console.log(`📤 Subiendo ${normalizedData.length || 1} registros de '${key}' al portal...`);
-        await dataService.writeData(key, normalizedData);
+        // CRITICAL: We now use skipMaster: true so we DON'T overwrite the admin's master file with flattened portal data!
+        await dataService.writeData(key, normalizedData, { skipMaster: true });
       }
-      console.log('✅ Sincronización Híbrida completada.');
-      if (isManual) alert('¡Sincronización FINAL completada! Los datos de tu pantalla han sido subidos exitosamente al portal.');
+      console.log('✅ Sincronización Híbrida completada (Sin afectar Master Doc).');
+      if (isManual) alert('¡Sincronización FINAL completada! Los datos se han subido al portal SIN alterar tus archivos maestros.');
     } catch (err) {
       console.error('❌ Error en sincronización:', err);
       if (isManual) alert('Error: ' + err.message);
     } finally {
       if (isManual) setIsSyncingPortal(false);
+    }
+  };
+
+  // 🚑 EMERGENCY DATA RECOVERY: Restore Master Docs from Portal Collections
+  const repairSystemData = async () => {
+    if (!window.confirm('🚨 ¿Deseas ejecutar la REPARACIÓN DE EMERGENCIA? \n\nEsto intentará reconstruir tus tablas de méritos y unidades usando los datos del portal. Rompiste tu panel por la sincronización anterior, esto lo arreglará.')) return;
+    
+    setIsSyncingPortal(true);
+    try {
+      console.log('🚑 Iniciando Operación de Rescate...');
+      
+      // 1. Recover Points (The most critical failure)
+      console.log('⏳ Recuperando PUNTOS...');
+      const portalPoints = await dataService.readData('points') || [];
+      if (Array.isArray(portalPoints) && portalPoints.length > 0) {
+        const reconstructedPoints = {};
+        portalPoints.forEach(p => {
+          if (p.memberId && p.monthKey) {
+            if (!reconstructedPoints[p.memberId]) reconstructedPoints[p.memberId] = {};
+            reconstructedPoints[p.memberId][p.monthKey] = p;
+          }
+        });
+        console.log(`✅ Puntos reconstruidos: ${Object.keys(reconstructedPoints).length} miembros.`);
+        await dataService.writeData('points', reconstructedPoints);
+        setPoints(reconstructedPoints);
+      }
+
+      // 2. Recover Member Progress (Member Progress)
+      console.log('⏳ Recuperando PROGRESO DE CLASES...');
+      const portalQuals = await dataService.readData('qualifications') || [];
+      if (Array.isArray(portalQuals) && portalQuals.length > 0) {
+        const reconstructedQuals = {};
+        portalQuals.forEach(q => {
+          if (q.memberId && q.requirementId) {
+            if (!reconstructedQuals[q.memberId]) reconstructedQuals[q.memberId] = {};
+            reconstructedQuals[q.memberId][q.requirementId] = q;
+          }
+        });
+        console.log(`✅ Progreso reconstruido: ${Object.keys(reconstructedQuals).length} miembros.`);
+        await dataService.writeData('qualifications', reconstructedQuals);
+        setMemberProgress(reconstructedQuals);
+      }
+
+      // 3. Recover Units
+      console.log('⏳ Recuperando UNIDADES...');
+      const portalUnits = await dataService.readData('units') || [];
+      if (Array.isArray(portalUnits) && portalUnits.length > 0) {
+        await dataService.writeData('units', portalUnits);
+        setUnits(portalUnits);
+        console.log(`✅ Unidades restauradas: ${portalUnits.length}`);
+      }
+
+      alert('🎉 ¡REPARACIÓN EXITOSA! \n\nTus puntos, progreso y unidades han sido restaurados al formato de administrador. Por favor recarga la página.');
+      window.location.reload();
+    } catch (err) {
+      console.error('❌ Error en reparación:', err);
+      alert('Error en reparación: ' + err.message);
+    } finally {
+      setIsSyncingPortal(false);
     }
   };
 
@@ -22405,7 +22465,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mt-1">Respalda, restaura y configura tu sistema</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={repairSystemData}
+                          disabled={isSyncingPortal}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                            isSyncingPortal 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 shadow-sm'
+                          }`}
+                        >
+                          <ShieldCheck className="w-5 h-5" />
+                          {isSyncingPortal ? 'Procesando...' : 'Reparar Datos'}
+                        </button>
+                        
                         <button
                           onClick={() => syncPortalData(true)}
                           disabled={isSyncingPortal}

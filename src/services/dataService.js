@@ -157,7 +157,8 @@ export const dataService = {
    * If Electron, updates local file.
    * If Web, updates Firestore.
    */
-  writeData: async (key, data) => {
+  writeData: async (key, data, options = {}) => {
+    const { skipMaster = false } = options;
     if (isElectron) {
       const fullData = await window.electronAPI.readData();
       fullData[key] = data;
@@ -189,25 +190,31 @@ export const dataService = {
           batch.set(itemRef, sanitizeData(item));
         }
 
-        // Mark as collection in central metadata
-        try {
-          await setDoc(doc(db, 'club_vencedores_data', key), { 
-            isCollection: true, 
-            updatedAt: new Date().toISOString() 
-          }, { merge: true });
-        } catch (e) {
-          console.warn(`Could not set collection metadata for ${key}`, e);
+        if (!skipMaster) {
+          // Mark as collection in central metadata
+          try {
+            await setDoc(doc(db, 'club_vencedores_data', key), { 
+              isCollection: true, 
+              updatedAt: new Date().toISOString() 
+            }, { merge: true });
+          } catch (e) {
+            console.warn(`Could not set collection metadata for ${key}`, e);
+          }
         }
 
         await batch.commit();
         
-        // Also save to central doc for redundancy/legacy compatibility
-        await saveCollectionToFirestore(key, sanitizeData(data));
+        // Also save to central doc for redundancy/legacy compatibility (UNLESS skipMaster)
+        if (!skipMaster) {
+          await saveCollectionToFirestore(key, sanitizeData(data));
+        }
         return { success: true };
       }
 
       // Generic handling for non-collection data (Config, settings, etc)
-      await saveCollectionToFirestore(key, sanitizeData(data));
+      if (!skipMaster) {
+        await saveCollectionToFirestore(key, sanitizeData(data));
+      }
       return { success: true };
     }
   },
