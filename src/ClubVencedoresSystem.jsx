@@ -9898,7 +9898,7 @@ const ClubVencedoresSystem = () => {
         announcements={announcements}
         units={units}
         members={members}
-        activityAttendance={activityAttendance}
+        points={points}
         meritEntries={meritEntries}
         clubSettings={clubSettings}
         transactions={transactions}
@@ -22935,7 +22935,7 @@ const MemberPortal = ({
   announcements = [], 
   units = [], 
   members = [],
-  activityAttendance = [],
+  points = [],
   meritEntries = [],
   clubSettings = {},
   transactions = [],
@@ -22960,9 +22960,35 @@ const MemberPortal = ({
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
   // Calculate Stats
-  const myAttendance = activityAttendance.filter(a => a.memberId === member.id);
-  const attendanceRate = myAttendance.length > 0 
-    ? Math.round((myAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length / myAttendance.length) * 100)
+  const myPointsRecords = points.filter(p => p.memberId === member.id);
+  let totalAttendables = 0;
+  let attendedCount = 0;
+
+  myPointsRecords.forEach(monthRecord => {
+    if (monthRecord.saturdays) {
+      Object.values(monthRecord.saturdays).forEach(day => {
+        // Count Friday
+        if (day.attendanceFriday) {
+          totalAttendables++;
+          if (day.attendanceFriday === 'P' || day.attendanceFriday === 'L') attendedCount++;
+        }
+        // Count Sat AM
+        if (day.attendanceSatAM) {
+          totalAttendables++;
+          if (day.attendanceSatAM === 'P' || day.attendanceSatAM === 'L') attendedCount++;
+        }
+        // Count Sat PM (or fallback to .attendance)
+        const statusPM = day.attendanceSatPM || day.attendance;
+        if (statusPM) {
+          totalAttendables++;
+          if (statusPM === 'P' || statusPM === 'L') attendedCount++;
+        }
+      });
+    }
+  });
+
+  const attendanceRate = totalAttendables > 0 
+    ? Math.round((attendedCount / totalAttendables) * 100) 
     : 0;
     
   const myScore = meritEntries
