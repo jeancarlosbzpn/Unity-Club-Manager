@@ -22980,10 +22980,29 @@ const MemberPortal = ({
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
     if (!idInRecord) return false;
-    const rid = String(idInRecord);
-    const mid = String(member.id);
-    const mcode = member.portalAccessCode ? String(member.portalAccessCode) : null;
-    return rid === mid || (mcode && rid === mcode);
+    const rid = String(idInRecord).trim();
+    const mid = String(member.id).trim();
+    const midPartial = mid.split('-')[0];
+    const ridPartial = rid.split('-')[0];
+    const mcode = member.portalAccessCode ? String(member.portalAccessCode).trim() : null;
+    const mFullName = ((member.firstName || '') + ' ' + (member.lastName || '')).trim().toLowerCase();
+    
+    // L1: Exact ID or Portal Code match
+    if (rid === mid || (mcode && rid === mcode)) return true;
+    
+    // L2: Partial ID match (handles index-prefixed IDs like "7-thais" matching "7")
+    if (rid === midPartial || ridPartial === mid) return true;
+    
+    // L3: Name-based fallback (last resort for legacy records)
+    if (rid.toLowerCase() === mFullName) return true;
+    
+    return false;
+  };
+
+  const isPresent = (status) => {
+    if (!status) return false;
+    const s = String(status).toUpperCase();
+    return s === 'P' || s === 'L';
   };
 
   // Find member's unit (with fallback to name match if ID fails)
@@ -23015,18 +23034,18 @@ const MemberPortal = ({
         // Count Friday
         if (day.attendanceFriday) {
           totalAttendables++;
-          if (day.attendanceFriday === 'P' || day.attendanceFriday === 'L') attendedCount++;
+          if (isPresent(day.attendanceFriday)) attendedCount++;
         }
         // Count Sat AM
         if (day.attendanceSatAM) {
           totalAttendables++;
-          if (day.attendanceSatAM === 'P' || day.attendanceSatAM === 'L') attendedCount++;
+          if (isPresent(day.attendanceSatAM)) attendedCount++;
         }
         // Count Sat PM (or fallback to .attendance)
         const statusPM = day.attendanceSatPM || day.attendance;
         if (statusPM) {
           totalAttendables++;
-          if (statusPM === 'P' || statusPM === 'L') attendedCount++;
+          if (isPresent(statusPM)) attendedCount++;
         }
       });
     }
