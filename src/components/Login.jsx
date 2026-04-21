@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase-config';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { Lock, Mail, AlertCircle, Loader2, User, ShieldCheck } from 'lucide-react';
 
 const Login = ({ onLoginSuccess, users = [], members = [] }) => {
@@ -29,7 +29,16 @@ const Login = ({ onLoginSuccess, users = [], members = [] }) => {
         );
 
         if (member) {
-          console.log('✅ Miembro autenticado con código:', codeToTry);
+          console.log('✅ Miembro identificado con código:', codeToTry);
+          
+          // Elevate session with anonymous login to fulfill Firebase security requirements for reading master docs
+          try {
+            await signInAnonymously(auth);
+            console.log('🛡️ Sesión de Firebase elevada para portal de miembro');
+          } catch (authErr) {
+            console.warn('⚠️ No se pudo elevar la sesión (Anónima), el portal podría tener acceso limitado:', authErr);
+          }
+
           const memberUser = {
             ...member,
             role: 'member',
