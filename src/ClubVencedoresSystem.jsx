@@ -1793,14 +1793,15 @@ const ClubVencedoresSystem = () => {
     if (isAuthenticated && dataLoaded && currentUser?.role === 'admin') {
       const migrateCollections = async () => {
         try {
-          const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members'];
+          const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members', 'attendanceRecords'];
           for (const key of keysToMigrate) {
             const dataToMigrate = {
               'points': points,
               'units': units,
               'disciplineRecords': disciplineRecords,
               'announcements': announcements,
-              'members': members
+              'members': members,
+              'attendanceRecords': attendanceRecords
             }[key];
             
             if (!dataToMigrate) continue;
@@ -1812,7 +1813,17 @@ const ClubVencedoresSystem = () => {
 
             if (hasData) {
               console.log(`📦 Sincronizando '${key}' para portal...`);
-              await dataService.writeData(key, dataToMigrate);
+              
+              // CRITICAL: Convert Object to Array to trigger collection-based storage in dataService
+              let normalizedData = dataToMigrate;
+              if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
+                normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
+                  if (typeof val === 'object' && val !== null) return { ...val, id };
+                  return { id, value: val };
+                });
+              }
+              
+              await dataService.writeData(key, normalizedData);
             }
           }
           console.log('✅ Sincronización completa');

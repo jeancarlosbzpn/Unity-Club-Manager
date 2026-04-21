@@ -132,7 +132,7 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     } else {
       const STORAGE_PREFIX = 'clubvencedores_';
-      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements'];
+      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords'];
 
       // Collection-based handling for shared data
       if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
