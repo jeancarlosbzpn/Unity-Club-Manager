@@ -1793,9 +1793,36 @@ const ClubVencedoresSystem = () => {
   const syncPortalData = async (isManual = false) => {
     if (isManual) setIsSyncingPortal(true);
     try {
-      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización MAESTRA hacia el portal...`);
+      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización MAESTRA con TRADUCCIÓN DE IDENTIDAD...`);
       const keysToMigrate = ['members', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
       
+      // Load all Master Members first for identity mapping
+      const masterMembers = await dataService.readData('members', { forceMaster: true }) || [];
+      console.log(`👤 Cargados ${masterMembers.length} miembros maestros para resolución de IDs.`);
+
+      // Helper to find the actual GUID from any legacy ID/code/name
+      const findGuid = (idOrCode) => {
+        if (!idOrCode) return null;
+        const search = String(idOrCode).trim().toLowerCase();
+        
+        // Match by exact ID or Access Code
+        const found = masterMembers.find(m => 
+          String(m.id).toLowerCase() === search || 
+          String(m.portalAccessCode || '').toLowerCase() === search
+        );
+        if (found) return found.id;
+
+        // Match by normalized full name (resilient to accents)
+        const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const searchNorm = normalize(search);
+        const nameMatch = masterMembers.find(m => {
+           const fullName = normalize((m.firstName || '') + ' ' + (m.lastName || '')).trim();
+           return fullName === searchNorm || normalize(m.firstName || '') === searchNorm;
+        });
+
+        return nameMatch ? nameMatch.id : idOrCode;
+      };
+
       for (const key of keysToMigrate) {
         // LAYER 1: Load directly from Master Document to bypass any empty local/public cache
         console.log(`🔍 Extrayendo '${key}' desde el Documento Maestro...`);
@@ -1814,27 +1841,37 @@ const ClubVencedoresSystem = () => {
           console.log(`📦 Procesando ${count} registros de '${key}' encontrados en el Maestro...`);
           let normalizedData = dataToMigrate;
 
-          // SPECIAL HANDLING: Deep flattening for points (Legacy format: { memberId: { month: { ... } } } OR { memberId: value })
+          // SPECIAL HANDLING: Points with Identity Resolution
           if (key === 'points' && !Array.isArray(dataToMigrate)) {
-            normalizedData = Object.entries(dataToMigrate).flatMap(([mId, monthlyData]) => {
+            normalizedData = Object.entries(dataToMigrate).flatMap(([rawId, monthlyData]) => {
+              const actualId = findGuid(rawId); // Translate '7' or 'Nancy' to GUID
               if (monthlyData && typeof monthlyData === 'object') {
                 return Object.entries(monthlyData).map(([month, record]) => {
                   if (typeof record === 'object' && record !== null) {
-                    return { ...record, memberId: mId, monthKey: month, id: `${mId}-${month}` };
+                    return { ...record, memberId: actualId, monthKey: month, id: `${actualId}-${month}` };
                   }
-                  return { memberId: mId, monthKey: month, value: record, id: `${mId}-${month}` };
+                  return { memberId: actualId, monthKey: month, value: record, id: `${actualId}-${month}` };
                 });
               } else if (monthlyData !== undefined && monthlyData !== null) {
-                return [{ memberId: mId, value: monthlyData, id: `flat-${mId}-${Date.now()}` }];
+                return [{ memberId: actualId, value: monthlyData, id: `flat-${actualId}-${Date.now()}` }];
               }
               return [];
             });
           } 
-          // Other objects (members, units if indexed by ID)
+          // Other collections that might use legacy keys but are already arrays
+          else if (Array.isArray(dataToMigrate)) {
+             normalizedData = dataToMigrate.map(item => {
+                if (item.memberId) return { ...item, memberId: findGuid(item.memberId) };
+                if (item.responsibleId) return { ...item, responsibleId: findGuid(item.responsibleId) };
+                return item;
+             });
+          }
+          // Objects
           else if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
             normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
-              if (typeof val === 'object' && val !== null) return { ...val, id };
-              return { id, value: val };
+              const actualId = findGuid(id);
+              if (typeof val === 'object' && val !== null) return { ...val, id: actualId, memberId: actualId };
+              return { id: actualId, memberId: actualId, value: val };
             });
           }
           
@@ -1844,8 +1881,8 @@ const ClubVencedoresSystem = () => {
           console.log(`ℹ️ La clave '${key}' está vacía en el maestro, no hay nada que sincronizar.`);
         }
       }
-      console.log('✅ Sincronización de portal finalizada con éxito');
-      if (isManual) alert('¡Datos del portal sincronizados correctamente! Diana y los demás ya pueden ver sus puntos.');
+      console.log('✅ Sincronización maestra finalizada con resolución de identidades.');
+      if (isManual) alert('¡Sincronización MAESTRA completada! Se han unificado las identidades de los miembros. Ya pueden revisar sus puntos.');
     } catch (err) {
       console.error('❌ Error en sincronización de portal:', err);
       if (isManual) alert('Error al sincronizar datos: ' + err.message);
@@ -23056,21 +23093,25 @@ const MemberPortal = ({
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
     if (!idInRecord) return false;
-    const rid = String(idInRecord).trim();
-    const mid = String(member.id).trim();
-    const midPartial = mid.split('-')[0];
+    const rid = String(idInRecord).trim().toLowerCase();
+    const mid = String(member.id).trim().toLowerCase();
     const ridPartial = rid.split('-')[0];
-    const mcode = member.portalAccessCode ? String(member.portalAccessCode).trim() : null;
-    const mFullName = ((member.firstName || '') + ' ' + (member.lastName || '')).trim().toLowerCase();
+    const midPartial = mid.split('-')[0];
+    const mcode = member.portalAccessCode ? String(member.portalAccessCode).trim().toLowerCase() : null;
     
-    // L1: Exact ID or Portal Code match
+    // Normalization helper for resilient name matching
+    const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const mFullName = normalize((member.firstName || '') + ' ' + (member.lastName || '')).trim();
+    const recordName = normalize(rid);
+
+    // L1: Exact Match (ID or Portal Code)
     if (rid === mid || (mcode && rid === mcode)) return true;
     
-    // L2: Partial ID match (handles index-prefixed IDs like "7-thais" matching "7")
+    // L2: Partial Match
     if (rid === midPartial || ridPartial === mid) return true;
     
-    // L3: Name-based fallback (last resort for legacy records)
-    if (rid.toLowerCase() === mFullName) return true;
+    // L3: Name-based Fallback (Resilient to accents/caps)
+    if (recordName === mFullName || recordName === normalize(member.firstName || '')) return true;
     
     return false;
   };
