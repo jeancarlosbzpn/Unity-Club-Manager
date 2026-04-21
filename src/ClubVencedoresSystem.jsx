@@ -22943,12 +22943,12 @@ const MemberPortal = ({
   pathfinderClasses = []
 }) => {
   // Find member's unit
-  const myUnit = units.find(u => u.id === member.unitId);
+  const myUnit = units.find(u => u.id == member.unitId);
   
   // Filter announcements for this member
   const filteredAnnouncements = announcements.filter(a => {
     if (a.target === 'Global') return true;
-    if (a.target === 'Unit' && a.unitId === member.unitId) return true;
+    if (a.target === 'Unit' && a.unitId == member.unitId) return true;
     
     // Check club section targeting
     const age = member.age || (member.dateOfBirth ? (new Date().getFullYear() - new Date(member.dateOfBirth).getFullYear()) : 0);
@@ -22960,7 +22960,7 @@ const MemberPortal = ({
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
   // Calculate Stats
-  const myPointsRecords = points.filter(p => p.memberId === member.id);
+  const myPointsRecords = points.filter(p => p.memberId == member.id);
   let totalAttendables = 0;
   let attendedCount = 0;
 
@@ -22993,25 +22993,25 @@ const MemberPortal = ({
     
   const myScore = meritEntries
     .filter(e => {
-      if (e.memberId === member.id) return true;
-      if (e.memberIds && e.memberIds.includes(member.id)) return true;
+      if (e.memberId == member.id) return true;
+      if (e.memberIds && e.memberIds.some(id => id == member.id)) return true;
       return false;
     })
     .reduce((sum, e) => sum + (parseInt(e.points) || 0), 0);
 
   // Financial Stats
-  const myTransactions = transactions.filter(t => t.memberId === member.id);
+  const myTransactions = transactions.filter(t => t.memberId == member.id);
   const totalPaid = myTransactions
     .filter(t => t.type === 'Ingreso' || !t.type) // Default to Ingreso for payments
     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
   // Class Info
-  const myQual = qualifications.find(q => q.memberId === member.id);
-  const myClassName = pathfinderClasses.find(c => c.value === member.currentClass)?.label || member.currentClass || 'No asignada';
+  const myQual = qualifications.find(q => q.memberId == member.id);
+  const myClassName = pathfinderClasses.find(c => c.value == member.currentClass)?.label || member.currentClass || 'No asignada';
 
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
-    .filter(m => m.unitId === member.unitId && m.id !== member.id)
+    .filter(m => m.unitId == member.unitId && m.id != member.id)
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
   return (
