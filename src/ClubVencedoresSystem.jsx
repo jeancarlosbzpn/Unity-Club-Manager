@@ -8123,63 +8123,8 @@ const ClubVencedoresSystem = () => {
     printWindow.document.close();
   };
 
-  < html >
-        <head>
-          <title>Itinerario ${clubName}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-            body { font-family: 'Inter', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-            .header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
-            .header h1 { margin: 0; color: ${isAventureros ? '#eab308' : '#dc2626'}; text-transform: uppercase; font-size: 24px; }
-            .header p { margin: 5px 0; color: #666; }
-            .content { margin-top: 30px; }
-            .item { display: flex; justify-content: space-between; border-bottom: 1px dashed #ddd; padding: 10px 0; }
-            .time { font-weight: bold; width: 100px; color: #666; }
-            .task { flex: 1; margin-left: 20px; }
-            .responsable { width: 200px; text-align: right; font-style: italic; }
-            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; pt: 20px; }
-            .section-title { background: #f9fafb; padding: 5px 10px; font-weight: bold; margin-top: 20px; border-left: 4px solid ${isAventureros ? '#eab308' : '#dc2626'}; }
-            @media print { .no-print { display: none; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div style="width: 80px; height: 80px; margin: 0 auto 10px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-              ${clubSettings?.logo ? `<img src="${clubSettings.logo}" style="width: 100%; height: 100%; object-fit: contain;">` : '<span style="font-weight: bold; color: #ccc;">LOGO</span>'}
-            </div>
-            <h1>${clubName} ${clubSettings?.name || ''}</h1>
-            <p>${title}</p>
-            <p>${date}</p>
-          </div>
-          
-          <div class="content">
-            <div class="section-title">Apertura y Devocional</div>
-            <div class="item"><div class="time">09:00 AM</div><div class="task">Entrada de Banderas y Toque de Silbato</div><div class="responsable">Capitán de Guía Mayor</div></div>
-            <div class="item"><div class="time">09:05 AM</div><div class="task">Ideales (Voto, Ley, etc.)</div><div class="responsable">Directiva</div></div>
-            <div class="item"><div class="time">09:15 AM</div><div class="task">Oración Inicial</div><div class="responsable">Miembro Invitado</div></div>
-            <div class="item"><div class="time">09:20 AM</div><div class="task">Reflexión Espiritual</div><div class="responsable">Consejero de Turno</div></div>
-            
-            <div class="section-title">Actividades de Clase</div>
-            <div class="item"><div class="time">09:40 AM</div><div class="task">Instrucción de Clase ${isAventureros ? 'Aventureros' : 'Conquistadores'}</div><div class="responsable">Instructores</div></div>
-            <div class="item"><div class="time">10:30 AM</div><div class="task">Especialidades / Requisitos</div><div class="responsable">Directiva</div></div>
-            
-            <div class="section-title">Cierre</div>
-            <div class="item"><div class="time">11:30 AM</div><div class="task">Avisos y Recordatorios</div><div class="responsable">Director</div></div>
-            <div class="item"><div class="time">11:45 AM</div><div class="task">Oración Final y Salida</div><div class="responsable">Directiva</div></div>
-          </div>
-          
-          <div class="footer">
-            Generado por TriClub Manager &copy; ${new Date().getFullYear()}-${clubSettings?.association || ''}
-          </div>
-          
-          <script>
-            window.onload = function() { setTimeout(function() { window.print(); }, 500); }
-          </script>
-        </body>
-      </html >
-  `);
-    printWindow.document.close();
-  };
+
+
 
 
   // Helper to calculate grade from Qualifications module
