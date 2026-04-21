@@ -585,6 +585,7 @@ const ClubVencedoresSystem = () => {
   });
   const [transactions, setTransactions] = useState([]);
   const [isVerifyingReceipt, setIsVerifyingReceipt] = useState(false);
+  const [isSyncingPortal, setIsSyncingPortal] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({}); // { menuId: boolean }
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
@@ -1788,53 +1789,63 @@ const ClubVencedoresSystem = () => {
     fetchData();
   }, [isAuthenticated, portalMember]);
 
-  // TRIGGER: Automatic Migration to public collections (Run by Admin)
-  useEffect(() => {
-    if (isAuthenticated && dataLoaded && currentUser?.role === 'admin') {
-      const migrateCollections = async () => {
-        try {
-          const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members', 'attendanceRecords'];
-          for (const key of keysToMigrate) {
-            const dataToMigrate = {
-              'points': points,
-              'units': units,
-              'disciplineRecords': disciplineRecords,
-              'announcements': announcements,
-              'members': members,
-              'attendanceRecords': attendanceRecords
-            }[key];
-            
-            if (!dataToMigrate) continue;
-            
-            // Handle both Arrays and Objects (Legacy Points are often strictly objects)
-            const hasData = Array.isArray(dataToMigrate) 
-              ? dataToMigrate.length > 0 
-              : (typeof dataToMigrate === 'object' && Object.keys(dataToMigrate).length > 0);
+  // Helper for Member Portal Data Sync (Can be called automatically or manually)
+  const syncPortalData = async (isManual = false) => {
+    if (isManual) setIsSyncingPortal(true);
+    try {
+      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización de portal...`);
+      const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members', 'attendanceRecords'];
+      for (const key of keysToMigrate) {
+        const dataToMigrate = {
+          'points': points,
+          'units': units,
+          'disciplineRecords': disciplineRecords,
+          'announcements': announcements,
+          'members': members,
+          'attendanceRecords': attendanceRecords
+        }[key];
+        
+        if (!dataToMigrate) continue;
+        
+        const hasData = Array.isArray(dataToMigrate) 
+          ? dataToMigrate.length > 0 
+          : (typeof dataToMigrate === 'object' && Object.keys(dataToMigrate).length > 0);
 
-            if (hasData) {
-              console.log(`📦 Sincronizando '${key}' para portal...`);
-              
-              // CRITICAL: Convert Object to Array to trigger collection-based storage in dataService
-              let normalizedData = dataToMigrate;
-              if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
-                normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
-                  if (typeof val === 'object' && val !== null) return { ...val, id };
-                  return { id, value: val };
-                });
-              }
-              
-              await dataService.writeData(key, normalizedData);
-            }
+        if (hasData) {
+          console.log(`📦 Sincronizando '${key}'...`);
+          let normalizedData = dataToMigrate;
+          if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
+            normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
+              if (typeof val === 'object' && val !== null) return { ...val, id };
+              return { id, value: val };
+            });
           }
-          console.log('✅ Sincronización completa');
-        } catch (err) {
-          console.error('❌ Error en migración:', err);
+          await dataService.writeData(key, normalizedData);
         }
-      };
-      const timer = setTimeout(migrateCollections, 3000);
+      }
+      console.log('✅ Sincronización de portal finalizada con éxito');
+      if (isManual) alert('¡Datos del portal sincronizados correctamente! Diana y los demás ya pueden ver sus puntos.');
+    } catch (err) {
+      console.error('❌ Error en sincronización de portal:', err);
+      if (isManual) alert('Error al sincronizar datos: ' + err.message);
+    } finally {
+      if (isManual) setIsSyncingPortal(false);
+    }
+  };
+
+  // TRIGGER: Automatic Migration (Run by Admin on Login)
+  useEffect(() => {
+    console.log('🔄 Verificando estado para sincronización portal:', { 
+      isAuthenticated, 
+      dataLoaded, 
+      role: currentUser?.role 
+    });
+    
+    if (isAuthenticated && dataLoaded && currentUser?.role === 'administrator') {
+      const timer = setTimeout(() => syncPortalData(false), 5000);
       return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, dataLoaded, currentUser, points, units]);
+  }, [isAuthenticated, dataLoaded, currentUser]);
 
   // ========================================
   // AUTO-SAVE DATA ON CHANGES
@@ -22303,6 +22314,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           Configuración y Gestión de Datos
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mt-1">Respalda, restaura y configura tu sistema</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => syncPortalData(true)}
+                          disabled={isSyncingPortal}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                            isSyncingPortal 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200'
+                          }`}
+                        >
+                          <RefreshCcw className={`w-5 h-5 ${isSyncingPortal ? 'animate-spin' : ''}`} />
+                          {isSyncingPortal ? 'Sincronizando...' : 'Sincronizar Datos Portal'}
+                        </button>
                       </div>
                     </div>
                   </div>
