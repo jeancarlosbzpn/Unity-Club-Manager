@@ -1777,7 +1777,36 @@ const ClubVencedoresSystem = () => {
     };
 
     fetchData();
-  }, [isAuthenticated, portalMember]); // Se ejecuta al cargar por primera vez y cuando cambia el estado de autenticación o de miembro portal
+  }, [isAuthenticated, portalMember]);
+
+  // NEW: Admin-LED Migration to robust collections (Ensures portal access for members)
+  useEffect(() => {
+    if (isAuthenticated && dataLoaded) {
+      console.log('🔄 Sincronizando colecciones maestras para acceso de miembros...');
+      const migrateKeys = async () => {
+        try {
+          const keys = ['units', 'points', 'disciplineRecords', 'announcements'];
+          for (const key of keys) {
+            let dataToSave = null;
+            if (key === 'units') dataToSave = units;
+            if (key === 'points') dataToSave = points;
+            if (key === 'disciplineRecords') dataToSave = disciplineRecords;
+            if (key === 'announcements') dataToSave = announcements;
+
+            if (dataToSave && Array.isArray(dataToSave)) {
+              await dataService.writeData(key, dataToSave);
+            }
+          }
+          console.log('✅ Sincronización de colecciones completada.');
+        } catch (err) {
+          console.error('❌ Error durante la migración de colecciones:', err);
+        }
+      };
+      
+      const timer = setTimeout(migrateKeys, 2000); // Delay slightly to ensure states are settled
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, dataLoaded]); // This effect only runs once when admin is ready
 
   // ========================================
   // AUTO-SAVE DATA ON CHANGES

@@ -131,15 +131,18 @@ export const dataService = {
       fullData[key] = data;
       return await window.electronAPI.writeData(fullData);
     } else {
-      // 1. Members handling (Collection + Deletions)
-      if (key === 'members' && Array.isArray(data)) {
-        const STORAGE_PREFIX = 'clubvencedores_';
+      const STORAGE_PREFIX = 'clubvencedores_';
+      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements'];
+
+      // Collection-based handling for shared data
+      if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
         const batch = writeBatch(db);
+        const colName = STORAGE_PREFIX + key;
         
         // Sync deletions: find docs in cloud that are not in incoming array
-        const colRef = collection(db, STORAGE_PREFIX + 'members');
+        const colRef = collection(db, colName);
         const currentSnap = await getDocs(colRef);
-        const incomingIds = data.map(m => m.id);
+        const incomingIds = data.map(item => item.id || item.username || (item.firstName + '_' + item.lastName));
         
         currentSnap.docs.forEach(docSnap => {
           if (!incomingIds.includes(docSnap.id)) {
@@ -147,76 +150,31 @@ export const dataService = {
           }
         });
 
-        for (const member of data) {
-          if (!member.id) member.id = crypto.randomUUID();
-          const memberRef = doc(db, STORAGE_PREFIX + 'members', member.id);
-          batch.set(memberRef, sanitizeData(member));
+        // Upsert items
+        for (const item of data) {
+          const itemId = item.id || item.username || (item.firstName ? (item.firstName + '_' + item.lastName) : Date.now().toString() + Math.random().toString(36).substring(2, 7));
+          const itemRef = doc(db, colName, itemId);
+          batch.set(itemRef, sanitizeData(item));
         }
+
+        // Mark as collection in central metadata
+        try {
+          await setDoc(doc(db, 'club_vencedores_data', key), { 
+            isCollection: true, 
+            updatedAt: new Date().toISOString() 
+          }, { merge: true });
+        } catch (e) {
+          console.warn(`Could not set collection metadata for ${key}`, e);
+        }
+
         await batch.commit();
         
-        // Also save to central doc for redundancy/backup during migration
+        // Also save to central doc for redundancy/legacy compatibility
         await saveCollectionToFirestore(key, sanitizeData(data));
         return { success: true };
       }
 
-      // 2. Transactions handling (Collection + Deletions)
-      if (key === 'transactions' && Array.isArray(data)) {
-        const STORAGE_PREFIX = 'clubvencedores_';
-        const batch = writeBatch(db);
-        // Mark as collection
-        await setDoc(doc(db, 'club_vencedores_data', 'transactions'), { isCollection: true, updatedAt: new Date().toISOString() });
-        
-        // Sync deletions
-        const colRef = collection(db, STORAGE_PREFIX + 'transactions');
-        const currentSnap = await getDocs(colRef);
-        const incomingIds = data.map(t => t.id);
-        
-        currentSnap.docs.forEach(docSnap => {
-          if (!incomingIds.includes(docSnap.id)) {
-            batch.delete(docSnap.ref);
-          }
-        });
-
-        for (const tx of data) {
-          if (!tx.id) tx.id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
-          const txRef = doc(db, STORAGE_PREFIX + 'transactions', tx.id);
-          batch.set(txRef, sanitizeData(tx));
-        }
-        await batch.commit();
-        
-        // Also save to central doc for redundancy
-        await saveCollectionToFirestore(key, sanitizeData(data));
-        return { success: true };
-      }
-
-      // 3. User profiles handling (Collection)
-      if (key === 'users' && Array.isArray(data)) {
-        const STORAGE_PREFIX = 'clubvencedores_';
-        const batch = writeBatch(db);
-        
-        // Sync deletions
-        const colRef = collection(db, STORAGE_PREFIX + 'users');
-        const currentSnap = await getDocs(colRef);
-        const incomingIds = data.map(u => u.username || u.id); // Use username as ID if present
-        
-        currentSnap.docs.forEach(docSnap => {
-          if (!incomingIds.includes(docSnap.id)) {
-            batch.delete(docSnap.ref);
-          }
-        });
-
-        for (const user of data) {
-          const userId = user.username || user.id || Date.now().toString();
-          const userRef = doc(db, STORAGE_PREFIX + 'users', userId);
-          batch.set(userRef, sanitizeData(user));
-        }
-        await batch.commit();
-        
-        await saveCollectionToFirestore(key, sanitizeData(data));
-        return { success: true };
-      }
-
-      // Generic handling with sanitization
+      // Generic handling for non-collection data (Config, settings, etc)
       await saveCollectionToFirestore(key, sanitizeData(data));
       return { success: true };
     }
