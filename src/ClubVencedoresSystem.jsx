@@ -313,6 +313,7 @@ const ClubVencedoresSystem = () => {
 
 
   const [currentUser, setCurrentUser] = useState(null);
+  const [portalMember, setPortalMember] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -846,6 +847,19 @@ const ClubVencedoresSystem = () => {
   // ID Cards State
   const [selectedForIdCard, setSelectedForIdCard] = useState([]);
 
+  // Announcements State
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [announcementFormData, setAnnouncementFormData] = useState({
+    title: '',
+    content: '',
+    date: getLocalISODate(),
+    type: 'Information', // 'Information', 'Alert', 'Event'
+    target: 'Global', // 'Global', 'Aventureros', 'Conquistadores', 'Guias Mayores', 'Unit'
+    unitId: ''
+  });
+
   // CLASSES MODULE STATE
   const [activeClassTab, setActiveClassTab] = useState('summary'); // 'summary', 'requirements', 'evaluations', 'matrix'
   const [selectedClassId, setSelectedClassId] = useState(null); // e.g. 'Amigo'
@@ -1317,7 +1331,7 @@ const ClubVencedoresSystem = () => {
           'financeCategories', 'inventoryCategories', 'tents', 'tentAssignments', 
           'uniformInspections', 'memberUniforms', 'uniformItems', 'uniformCategories', 
           'clubSettings', 'duesConfig', 'qualifications', 
-          'attendanceRecords', 'firstAidItems', 'disciplineRecords'
+          'attendanceRecords', 'firstAidItems', 'disciplineRecords', 'announcements'
         ];
         
         // Load all in parallel
@@ -1390,6 +1404,7 @@ const ClubVencedoresSystem = () => {
         financeCategories: financeCategories || [],
         tents: tents || [],
         tentAssignments: tentAssignments || {},
+        announcements: announcements || [],
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -1750,6 +1765,7 @@ const ClubVencedoresSystem = () => {
         if (allData.requirementSections) setRequirementSections(allData.requirementSections);
         if (allData.firstAidItems) setFirstAidItems(allData.firstAidItems);
         if (allData.disciplineRecords) setDisciplineRecords(allData.disciplineRecords);
+        if (allData.announcements) setAnnouncements(allData.announcements);
 
 
         setDataLoaded(true); // Enable auto-save now that we have loaded data
@@ -1785,6 +1801,7 @@ const ClubVencedoresSystem = () => {
         inventory,
         cuotaAmount,
         masterGuideData,
+        announcements,
         financeCategories,
         // paymentConcepts, concepts, achievements removed as they are undefined
         reminders,
@@ -1905,6 +1922,7 @@ const ClubVencedoresSystem = () => {
   // Navigation menu items
   const menuItems = [
     { id: 'dashboard', label: 'Inicio', icon: Home, available: true },
+    { id: 'announcements', label: 'Anuncios', icon: MessageSquare, available: true },
     { id: 'discipline', label: 'Faltas', icon: AlertTriangle, available: true },
     {
       id: 'activities',
@@ -2082,6 +2100,88 @@ const ClubVencedoresSystem = () => {
   };
 
   const toggleReminderCompletion = (id) => {
+    setReminders(prev => prev.map(r => {
+      if (r.id === id) {
+        const isNowCompleted = !r.isCompleted;
+
+        // If becoming completed and has recurrence, calculate next date
+        if (isNowCompleted && r.recurrence && r.recurrence !== 'none') {
+          const currentDate = new Date(r.date);
+          const nextDate = new Date(currentDate);
+
+          if (r.recurrence === 'daily') nextDate.setDate(currentDate.getDate() + 1);
+          else if (r.recurrence === 'weekly') nextDate.setDate(currentDate.getDate() + 7);
+          else if (r.recurrence === 'monthly') nextDate.setMonth(currentDate.getMonth() + 1);
+          else if (r.recurrence === 'yearly') nextDate.setFullYear(currentDate.getFullYear() + 1);
+
+          return {
+            ...r,
+            date: dateToLocalISO(nextDate),
+            isCompleted: false // Reset for next instance
+          };
+        }
+
+        return { ...r, isCompleted: isNowCompleted };
+      }
+      return r;
+    }));
+  };
+
+  // ===================================
+  // ANNOUNCEMENTS HANDLERS
+  // ===================================
+  const handleAddAnnouncement = () => {
+    setEditingAnnouncement(null);
+    setAnnouncementFormData({
+      title: '',
+      content: '',
+      date: getLocalISODate(),
+      type: 'Information',
+      target: 'Global',
+      unitId: ''
+    });
+    setShowAnnouncementForm(true);
+  };
+
+  const handleEditAnnouncement = (announcement) => {
+    setEditingAnnouncement(announcement);
+    setAnnouncementFormData({
+      title: announcement.title,
+      content: announcement.content,
+      date: announcement.date,
+      type: announcement.type || 'Information',
+      target: announcement.target || 'Global',
+      unitId: announcement.unitId || ''
+    });
+    setShowAnnouncementForm(true);
+  };
+
+  const handleDeleteAnnouncement = (id) => {
+    if (window.confirm('¿Estás seguro de eliminar este anuncio?')) {
+      setAnnouncements(prev => prev.filter(a => a.id !== id));
+    }
+  };
+
+  const handleSaveAnnouncement = () => {
+    if (!announcementFormData.title.trim()) {
+      alert('Por favor ingresa un título para el anuncio');
+      return;
+    }
+
+    if (editingAnnouncement) {
+      setAnnouncements(prev => prev.map(a => 
+        a.id === editingAnnouncement.id ? { ...a, ...announcementFormData } : a
+      ));
+    } else {
+      const newAnnouncement = {
+        ...announcementFormData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
+      };
+      setAnnouncements(prev => [newAnnouncement, ...prev]);
+    }
+    setShowAnnouncementForm(false);
+  };
     setReminders(prev => prev.map(r => {
       if (r.id === id) {
         const isNowCompleted = !r.isCompleted;
@@ -9796,11 +9896,42 @@ const ClubVencedoresSystem = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login onLoginSuccess={(u) => {
-      if (u) setCurrentUser(u);
-      setIsAuthenticated(true);
-    }} users={users} members={members} />;
+  if (!isAuthenticated && !portalMember) {
+    return (
+      <Login
+        onLoginSuccess={(u) => {
+          if (u && u.role === 'member') {
+            setPortalMember(u);
+          } else {
+            if (u) setCurrentUser(u);
+            setIsAuthenticated(true);
+          }
+        }}
+        users={users}
+        members={members}
+      />
+    );
+  }
+
+  if (portalMember) {
+    return (
+      <MemberPortal
+        member={portalMember}
+        onLogout={() => {
+          setPortalMember(null);
+          localStorage.removeItem('clubvencedores_current_user');
+        }}
+        announcements={announcements}
+        units={units}
+        members={members}
+        activityAttendance={activityAttendance}
+        meritEntries={meritEntries}
+        clubSettings={clubSettings}
+        transactions={transactions}
+        qualifications={qualifications}
+        pathfinderClasses={pathfinderClasses}
+      />
+    );
   }
 
   // Calendar functions
@@ -12896,6 +13027,175 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           >
                             Guardar Registro
                           </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            {
+              activeModule === 'announcements' && (
+                <div className="space-y-6 animate-in fade-in duration-500">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-red-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                          <MessageSquare className="w-7 h-7 text-red-600 dark:text-red-500" />
+                          Módulo de Anuncios
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">Crea y gestiona avisos importantes para el portal de miembros</p>
+                      </div>
+                      <button
+                        onClick={handleAddAnnouncement}
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-red-200 dark:shadow-none transition-all transform hover:scale-105"
+                      >
+                        <Plus className="w-5 h-5 font-black" />
+                        Nuevo Anuncio
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {announcements.length === 0 ? (
+                      <div className="col-span-full py-20 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 shadow-sm">
+                        <MessageSquare className="w-20 h-20 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Silencio Informativo</h3>
+                        <p className="text-gray-400 dark:text-gray-500 mt-2">No se han publicado anuncios todavía.</p>
+                        <button onClick={handleAddAnnouncement} className="mt-6 px-8 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-red-50 hover:text-red-600 transition-all border border-gray-200 dark:border-gray-600">
+                          Publicar primer aviso
+                        </button>
+                      </div>
+                    ) : (
+                      announcements.map(announcement => (
+                        <div key={announcement.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col h-full border-t-0">
+                          <div className={`h-2 shadow-sm ${
+                            announcement.type === 'Alert' ? 'bg-gradient-to-r from-red-500 to-orange-500' : 
+                            announcement.type === 'Event' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 
+                            'bg-gradient-to-r from-gray-400 to-gray-500'
+                          }`} />
+                          <div className="p-6 flex-1 flex flex-col">
+                            <div className="flex justify-between items-start mb-4">
+                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                announcement.type === 'Alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 
+                                announcement.type === 'Event' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
+                                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                              }`}>
+                                {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Informativo'}
+                              </span>
+                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => handleEditAnnouncement(announcement)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-colors" title="Editar"><Edit2 className="w-4 h-4" /></button>
+                                <button onClick={() => handleDeleteAnnouncement(announcement.id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-colors" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+                            <h3 className="text-lg font-black text-gray-800 dark:text-white mb-3 line-clamp-2 leading-tight uppercase tracking-tight">{announcement.title}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-4 mb-6 leading-relaxed flex-1 whitespace-pre-wrap">{announcement.content}</p>
+                            
+                            <div className="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700 mt-auto">
+                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                <Calendar className="w-3.5 h-3.5" />
+                                {new Date(announcement.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-md">
+                                <Target className="w-3.5 h-3.5" />
+                                {announcement.target === 'Unit' ? (units.find(u => u.id === announcement.unitId)?.name || 'Unidad') : announcement.target}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {showAnnouncementForm && (
+                    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+                      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-white/20 transform animate-in zoom-in-95 duration-300">
+                        <div className="px-8 py-6 bg-red-600 flex items-center justify-between text-white border-b border-red-700 shadow-lg relative">
+                          <div className="relative z-10">
+                            <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
+                              <MessageSquare className="w-7 h-7" />
+                              {editingAnnouncement ? 'Editar Comunicado' : 'Nuevo Comunicado'}
+                            </h3>
+                            <p className="text-xs text-red-100 font-bold uppercase tracking-widest mt-1">Suministra información clave al club</p>
+                          </div>
+                          <button onClick={() => setShowAnnouncementForm(false)} className="hover:bg-white/20 p-2 rounded-full transition-all relative z-10"><X className="w-6 h-6 font-black" /></button>
+                          {/* Decorative pattern for header */}
+                          <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -mr-16 -mt-16 blur-3xl opacity-50"></div>
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-black rounded-full -ml-16 -mb-16 blur-2xl opacity-30"></div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gray-50/30 dark:bg-gray-800/50">
+                          <div className="group">
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 group-focus-within:text-red-500 transition-colors">Título del Anuncio</label>
+                            <input
+                              type="text"
+                              value={announcementFormData.title}
+                              onChange={(e) => setAnnouncementFormData({...announcementFormData, title: e.target.value})}
+                              className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-red-500 outline-none transition-all dark:text-white font-bold text-lg shadow-sm"
+                              placeholder="Ej: Instrucciones para el Campamento"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="group">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Categoría</label>
+                              <select
+                                value={announcementFormData.type}
+                                onChange={(e) => setAnnouncementFormData({...announcementFormData, type: e.target.value})}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-red-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer"
+                              >
+                                <option value="Information">📍 Informativo</option>
+                                <option value="Alert">🚨 Urgente / Alerta</option>
+                                <option value="Event">📅 Evento Próximo</option>
+                              </select>
+                            </div>
+                            <div className="group">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Destinatarios</label>
+                              <select
+                                value={announcementFormData.target}
+                                onChange={(e) => setAnnouncementFormData({...announcementFormData, target: e.target.value, unitId: e.target.value === 'Unit' ? (units[0]?.id || '') : ''})}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-red-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer"
+                              >
+                                <option value="Global">🌎 Todo el Club</option>
+                                <option value="Aventureros">🦁 Aventureros</option>
+                                <option value="Conquistadores">⚔️ Conquistadores</option>
+                                <option value="Guias Mayores">🧭 Guías Mayores</option>
+                                <option value="Unit">🛡️ Unidad Específica</option>
+                              </select>
+                            </div>
+                          </div>
+                          
+                          {announcementFormData.target === 'Unit' && (
+                            <div className="animate-in slide-in-from-top-4 duration-300">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Seleccionar Unidad Beneficiaria</label>
+                              <select
+                                value={announcementFormData.unitId}
+                                onChange={(e) => setAnnouncementFormData({...announcementFormData, unitId: e.target.value})}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-2xl focus:border-indigo-500 outline-none dark:text-white font-bold shadow-sm"
+                              >
+                                {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                              </select>
+                            </div>
+                          )}
+
+                          <div className="group">
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Cuerpo del Mensaje</label>
+                            <textarea
+                              value={announcementFormData.content}
+                              onChange={(e) => setAnnouncementFormData({...announcementFormData, content: e.target.value})}
+                              rows="6"
+                              className="w-full px-5 py-4 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-red-500 outline-none transition-all dark:text-white font-medium shadow-sm resize-none leading-relaxed"
+                              placeholder="Escribe aquí los detalles del anuncio que verán los miembros..."
+                            ></textarea>
+                          </div>
+                        </div>
+                        
+                        <div className="p-8 bg-gray-50 dark:bg-gray-900/20 flex flex-col md:flex-row justify-end gap-4 border-t border-gray-100 dark:border-gray-700/50">
+                          <button onClick={() => setShowAnnouncementForm(false)} className="px-8 py-3 text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-[10px] hover:bg-gray-200 dark:hover:bg-gray-700 rounded-2xl transition-all">Descartar</button>
+                          <button onClick={handleSaveAnnouncement} className="px-12 py-3 bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-red-200 dark:shadow-none transition-all transform active:scale-95">Publicar comunicado</button>
                         </div>
                       </div>
                     </div>
@@ -22649,6 +22949,219 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 };
 
 // Render the application
+
+
+// ===========================================
+// MEMBER PORTAL COMPONENT
+// ===========================================
+
+const MemberPortal = ({ 
+  member, 
+  onLogout, 
+  announcements = [], 
+  units = [], 
+  members = [],
+  activityAttendance = [],
+  meritEntries = [],
+  clubSettings = {},
+  transactions = [],
+  qualifications = [],
+  pathfinderClasses = []
+}) => {
+  // Find member's unit
+  const myUnit = units.find(u => u.id === member.unitId);
+  
+  // Filter announcements for this member
+  const filteredAnnouncements = announcements.filter(a => {
+    if (a.target === 'Global') return true;
+    if (a.target === 'Unit' && a.unitId === member.unitId) return true;
+    
+    // Check club section targeting
+    const age = member.age || (member.dateOfBirth ? (new Date().getFullYear() - new Date(member.dateOfBirth).getFullYear()) : 0);
+    if (a.target === 'Aventureros' && age < 10) return true;
+    if (a.target === 'Conquistadores' && age >= 10 && age < 16) return true;
+    if (a.target === 'Guias Mayores' && age >= 16) return true;
+    
+    return false;
+  }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+
+  // Calculate Stats
+  const myAttendance = activityAttendance.filter(a => a.memberId === member.id);
+  const attendanceRate = myAttendance.length > 0 
+    ? Math.round((myAttendance.filter(a => a.status === 'Present' || a.status === 'Late').length / myAttendance.length) * 100)
+    : 0;
+    
+  const myScore = meritEntries
+    .filter(e => e.memberId === member.id)
+    .reduce((sum, e) => sum + (parseInt(e.points) || 0), 0);
+
+  // Financial Stats
+  const myTransactions = transactions.filter(t => t.memberId === member.id);
+  const totalPaid = myTransactions
+    .filter(t => t.type === 'Ingreso' || !t.type) // Default to Ingreso for payments
+    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+  // Class Info
+  const myQual = qualifications.find(q => q.memberId === member.id);
+  const myClassName = pathfinderClasses.find(c => c.value === member.currentClass)?.label || member.currentClass || 'No asignada';
+
+  // Filter unit members (Privacy: same unit only)
+  const unitMembers = members
+    .filter(m => m.unitId === member.unitId && m.id !== member.id)
+    .sort((a, b) => a.firstName.localeCompare(b.firstName));
+
+  return (
+    <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-red-500/30">
+      {/* Mobile Top Bar */}
+      <div className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-black shadow-lg shadow-red-900/20">
+            {member.firstName ? member.firstName[0] : 'V'}
+          </div>
+          <div>
+            <h1 className="text-sm font-black uppercase tracking-tighter">Mi Portal</h1>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{myUnit?.name || 'Vencedor'}</p>
+          </div>
+        </div>
+        <button 
+          onClick={onLogout}
+          className="p-2 bg-gray-800 hover:bg-red-900/40 text-gray-400 hover:text-red-400 rounded-xl transition-all border border-white/5"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
+        {/* Welcome Header */}
+        <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+          <h2 className="text-3xl font-black tracking-tighter leading-none mb-1">
+            ¡Hola, <span className="text-red-500">{member.firstName}</span>!
+          </h2>
+          <p className="text-gray-400 text-sm font-medium">Aquí tienes tu resumen actualizado.</p>
+        </section>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Main Stats */}
+          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
+              <Trophy className="w-5 h-5 text-amber-500" />
+            </div>
+            <div className="text-2xl font-black tracking-tighter">{myScore}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Puntos Totales</div>
+          </div>
+          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
+            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
+              <CalendarCheck className="w-5 h-5 text-blue-500" />
+            </div>
+            <div className="text-2xl font-black tracking-tighter">{attendanceRate}%</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Asistencia</div>
+          </div>
+
+          {/* Secondary Stats */}
+          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
+              <DollarSign className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div className="text-2xl font-black tracking-tighter">${totalPaid}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total Pagado</div>
+          </div>
+          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group overflow-hidden">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
+              <BookOpen className="w-5 h-5 text-indigo-500" />
+            </div>
+            <div className="text-sm font-black tracking-tighter truncate leading-tight h-8 flex items-center">{myClassName}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-0.5">Clase Actual</div>
+          </div>
+        </div>
+
+        {/* Announcements Feed */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+              <Bell className="w-4 h-4 text-red-500" />
+              Comunicados
+            </h3>
+            {filteredAnnouncements.length > 0 && (
+              <span className="text-[10px] font-bold text-gray-500">{filteredAnnouncements.length} anuncios</span>
+            )}
+          </div>
+          
+          <div className="space-y-4">
+            {filteredAnnouncements.length === 0 ? (
+              <div className="bg-gray-900/50 rounded-3xl p-8 text-center border border-dashed border-white/5">
+                <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">No hay anuncios para ti</p>
+              </div>
+            ) : (
+              filteredAnnouncements.map(announcement => (
+                <div key={announcement.id} className="bg-gray-900 border border-white/5 rounded-3xl overflow-hidden group">
+                  <div className={`h-1.5 ${
+                    announcement.type === 'Alert' ? 'bg-red-500' : 
+                    announcement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-700'
+                  }`} />
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-black/40 px-2 py-0.5 rounded">
+                        {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Aviso'}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-600">
+                        {new Date(announcement.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-400 transition-colors">{announcement.title}</h4>
+                    <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">{announcement.content}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* My Unit Section */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <Users className="w-4 h-4 text-red-500" />
+            <h3 className="text-sm font-black uppercase tracking-widest">Mi Unidad: {myUnit?.name || '-'}</h3>
+          </div>
+          
+          <div className="bg-gray-900 border border-white/5 rounded-3xl overflow-hidden">
+            {unitMembers.length === 0 ? (
+              <div className="p-6 text-center text-gray-500 text-xs font-bold">Cargando compañeros...</div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {unitMembers.map(m => (
+                  <div key={m.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center font-bold text-[10px]">
+                        {m.firstName ? m.firstName[0] : 'V'}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold">{m.firstName} {m.lastName}</div>
+                        <div className="text-[9px] font-black uppercase tracking-widest text-gray-500">{m.unitRole || 'Miembro'}</div>
+                      </div>
+                    </div>
+                    {m.unitRole === 'Captain' && <ShieldCheck className="w-4 h-4 text-amber-500" />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Footer Info */}
+        <footer className="pt-8 pb-12 text-center">
+          <div className="inline-block px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">
+            Vencedores Portal v1.0
+          </div>
+          <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
+            Club {clubSettings?.name || 'Vencedores'}
+          </p>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
 
 const ClubVencedoresApp = () => (
   <ErrorBoundary>
