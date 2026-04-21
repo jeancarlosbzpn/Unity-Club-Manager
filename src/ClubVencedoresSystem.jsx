@@ -9800,7 +9800,7 @@ const ClubVencedoresSystem = () => {
     return <Login onLoginSuccess={(u) => {
       if (u) setCurrentUser(u);
       setIsAuthenticated(true);
-    }} users={users} />;
+    }} users={users} members={members} />;
   }
 
   // Calendar functions

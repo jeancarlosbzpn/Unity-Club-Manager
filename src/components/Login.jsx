@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase-config';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { Lock, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Loader2, User, ShieldCheck } from 'lucide-react';
 
-const Login = ({ onLoginSuccess, users = [] }) => {
+const Login = ({ onLoginSuccess, users = [], members = [] }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [portalCode, setPortalCode] = useState('');
+  const [loginMode, setLoginMode] = useState('admin'); // 'admin' or 'member'
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -16,11 +18,39 @@ const Login = ({ onLoginSuccess, users = [] }) => {
     setLoading(true);
 
     try {
+      if (loginMode === 'member') {
+        const codeToTry = portalCode.trim().toUpperCase();
+        if (!codeToTry) {
+          throw new Error('Por favor ingresa tu código de acceso');
+        }
+
+        // Search for a member that matches this portalAccessCode
+        // Note: portalAccessCode is the last 6 chars of their ID
+        const member = members.find(m => 
+          (m.portalAccessCode === codeToTry) || 
+          (m.id && m.id.slice(-6).toUpperCase() === codeToTry)
+        );
+
+        if (member) {
+          console.log('✅ Miembro autenticado con código:', codeToTry);
+          // Store session info
+          const memberUser = {
+            ...member,
+            role: 'member',
+            displayName: `${member.firstName} ${member.lastName}`
+          };
+          localStorage.setItem('clubvencedores_current_user', JSON.stringify(memberUser));
+          onLoginSuccess(memberUser);
+          return;
+        } else {
+          throw new Error('Código de acceso inválido. Verifica que sea el de 6 caracteres que aparece en tu perfil.');
+        }
+      }
+
+      // Admin Login Logic
       if (isRegistering) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
-        // 1. Check if it's a local/internal username login
-        // Either the identifier doesn't have an @ or we find a match in the internal users list
         const localUser = users.find(u => 
           (u.username && u.username.toLowerCase() === email.toLowerCase()) || 
           (u.email && u.email.toLowerCase() === email.toLowerCase())
@@ -33,24 +63,15 @@ const Login = ({ onLoginSuccess, users = [] }) => {
           return;
         }
 
-        // 2. Otherwise use standard Firebase Auth
         await signInWithEmailAndPassword(auth, email, password);
       }
       onLoginSuccess();
     } catch (err) {
       console.error(err);
-      let message = 'Error al iniciar sesión';
+      let message = err.message || 'Error al iniciar sesión';
       if (err.code === 'auth/user-not-found') message = 'Usuario no encontrado';
       if (err.code === 'auth/wrong-password') message = 'Contraseña incorrecta';
       if (err.code === 'auth/invalid-login-credentials' || err.code === 'auth/invalid-credential') message = 'Credenciales inválidas (correo o contraseña incorrectos)';
-      if (err.code === 'auth/invalid-email') message = 'Correo inválido';
-      if (err.code === 'auth/email-already-in-use') message = 'El correo ya está en uso';
-      if (err.code === 'auth/weak-password') message = 'La contraseña debe tener al menos 6 caracteres';
-      if (err.code === 'auth/operation-not-allowed') message = 'La autenticación por correo no está habilitada en la consola de Firebase';
-      
-      if (message === 'Error al iniciar sesión' && err.message) {
-         message = `${message}: ${err.message}`;
-      }
       
       setError(message);
     } finally {
@@ -59,15 +80,45 @@ const Login = ({ onLoginSuccess, users = [] }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-900 to-slate-900 flex items-center justify-center p-4">
       <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-md p-8 border border-white/20">
         <div className="text-center mb-8">
           <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="text-blue-600 w-8 h-8" />
+            {loginMode === 'admin' ? (
+              <Lock className="text-blue-600 w-8 h-8" />
+            ) : (
+              <ShieldCheck className="text-blue-600 w-8 h-8" />
+            )}
           </div>
           <h1 className="text-3xl font-bold text-gray-800">Sistema Vencedores</h1>
-          <p className="text-gray-500 mt-2">Acceso a la gestión en la nube</p>
+          <p className="text-gray-500 mt-2">
+            {loginMode === 'admin' ? 'Acceso Administrativo' : 'Portal de Miembros'}
+          </p>
         </div>
+
+        {/* Toggle Mode */}
+        {!isRegistering && (
+          <div className="flex bg-gray-100 p-1 rounded-xl mb-8">
+            <button
+              onClick={() => { setLoginMode('admin'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                loginMode === 'admin' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Lock className="w-4 h-4" />
+              Administrador
+            </button>
+            <button
+              onClick={() => { setLoginMode('member'); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                loginMode === 'member' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              Miembro
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
@@ -77,43 +128,75 @@ const Login = ({ onLoginSuccess, users = [] }) => {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block">Usuario o Correo</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="soybaex o ejemplo@club.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
+          {loginMode === 'admin' ? (
+            <>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 block text-left px-1">Usuario o Correo</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    required
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    placeholder="soybaex o ejemplo@club.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block">Contraseña</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="password"
-                required
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 block text-left px-1">Contraseña</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="password"
+                    required
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 block text-center uppercase tracking-widest">
+                  Código de Portal
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 w-6 h-6" />
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    autoFocus
+                    className="w-full pl-12 pr-4 py-5 rounded-2xl border-2 border-blue-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-center text-3xl font-black font-mono tracking-[0.3em] uppercase placeholder:text-gray-300"
+                    placeholder="ABC123"
+                    value={portalCode}
+                    onChange={(e) => setPortalCode(e.target.value.toUpperCase())}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center mt-4">
+                  Ingresa el código de 6 caracteres que aparece en tu perfil del club.
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+            className={`w-full ${
+              loginMode === 'member' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'
+            } text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 text-lg`}
           >
             {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-6 h-6 animate-spin" />
+            ) : loginMode === 'member' ? (
+              'Ingresar al Portal'
             ) : isRegistering ? (
               'Crear Cuenta'
             ) : (
@@ -127,7 +210,7 @@ const Login = ({ onLoginSuccess, users = [] }) => {
             onClick={() => setIsRegistering(!isRegistering)}
             className="text-sm text-blue-600 hover:underline font-medium"
           >
-            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : '¿Primer acceso? Regístrate aquí'}
+            {isRegistering ? '¿Ya tienes cuenta? Inicia sesión' : 'Información para nuevos registros'}
           </button>
         </div>
       </div>
