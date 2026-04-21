@@ -23065,7 +23065,7 @@ const MemberPortal = ({
     return false;
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
-,ReplacementChunks:[{AllowMultiple:false,EndLine:23039,ReplacementContent:  let totalAttendables = 0;
+  let totalAttendables = 0;
   let attendedCount = 0;
 
   myPointsRecords.forEach(monthRecord => {
