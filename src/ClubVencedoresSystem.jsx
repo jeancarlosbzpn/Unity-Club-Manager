@@ -1823,12 +1823,25 @@ const ClubVencedoresSystem = () => {
         console.log(`🔍 Buscando '${key}' en Nube...`);
         let cloudData = await dataService.readData(key, { forceMaster: true });
         
-        // LAYER 2: Fallback to Current Screen State if cloud is empty
+        // LAYER 2: Fallback to Current Screen State variables
+        // Map keys to their actual React State variable names
         const screenData = {
-          'members': members, 'points': points, 'units': units, 
-          'disciplineRecords': disciplineRecords, 'announcements': announcements, 
-          'attendanceRecords': attendanceRecords, 'qualifications': qualifications
+          'members': members,
+          'points': points,
+          'units': units, 
+          'disciplineRecords': disciplineRecords,
+          'announcements': announcements, 
+          'attendanceRecords': attendanceRecords,
+          'qualifications': memberProgress // FIXED: qualifications is stored in memberProgress state
         }[key];
+
+        // DEBUG: Log state content to identify where the data is
+        if (screenData) {
+          const sCount = Array.isArray(screenData) ? screenData.length : Object.keys(screenData).length;
+          console.log(`📱 PANTALLA [${key}]: Encontrados ${sCount} registros en memoria del navegador.`);
+        } else {
+          console.log(`📱 PANTALLA [${key}]: Variable de estado vacía o nula.`);
+        }
 
         let dataToMigrate = cloudData;
         let source = 'Nube';
@@ -1838,7 +1851,7 @@ const ClubVencedoresSystem = () => {
         if (isDataEmpty(dataToMigrate) && !isDataEmpty(screenData)) {
            dataToMigrate = screenData;
            source = 'PANTALLA (Local)';
-           console.log(`💡 '${key}' está vacío en nube, usando datos de la PANTALLA.`);
+           console.log(`💡 '${key}' está vacío en nube, USANDO DATOS DE LA PANTALLA (${source}).`);
         }
 
         if (isDataEmpty(dataToMigrate)) {
@@ -1851,6 +1864,7 @@ const ClubVencedoresSystem = () => {
 
         // Flattening + Identity resolution
         if (key === 'points' && !Array.isArray(dataToMigrate)) {
+          console.log(`🔄 Aplanando objeto de puntos para ${Object.keys(dataToMigrate).length} miembros...`);
           normalizedData = Object.entries(dataToMigrate).flatMap(([rawId, monthlyData]) => {
             const actualId = findGuid(rawId);
             if (monthlyData && typeof monthlyData === 'object') {
@@ -1864,11 +1878,26 @@ const ClubVencedoresSystem = () => {
             return [];
           });
         } 
+        else if (key === 'qualifications' && !Array.isArray(dataToMigrate)) {
+          console.log(`🔄 Aplanando matriz de progreso para ${Object.keys(dataToMigrate).length} miembros...`);
+          normalizedData = Object.entries(dataToMigrate).flatMap(([mId, reqs]) => {
+             const actualId = findGuid(mId);
+             if (reqs && typeof reqs === 'object') {
+                return Object.entries(reqs).map(([reqId, status]) => ({
+                   memberId: actualId,
+                   requirementId: reqId,
+                   ...(typeof status === 'object' ? status : { status }),
+                   id: `${actualId}-${reqId}`
+                }));
+             }
+             return [];
+          });
+        }
         else if (Array.isArray(dataToMigrate)) {
            normalizedData = dataToMigrate.map(item => {
               if (item.memberId) return { ...item, memberId: findGuid(item.memberId) };
               if (item.responsibleId) return { ...item, responsibleId: findGuid(item.responsibleId) };
-              if (item.id && key === 'members') return { ...item, memberId: item.id }; // Identity for members
+              if (item.id && key === 'members') return { ...item, memberId: item.id };
               return item;
            });
         }
