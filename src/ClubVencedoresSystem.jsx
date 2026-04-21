@@ -1789,103 +1789,105 @@ const ClubVencedoresSystem = () => {
     fetchData();
   }, [isAuthenticated, portalMember]);
 
-  // Helper for Member Portal Data Sync (Can be called automatically or manually)
   const syncPortalData = async (isManual = false) => {
     if (isManual) setIsSyncingPortal(true);
     try {
-      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización MAESTRA con TRADUCCIÓN DE IDENTIDAD...`);
+      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización HÍBRIDA (Maestro + Pantalla)...`);
       const keysToMigrate = ['members', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
       
-      // Load all Master Members first for identity mapping
-      const masterMembers = await dataService.readData('members', { forceMaster: true }) || [];
-      console.log(`👤 Cargados ${masterMembers.length} miembros maestros para resolución de IDs.`);
+      // Load all Master Members FIRST for identity mapping
+      const cloudMembers = await dataService.readData('members', { forceMaster: true }) || [];
+      const masterMembers = cloudMembers.length > 0 ? cloudMembers : (members || []);
+      console.log(`👤 Miembros para resolución: ${masterMembers.length} (${cloudMembers.length > 0 ? 'Desde Nube' : 'Desde Pantalla'}).`);
 
-      // Helper to find the actual GUID from any legacy ID/code/name
       const findGuid = (idOrCode) => {
         if (!idOrCode) return null;
         const search = String(idOrCode).trim().toLowerCase();
-        
-        // Match by exact ID or Access Code
         const found = masterMembers.find(m => 
           String(m.id).toLowerCase() === search || 
           String(m.portalAccessCode || '').toLowerCase() === search
         );
         if (found) return found.id;
 
-        // Match by normalized full name (resilient to accents)
         const normalize = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const searchNorm = normalize(search);
         const nameMatch = masterMembers.find(m => {
            const fullName = normalize((m.firstName || '') + ' ' + (m.lastName || '')).trim();
            return fullName === searchNorm || normalize(m.firstName || '') === searchNorm;
         });
-
         return nameMatch ? nameMatch.id : idOrCode;
       };
 
       for (const key of keysToMigrate) {
-        // LAYER 1: Load directly from Master Document to bypass any empty local/public cache
-        console.log(`🔍 Extrayendo '${key}' desde el Documento Maestro...`);
-        const dataToMigrate = await dataService.readData(key, { forceMaster: true });
+        // LAYER 1: Load from Cloud Master
+        console.log(`🔍 Buscando '${key}' en Nube...`);
+        let cloudData = await dataService.readData(key, { forceMaster: true });
         
-        if (!dataToMigrate) {
-          console.warn(`⚠️ Omitiendo '${key}': No se encontró información en el documento maestro.`);
+        // LAYER 2: Fallback to Current Screen State if cloud is empty
+        const screenData = {
+          'members': members, 'points': points, 'units': units, 
+          'disciplineRecords': disciplineRecords, 'announcements': announcements, 
+          'attendanceRecords': attendanceRecords, 'qualifications': qualifications
+        }[key];
+
+        let dataToMigrate = cloudData;
+        let source = 'Nube';
+
+        const isDataEmpty = (d) => !d || (Array.isArray(d) ? d.length === 0 : Object.keys(d).length === 0);
+
+        if (isDataEmpty(dataToMigrate) && !isDataEmpty(screenData)) {
+           dataToMigrate = screenData;
+           source = 'PANTALLA (Local)';
+           console.log(`💡 '${key}' está vacío en nube, usando datos de la PANTALLA.`);
+        }
+
+        if (isDataEmpty(dataToMigrate)) {
+          console.warn(`⚠️ Omitiendo '${key}': No se encontró información en Nube ni Pantalla.`);
           continue;
         }
-        
-        const count = Array.isArray(dataToMigrate) 
-          ? dataToMigrate.length 
-          : (typeof dataToMigrate === 'object' ? Object.keys(dataToMigrate).length : 0);
 
-        if (count > 0) {
-          console.log(`📦 Procesando ${count} registros de '${key}' encontrados en el Maestro...`);
-          let normalizedData = dataToMigrate;
+        console.log(`📦 Procesando registros de '${key}' (Fuente: ${source})...`);
+        let normalizedData = dataToMigrate;
 
-          // SPECIAL HANDLING: Points with Identity Resolution
-          if (key === 'points' && !Array.isArray(dataToMigrate)) {
-            normalizedData = Object.entries(dataToMigrate).flatMap(([rawId, monthlyData]) => {
-              const actualId = findGuid(rawId); // Translate '7' or 'Nancy' to GUID
-              if (monthlyData && typeof monthlyData === 'object') {
-                return Object.entries(monthlyData).map(([month, record]) => {
-                  if (typeof record === 'object' && record !== null) {
-                    return { ...record, memberId: actualId, monthKey: month, id: `${actualId}-${month}` };
-                  }
-                  return { memberId: actualId, monthKey: month, value: record, id: `${actualId}-${month}` };
-                });
-              } else if (monthlyData !== undefined && monthlyData !== null) {
-                return [{ memberId: actualId, value: monthlyData, id: `flat-${actualId}-${Date.now()}` }];
-              }
-              return [];
-            });
-          } 
-          // Other collections that might use legacy keys but are already arrays
-          else if (Array.isArray(dataToMigrate)) {
-             normalizedData = dataToMigrate.map(item => {
-                if (item.memberId) return { ...item, memberId: findGuid(item.memberId) };
-                if (item.responsibleId) return { ...item, responsibleId: findGuid(item.responsibleId) };
-                return item;
-             });
-          }
-          // Objects
-          else if (!Array.isArray(dataToMigrate) && typeof dataToMigrate === 'object') {
-            normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
-              const actualId = findGuid(id);
-              if (typeof val === 'object' && val !== null) return { ...val, id: actualId, memberId: actualId };
-              return { id: actualId, memberId: actualId, value: val };
-            });
-          }
-          
-          console.log(`📤 Subiendo ${Array.isArray(normalizedData) ? normalizedData.length : '1'} registros finales a la colección pública '${key}'...`);
-          await dataService.writeData(key, normalizedData);
-        } else {
-          console.log(`ℹ️ La clave '${key}' está vacía en el maestro, no hay nada que sincronizar.`);
+        // Flattening + Identity resolution
+        if (key === 'points' && !Array.isArray(dataToMigrate)) {
+          normalizedData = Object.entries(dataToMigrate).flatMap(([rawId, monthlyData]) => {
+            const actualId = findGuid(rawId);
+            if (monthlyData && typeof monthlyData === 'object') {
+              return Object.entries(monthlyData).map(([month, record]) => {
+                const base = typeof record === 'object' && record !== null ? record : { value: record };
+                return { ...base, memberId: actualId, monthKey: month, id: `${actualId}-${month}` };
+              });
+            } else if (monthlyData !== undefined && monthlyData !== null) {
+              return [{ memberId: actualId, value: monthlyData, id: `flat-${actualId}-${Date.now()}` }];
+            }
+            return [];
+          });
+        } 
+        else if (Array.isArray(dataToMigrate)) {
+           normalizedData = dataToMigrate.map(item => {
+              if (item.memberId) return { ...item, memberId: findGuid(item.memberId) };
+              if (item.responsibleId) return { ...item, responsibleId: findGuid(item.responsibleId) };
+              if (item.id && key === 'members') return { ...item, memberId: item.id }; // Identity for members
+              return item;
+           });
         }
+        else if (typeof dataToMigrate === 'object') {
+          normalizedData = Object.entries(dataToMigrate).map(([id, val]) => {
+            const actualId = findGuid(id);
+            const base = typeof val === 'object' && val !== null ? val : { value: val };
+            return { ...base, id: actualId, memberId: actualId };
+          });
+        }
+        
+        console.log(`📤 Subiendo ${normalizedData.length || 1} registros de '${key}' al portal...`);
+        await dataService.writeData(key, normalizedData);
       }
-      console.log('✅ Sincronización maestra finalizada con resolución de identidades.');
-      if (isManual) alert('¡Sincronización MAESTRA completada! Se han unificado las identidades de los miembros. Ya pueden revisar sus puntos.');
+      console.log('✅ Sincronización Híbrida completada.');
+      if (isManual) alert('¡Sincronización FINAL completada! Los datos de tu pantalla han sido subidos exitosamente al portal.');
     } catch (err) {
-      console.error('❌ Error en sincronización de portal:', err);
-      if (isManual) alert('Error al sincronizar datos: ' + err.message);
+      console.error('❌ Error en sincronización:', err);
+      if (isManual) alert('Error: ' + err.message);
     } finally {
       if (isManual) setIsSyncingPortal(false);
     }

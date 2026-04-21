@@ -72,8 +72,20 @@ export const dataService = {
               const docRef = doc(db, 'club_vencedores_data', docId);
               const docSnap = await getDoc(docRef);
               if (docSnap.exists()) {
+                const content = docSnap.data();
+                // If the master doc says it's shifted to a collection, query the collection!
+                if (content.isCollection) {
+                  console.log(`📂 Metadatos de Maestro para '${docId}' indican colección. Consultando...`);
+                  const colName = STORAGE_PREFIX + key;
+                  const colRef = collection(db, colName);
+                  const querySnapshot = await getDocs(colRef);
+                  if (!querySnapshot.empty) {
+                    console.log(`✅ ÉXITO MAESTRO (Colección): '${key}' cargado.`);
+                    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                  }
+                }
                 console.log(`✅ ÉXITO MAESTRO: '${key}' cargado desde documento central.`);
-                return docSnap.data().data;
+                return content.data;
               }
             } catch (e) {
               console.warn(`⚠️ Aviso Maestro: No se pudo leer central '${docId}'.`, e.message);
