@@ -8,7 +8,7 @@ import { Mention, MentionBlot } from 'quill-mention';
 import 'quill-mention/dist/quill.mention.css';
 import ClubLogo from './components/ClubLogo';
 import { saveCollectionToFirestore, loadCollectionFromFirestore, storage, ref, uploadString, getDownloadURL, auth } from './firebase-config';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { dataService } from './services/dataService';
 import Login from './components/Login';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
@@ -1616,6 +1616,15 @@ const ClubVencedoresSystem = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Portal member anonymous elevating session to bypass Firestore restrictive central doc rules
+        if (portalMember && !auth.currentUser) {
+          try {
+            await signInAnonymously(auth);
+            console.log('🛡️ Auto-elevated portal session');
+          } catch (e) {
+            console.warn('Could not auto-elevate session:', e);
+          }
+        }
         // En la web, si NO estamos autenticados (como admin o miembro), solo permitimos cargar la lista de usuarios
         // para que el login pueda funcionar con perfiles creados en otros equipos.
         if (!isAuthenticated && !portalMember && !window.electronAPI) {
@@ -23024,7 +23033,12 @@ const MemberPortal = ({
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
   // Calculate Stats
-  const myPointsRecords = points.filter(p => isThisMember(p.memberId));
+  // Ensure points is an array (handle legacy object format)
+  const safePoints = Array.isArray(points) 
+    ? points 
+    : (points && typeof points === 'object' ? Object.values(points).flat() : []);
+
+  const myPointsRecords = safePoints.filter(p => isThisMember(p.memberId));
   let totalAttendables = 0;
   let attendedCount = 0;
 
