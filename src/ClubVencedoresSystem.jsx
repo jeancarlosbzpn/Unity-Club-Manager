@@ -1777,7 +1777,7 @@ const ClubVencedoresSystem = () => {
     };
 
     fetchData();
-  }, [isAuthenticated]); // Se ejecuta al cargar por primera vez y cuando cambia el estado de autenticación
+  }, [isAuthenticated, portalMember]); // Se ejecuta al cargar por primera vez y cuando cambia el estado de autenticación o de miembro portal
 
   // ========================================
   // AUTO-SAVE DATA ON CHANGES
@@ -9853,7 +9853,7 @@ const ClubVencedoresSystem = () => {
   };
 
   // Gates for loading and authentication
-  if (isAuthLoading) {
+  if (isAuthLoading || ((isAuthenticated || portalMember) && !dataLoaded)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="flex flex-col items-center gap-6 p-8 rounded-3xl bg-white/50 backdrop-blur-sm shadow-xl border border-white/20">
