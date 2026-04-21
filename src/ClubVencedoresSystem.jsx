@@ -2459,13 +2459,19 @@ const ClubVencedoresSystem = () => {
     if (editingMember) {
       setMembers(prev => prev.map(member =>
         member.id === editingMember.id
-          ? { ...updatedFormData, id: editingMember.id }
+          ? { 
+              ...updatedFormData, 
+              id: editingMember.id,
+              portalAccessCode: editingMember.id.slice(-6).toUpperCase()
+            }
           : member
       ));
     } else {
+      const id = Date.now().toString();
       const newMember = {
         ...updatedFormData,
-        id: Date.now().toString()
+        id,
+        portalAccessCode: id.slice(-6).toUpperCase()
       };
       setMembers(prev => [...prev, newMember]);
     }
@@ -13368,6 +13374,30 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       <X className="w-6 h-6" />
                     </button>
                   </div>
+
+                  {editingMember && (
+                    <div className="mb-6 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Lock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <label className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase tracking-wider">
+                            Código de Acceso al Portal
+                          </label>
+                        </div>
+                        <div className="text-3xl font-mono font-black tracking-[0.2em] text-blue-700 dark:text-blue-400">
+                          {editingMember.id.slice(-6).toUpperCase()}
+                        </div>
+                        <p className="text-[10px] text-blue-600 dark:text-blue-500 mt-1 uppercase font-semibold">
+                          Único • Inmutable • Permanente
+                        </p>
+                      </div>
+                      <div className="hidden md:block text-right">
+                        <div className="text-[10px] text-blue-500 dark:text-blue-400 max-w-[200px] leading-tight">
+                          Este código se genera automáticamente a partir de la identidad del miembro y no puede ser modificado.
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
