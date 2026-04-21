@@ -1735,9 +1735,28 @@ const ClubVencedoresSystem = () => {
 
         setTransactions(initialTransactions);
         if (allData.activities) setActivities(allData.activities);
-        if (allData.points) setPoints(allData.points);
+
+        // Robust loading for Points (Handle Object vs Array)
+        if (allData.points) {
+          const pointsData = allData.points;
+          if (typeof pointsData === 'object' && !Array.isArray(pointsData)) {
+            console.log('🔄 Autofix: Converting Points Map to List...');
+            const flattened = Object.entries(pointsData).flatMap(([mId, months]) => 
+              Object.entries(months).map(([month, data]) => ({
+                ...(typeof data === 'object' ? data : { value: data }),
+                memberId: mId,
+                month: month,
+                id: `${mId}-${month}`
+              }))
+            );
+            setPoints(flattened);
+          } else {
+            setPoints(pointsData);
+          }
+        }
+
         if (allData.lockedSaturdays) setLockedSaturdays(allData.lockedSaturdays);
-        if (allData.units) setUnits(allData.units);
+        if (allData.units) setUnits(Array.isArray(allData.units) ? allData.units : []);
         if (allData.users) setUsers(allData.users);
         if (allData.inventory) setInventory(allData.inventory);
         if (allData.inventoryCategories && Array.isArray(allData.inventoryCategories)) {
@@ -1762,7 +1781,23 @@ const ClubVencedoresSystem = () => {
         if (allData.uniformCategories && Array.isArray(allData.uniformCategories)) {
           setUniformCategories(allData.uniformCategories);
         }
-        if (allData.qualifications) setQualifications(allData.qualifications);
+
+        // Robust loading for Qualifications (Handle Object vs Array)
+        if (allData.qualifications) {
+          const qualData = allData.qualifications;
+          if (typeof qualData === 'object' && !Array.isArray(qualData)) {
+            console.log('🔄 Autofix: Converting Qualifications Map to List...');
+            const flattened = Object.entries(qualData).map(([mId, data]) => ({
+              ...(typeof data === 'object' ? data : { scores: data }),
+              memberId: mId,
+              id: mId
+            }));
+            setQualifications(flattened);
+          } else {
+            setQualifications(qualData);
+          }
+        }
+
         if (allData.clubSettings) setClubSettings(allData.clubSettings);
         if (allData.fixedPaymentConcepts) setFixedPaymentConcepts(allData.fixedPaymentConcepts);
         if (allData.fixedPayments) setFixedPayments(allData.fixedPayments);
