@@ -1816,7 +1816,7 @@ const ClubVencedoresSystem = () => {
           console.log(`📦 Sincronizando '${key}'...`);
           let normalizedData = dataToMigrate;
 
-          // SPECIAL HANDLING: Deep flattening for points (Legacy format: { memberId: { month: { ... } } })
+          // SPECIAL HANDLING: Deep flattening for points (Legacy format: { memberId: { month: { ... } } } OR { memberId: value })
           if (key === 'points' && !Array.isArray(dataToMigrate)) {
             normalizedData = Object.entries(dataToMigrate).flatMap(([mId, monthlyData]) => {
               if (monthlyData && typeof monthlyData === 'object') {
@@ -1826,8 +1826,11 @@ const ClubVencedoresSystem = () => {
                   }
                   return { memberId: mId, monthKey: month, value: record, id: `${mId}-${month}` };
                 });
+              } else if (monthlyData !== undefined && monthlyData !== null) {
+                // Handle simple numeric values: Diana: 150 -> { memberId: Diana, value: 150 }
+                return [{ memberId: mId, value: monthlyData, id: `flat-${mId}-${Date.now()}` }];
               }
-              return [{ memberId: mId, value: monthlyData, id: mId }];
+              return [];
             });
           } 
           // Other objects (members, units if indexed by ID)
