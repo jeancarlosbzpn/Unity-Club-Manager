@@ -1616,9 +1616,9 @@ const ClubVencedoresSystem = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // En la web, si NO estamos autenticados, solo permitimos cargar la lista de usuarios
+        // En la web, si NO estamos autenticados (como admin o miembro), solo permitimos cargar la lista de usuarios
         // para que el login pueda funcionar con perfiles creados en otros equipos.
-        if (!isAuthenticated && !window.electronAPI) {
+        if (!isAuthenticated && !portalMember && !window.electronAPI) {
           console.log('📡 Sincronizando lista de usuarios para inicio de sesión...');
           const cloudUsers = await dataService.readData('users');
           if (cloudUsers && Array.isArray(cloudUsers) && cloudUsers.length > 0) {
