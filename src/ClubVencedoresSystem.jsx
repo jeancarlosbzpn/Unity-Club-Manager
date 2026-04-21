@@ -1793,27 +1793,25 @@ const ClubVencedoresSystem = () => {
   const syncPortalData = async (isManual = false) => {
     if (isManual) setIsSyncingPortal(true);
     try {
-      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización de portal...`);
-      const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members', 'attendanceRecords', 'qualifications'];
+      console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización MAESTRA hacia el portal...`);
+      const keysToMigrate = ['members', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+      
       for (const key of keysToMigrate) {
-        const dataToMigrate = {
-          'points': points,
-          'units': units,
-          'disciplineRecords': disciplineRecords,
-          'announcements': announcements,
-          'members': members,
-          'attendanceRecords': attendanceRecords,
-          'qualifications': qualifications
-        }[key];
+        // LAYER 1: Load directly from Master Document to bypass any empty local/public cache
+        console.log(`🔍 Extrayendo '${key}' desde el Documento Maestro...`);
+        const dataToMigrate = await dataService.readData(key, { forceMaster: true });
         
-        if (!dataToMigrate) continue;
+        if (!dataToMigrate) {
+          console.warn(`⚠️ Omitiendo '${key}': No se encontró información en el documento maestro.`);
+          continue;
+        }
         
-        const hasData = Array.isArray(dataToMigrate) 
-          ? dataToMigrate.length > 0 
-          : (typeof dataToMigrate === 'object' && Object.keys(dataToMigrate).length > 0);
+        const count = Array.isArray(dataToMigrate) 
+          ? dataToMigrate.length 
+          : (typeof dataToMigrate === 'object' ? Object.keys(dataToMigrate).length : 0);
 
-        if (hasData) {
-          console.log(`📦 Sincronizando '${key}'...`);
+        if (count > 0) {
+          console.log(`📦 Procesando ${count} registros de '${key}' encontrados en el Maestro...`);
           let normalizedData = dataToMigrate;
 
           // SPECIAL HANDLING: Deep flattening for points (Legacy format: { memberId: { month: { ... } } } OR { memberId: value })
@@ -1827,7 +1825,6 @@ const ClubVencedoresSystem = () => {
                   return { memberId: mId, monthKey: month, value: record, id: `${mId}-${month}` };
                 });
               } else if (monthlyData !== undefined && monthlyData !== null) {
-                // Handle simple numeric values: Diana: 150 -> { memberId: Diana, value: 150 }
                 return [{ memberId: mId, value: monthlyData, id: `flat-${mId}-${Date.now()}` }];
               }
               return [];
@@ -1841,7 +1838,10 @@ const ClubVencedoresSystem = () => {
             });
           }
           
+          console.log(`📤 Subiendo ${Array.isArray(normalizedData) ? normalizedData.length : '1'} registros finales a la colección pública '${key}'...`);
           await dataService.writeData(key, normalizedData);
+        } else {
+          console.log(`ℹ️ La clave '${key}' está vacía en el maestro, no hay nada que sincronizar.`);
         }
       }
       console.log('✅ Sincronización de portal finalizada con éxito');

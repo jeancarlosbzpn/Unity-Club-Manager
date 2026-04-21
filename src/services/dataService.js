@@ -45,7 +45,9 @@ export const dataService = {
    * If Electron, uses local file.
    * If Web, uses Firestore.
    */
-  readData: async (key) => {
+  readData: async (key, options = {}) => {
+    const { forceMaster = false } = options;
+
     if (isElectron) {
       try {
         const fullData = await window.electronAPI.readData();
@@ -59,6 +61,26 @@ export const dataService = {
         const STORAGE_PREFIX = 'clubvencedores_';
         const snakeKey = toSnakeCase(key);
         
+        // Helper for Master Doc candidates
+        const docCandidates = [...new Set([key, snakeKey])];
+
+        // LAYER 0: Master Document (PRIORITY if forceMaster is true)
+        if (forceMaster) {
+          console.log(`💎 MODO MAESTRO: Priorizando documento central para '${key}'...`);
+          for (const docId of docCandidates) {
+            try {
+              const docRef = doc(db, 'club_vencedores_data', docId);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists()) {
+                console.log(`✅ ÉXITO MAESTRO: '${key}' cargado desde documento central.`);
+                return docSnap.data().data;
+              }
+            } catch (e) {
+              console.warn(`⚠️ Aviso Maestro: No se pudo leer central '${docId}'.`, e.message);
+            }
+          }
+        }
+
         const uniqueCandidates = [...new Set([
            STORAGE_PREFIX + snakeKey,
            STORAGE_PREFIX + key,
@@ -78,35 +100,33 @@ export const dataService = {
             }
           } catch (e) {
             if (e.code === 'permission-denied') {
-              console.warn(`⚠️ Aviso: Permiso denegado para la colección '${colName}'. Puede que las reglas de Firebase necesiten actualización.`);
+              console.warn(`⚠️ Aviso: Permiso denegado para la colección '${colName}'.`);
             }
-            // Sigue intentando con otras fuentes
           }
         }
 
-        // LAYER 2: Central Document
-        const docCandidates = [...new Set([key, snakeKey])];
-        for (const docId of docCandidates) {
-          try {
-            console.log(`🔍 Buscando '${key}' en documento central: ${docId}...`);
-            const docRef = doc(db, 'club_vencedores_data', docId);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-              const content = docSnap.data();
-              if (content.isCollection) {
-                console.log(`📂 Metadatos de '${docId}' indican colección. Consultando...`);
-                const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : key;
-                const colRef = collection(db, targetCol);
-                const querySnapshot = await getDocs(colRef);
-                return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        // LAYER 2: Central Document (Fallback if not forceMaster or collections empty)
+        if (!forceMaster) {
+          for (const docId of docCandidates) {
+            try {
+              console.log(`🔍 Buscando '${key}' en documento central: ${docId}...`);
+              const docRef = doc(db, 'club_vencedores_data', docId);
+              const docSnap = await getDoc(docRef);
+  
+              if (docSnap.exists()) {
+                const content = docSnap.data();
+                if (content.isCollection) {
+                  console.log(`📂 Metadatos de '${docId}' indican colección. Consultando...`);
+                  const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : (STORAGE_PREFIX + key);
+                  const colRef = collection(db, targetCol);
+                  const querySnapshot = await getDocs(colRef);
+                  return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                }
+                console.log(`✅ ÉXITO: '${key}' cargado desde documento central: ${docId}`);
+                return content.data;
               }
-              console.log(`✅ ÉXITO: '${key}' cargado desde documento central: ${docId}`);
-              return content.data;
-            }
-          } catch (e) {
-            if (e.code === 'permission-denied') {
-              console.warn(`⚠️ Aviso: Permiso denegado para el documento central '${docId}'.`);
+            } catch (e) {
+              console.warn(`⚠️ Error leyendo central '${docId}':`, e.message);
             }
           }
         }
