@@ -9888,9 +9888,12 @@ const ClubVencedoresSystem = () => {
   }
 
   if (portalMember) {
+    // Resolve up-to-date member object from global state if available (prevents stale data from login)
+    const liveMember = members.find(m => m.id == portalMember.id) || portalMember;
+
     return (
       <MemberPortal
-        member={portalMember}
+        member={liveMember}
         onLogout={() => {
           setPortalMember(null);
           localStorage.removeItem('clubvencedores_current_user');
