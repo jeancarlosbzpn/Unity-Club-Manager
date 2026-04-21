@@ -9899,7 +9899,7 @@ const ClubVencedoresSystem = () => {
         units={units}
         members={members}
         points={points}
-        meritEntries={meritEntries}
+        meritEntries={disciplineRecords}
         clubSettings={clubSettings}
         transactions={transactions}
         qualifications={qualifications}
@@ -22992,7 +22992,11 @@ const MemberPortal = ({
     : 0;
     
   const myScore = meritEntries
-    .filter(e => e.memberId === member.id)
+    .filter(e => {
+      if (e.memberId === member.id) return true;
+      if (e.memberIds && e.memberIds.includes(member.id)) return true;
+      return false;
+    })
     .reduce((sum, e) => sum + (parseInt(e.points) || 0), 0);
 
   // Financial Stats
