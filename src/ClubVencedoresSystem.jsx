@@ -23026,11 +23026,16 @@ const MemberPortal = ({
   const getPointsList = () => {
     if (Array.isArray(points)) return points;
     if (points && typeof points === 'object') {
-      // Legacy format: { memberId: value OR { month: value } }
+      // Legacy format: { memberId: value OR { month: record } }
       return Object.entries(points).flatMap(([mId, val]) => {
         if (typeof val === 'object' && val !== null) {
-          // Inner object (e.g. months)
-          return Object.values(val).map(v => ({ memberId: mId, value: v }));
+          // If it's a map of monthly records (e.g. { "Jan": { value: 10, saturdays: {} } })
+          return Object.values(val).map(v => {
+            if (typeof v === 'object' && v !== null) {
+              return { ...v, memberId: mId }; // Inject memberId into the record
+            }
+            return { memberId: mId, value: v }; // Simple numeric value if not a record
+          });
         }
         return [{ memberId: mId, value: val }];
       });
@@ -23060,14 +23065,7 @@ const MemberPortal = ({
     return false;
   }).sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
-  // Calculate Stats
-  // Ensure points is an array (handle legacy object format)
-  const safePoints = Array.isArray(points) 
-    ? points 
-    : (points && typeof points === 'object' ? Object.values(points).flat() : []);
-
-  const myPointsRecords = safePoints.filter(p => isThisMember(p.memberId));
-  let totalAttendables = 0;
+,ReplacementChunks:[{AllowMultiple:false,EndLine:23039,ReplacementContent:  let totalAttendables = 0;
   let attendedCount = 0;
 
   myPointsRecords.forEach(monthRecord => {
