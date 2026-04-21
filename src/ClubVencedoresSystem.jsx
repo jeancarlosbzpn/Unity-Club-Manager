@@ -1788,34 +1788,42 @@ const ClubVencedoresSystem = () => {
     fetchData();
   }, [isAuthenticated, portalMember]);
 
-  // NEW: Admin-LED Migration to robust collections (Ensures portal access for members)
+  // TRIGGER: Automatic Migration to public collections (Run by Admin)
   useEffect(() => {
-    if (isAuthenticated && dataLoaded) {
-      console.log('🔄 Sincronizando colecciones maestras para acceso de miembros...');
-      const migrateKeys = async () => {
+    if (isAuthenticated && dataLoaded && currentUser?.role === 'admin') {
+      const migrateCollections = async () => {
         try {
-          const keys = ['units', 'points', 'disciplineRecords', 'announcements'];
-          for (const key of keys) {
-            let dataToSave = null;
-            if (key === 'units') dataToSave = units;
-            if (key === 'points') dataToSave = points;
-            if (key === 'disciplineRecords') dataToSave = disciplineRecords;
-            if (key === 'announcements') dataToSave = announcements;
+          const keysToMigrate = ['points', 'units', 'disciplineRecords', 'announcements', 'members'];
+          for (const key of keysToMigrate) {
+            const dataToMigrate = {
+              'points': points,
+              'units': units,
+              'disciplineRecords': disciplineRecords,
+              'announcements': announcements,
+              'members': members
+            }[key];
+            
+            if (!dataToMigrate) continue;
+            
+            // Handle both Arrays and Objects (Legacy Points are often strictly objects)
+            const hasData = Array.isArray(dataToMigrate) 
+              ? dataToMigrate.length > 0 
+              : (typeof dataToMigrate === 'object' && Object.keys(dataToMigrate).length > 0);
 
-            if (dataToSave && Array.isArray(dataToSave)) {
-              await dataService.writeData(key, dataToSave);
+            if (hasData) {
+              console.log(`📦 Sincronizando '${key}' para portal...`);
+              await dataService.writeData(key, dataToMigrate);
             }
           }
-          console.log('✅ Sincronización de colecciones completada.');
+          console.log('✅ Sincronización completa');
         } catch (err) {
-          console.error('❌ Error durante la migración de colecciones:', err);
+          console.error('❌ Error en migración:', err);
         }
       };
-      
-      const timer = setTimeout(migrateKeys, 2000); // Delay slightly to ensure states are settled
+      const timer = setTimeout(migrateCollections, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, dataLoaded]); // This effect only runs once when admin is ready
+  }, [isAuthenticated, dataLoaded, currentUser, points, units]);
 
   // ========================================
   // AUTO-SAVE DATA ON CHANGES
@@ -23014,7 +23022,27 @@ const MemberPortal = ({
     return s === 'P' || s === 'L';
   };
 
-  // Find member's unit (with fallback to name match if ID fails)
+  // RESILIENT CALCULATION: Points
+  const getPointsList = () => {
+    if (Array.isArray(points)) return points;
+    if (points && typeof points === 'object') {
+      // Legacy format: { memberId: value OR { month: value } }
+      return Object.entries(points).flatMap(([mId, val]) => {
+        if (typeof val === 'object' && val !== null) {
+          // Inner object (e.g. months)
+          return Object.values(val).map(v => ({ memberId: mId, value: v }));
+        }
+        return [{ memberId: mId, value: val }];
+      });
+    }
+    return [];
+  };
+
+  const safePoints = getPointsList();
+  const myPointsRecords = safePoints.filter(p => p && isThisMember(p.memberId));
+  const totalPoints = myPointsRecords.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+
+  // RESILIENT CALCULATION: Unit
   const myUnit = units.find(u => String(u.id) === String(member.unitId)) || 
                  units.find(u => member.unitId && String(u.name).toLowerCase() === String(member.unitId).toLowerCase());
   
