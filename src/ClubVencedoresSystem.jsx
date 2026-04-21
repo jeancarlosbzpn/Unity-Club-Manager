@@ -23172,15 +23172,22 @@ const MemberPortal = ({
     })
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
+  // UNIFIED POINTS: Merits + Legacy Points
+  const displayTotalPoints = myScore + totalPoints;
+
   // Financial Stats
   const myTransactions = transactions.filter(t => isThisMember(t.memberId));
   const totalPaid = myTransactions
     .filter(t => ['income', 'Ingreso', 'Ingresos'].includes(t.type) || !t.type)
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-  // Class Info
+  // Class Info (Smart Detection)
   const myQual = qualifications.find(q => isThisMember(q.memberId));
-  const myClassName = pathfinderClasses.find(c => String(c.value) === String(member.currentClass))?.label || member.currentClass || 'No asignada';
+  const myClassName = (pathfinderClasses.find(c => String(c.value) === String(member.currentClass))?.label) || 
+                      member.currentClass || 
+                      (myQual?.className) || 
+                      (myQual?.classId) ||
+                      'No asignada';
 
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
@@ -23224,7 +23231,7 @@ const MemberPortal = ({
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
               <Trophy className="w-5 h-5 text-amber-500" />
             </div>
-            <div className="text-2xl font-black tracking-tighter">{myScore}</div>
+            <div className="text-2xl font-black tracking-tighter">{displayTotalPoints}</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Puntos Totales</div>
           </div>
           <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
