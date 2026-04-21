@@ -2182,32 +2182,6 @@ const ClubVencedoresSystem = () => {
     }
     setShowAnnouncementForm(false);
   };
-    setReminders(prev => prev.map(r => {
-      if (r.id === id) {
-        const isNowCompleted = !r.isCompleted;
-
-        // If becoming completed and has recurrence, calculate next date
-        if (isNowCompleted && r.recurrence && r.recurrence !== 'none') {
-          const currentDate = new Date(r.date);
-          const nextDate = new Date(currentDate);
-
-          if (r.recurrence === 'daily') nextDate.setDate(currentDate.getDate() + 1);
-          else if (r.recurrence === 'weekly') nextDate.setDate(currentDate.getDate() + 7);
-          else if (r.recurrence === 'monthly') nextDate.setMonth(currentDate.getMonth() + 1);
-          else if (r.recurrence === 'yearly') nextDate.setFullYear(currentDate.getFullYear() + 1);
-
-          return {
-            ...r,
-            date: dateToLocalISO(nextDate),
-            isCompleted: false // Reset for next instance
-          };
-        }
-
-        return { ...r, isCompleted: isNowCompleted };
-      }
-      return r;
-    }));
-  };
 
   // Birthday Checker Effect
   useEffect(() => {
