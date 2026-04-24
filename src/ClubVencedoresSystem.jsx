@@ -361,7 +361,8 @@ const ClubVencedoresSystem = () => {
     confirmPassword: '',
     position: '',
     role: 'user',
-    allowedModules: []
+    allowedModules: [],
+    modulePermissions: {} // New: { moduleId: 'edit' | 'read' | 'none' }
   });
   const [newUserErrors, setNewUserErrors] = useState({});
   const [selectedBirthdayMember, setSelectedBirthdayMember] = useState(null);
@@ -2115,9 +2116,17 @@ const ClubVencedoresSystem = () => {
     if (currentUser.role === 'administrator') return 'write';
     if (currentUser.username === 'soybaex') return 'write';
 
-    // 2. GRANULAR PERMISSIONS: Check allowedModules if defined and not empty
+    // 2. GRANULAR PERMISSIONS: Check new modulePermissions object first
+    const modulePermissions = currentUser.modulePermissions || {};
+    if (modulePermissions[moduleId]) {
+      if (modulePermissions[moduleId] === 'edit') return 'write';
+      if (modulePermissions[moduleId] === 'read') return 'read';
+      if (modulePermissions[moduleId] === 'none') return 'none';
+    }
+
+    // 3. LEGACY GRANULAR PERMISSIONS: Check allowedModules array if defined
     const explicitModules = currentUser.allowedModules || [];
-    if (explicitModules.length > 0) {
+    if (Array.isArray(explicitModules) && explicitModules.length > 0) {
       if (!explicitModules.includes(moduleId)) {
         return 'none'; // Strictly follow the explicitly allowed list if provided
       }
@@ -9843,7 +9852,8 @@ const ClubVencedoresSystem = () => {
         username: newUserFormData.username,
         position: newUserFormData.position,
         role: 'user',
-        allowedModules: newUserFormData.allowedModules || []
+        allowedModules: newUserFormData.allowedModules || [],
+        modulePermissions: newUserFormData.modulePermissions || {}
       };
 
       if (newUserFormData.password) {
@@ -9861,7 +9871,8 @@ const ClubVencedoresSystem = () => {
         password: newUserFormData.password,
         position: newUserFormData.position,
         role: 'user',
-        allowedModules: newUserFormData.allowedModules || []
+        allowedModules: newUserFormData.allowedModules || [],
+        modulePermissions: newUserFormData.modulePermissions || {}
       };
 
       setUsers(prev => [...prev, newUser]);
@@ -9874,7 +9885,8 @@ const ClubVencedoresSystem = () => {
       confirmPassword: '',
       position: '',
       role: 'user',
-      allowedModules: []
+      allowedModules: [],
+      modulePermissions: {}
     });
     setEditingUser(null);
     setShowAddUserForm(false);
@@ -9888,7 +9900,8 @@ const ClubVencedoresSystem = () => {
       confirmPassword: '',
       position: user.position,
       role: user.role,
-      allowedModules: user.allowedModules || []
+      allowedModules: user.allowedModules || [],
+      modulePermissions: user.modulePermissions || {}
     });
     setEditingUser(user);
     setShowAddUserForm(true);
@@ -9911,7 +9924,9 @@ const ClubVencedoresSystem = () => {
       password: '',
       confirmPassword: '',
       position: '',
-      role: 'user'
+      role: 'user',
+      allowedModules: [],
+      modulePermissions: {}
     });
     setEditingUser(null);
     setNewUserErrors({});
@@ -11094,26 +11109,56 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               { id: 'cuotas', label: 'Finanzas: Cuotas' },
                               { id: 'inventory_tents', label: 'Inventario: Carpas' },
                               { id: 'idcards', label: 'Reportes: Carnets' }
-                            ].map(module => (
-                              <label key={module.id} className="flex items-center space-x-2 p-2 border rounded hover:bg-gray-50 dark:hover:bg-gray-700 dark:border-gray-600 cursor-pointer transition-colors">
-                                <input
-                                  type="checkbox"
-                                  checked={(newUserFormData.allowedModules || []).includes(module.id)}
-                                  onChange={(e) => {
-                                    const currentModules = newUserFormData.allowedModules || [];
-                                    let updatedModules;
-                                    if (e.target.checked) {
-                                      updatedModules = [...currentModules, module.id];
-                                    } else {
-                                      updatedModules = currentModules.filter(id => id !== module.id);
-                                    }
-                                    setNewUserFormData(prev => ({ ...prev, allowedModules: updatedModules }));
-                                  }}
-                                  className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
-                                />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">{module.label}</span>
-                              </label>
-                            ))}
+                            ].map(module => {
+                              const currentPerm = newUserFormData.modulePermissions?.[module.id] || 
+                                             ((newUserFormData.allowedModules || []).includes(module.id) ? 'edit' : 'none');
+                              
+                              return (
+                                <div key={module.id} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all border-l-4" style={{ borderLeftColor: currentPerm === 'edit' ? '#10B981' : currentPerm === 'read' ? '#3B82F6' : '#9CA3AF' }}>
+                                  <div className="flex flex-col gap-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm font-bold text-gray-800 dark:text-white truncate" title={module.label}>{module.label}</span>
+                                      {currentPerm === 'edit' && <CheckCircle className="w-4 h-4 text-green-500" />}
+                                      {currentPerm === 'read' && <Eye className="w-4 h-4 text-blue-500" />}
+                                      {currentPerm === 'none' && <Lock className="w-4 h-4 text-gray-400" />}
+                                    </div>
+                                    
+                                    <div className="flex items-center bg-gray-100 dark:bg-gray-700 p-1 rounded-lg gap-1">
+                                      <button
+                                        onClick={() => setNewUserFormData(prev => ({
+                                          ...prev,
+                                          modulePermissions: { ...(prev.modulePermissions || {}), [module.id]: 'none' },
+                                          allowedModules: (prev.allowedModules || []).filter(id => id !== module.id)
+                                        }))}
+                                        className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${currentPerm === 'none' ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                      >
+                                        Bloqueado
+                                      </button>
+                                      <button
+                                        onClick={() => setNewUserFormData(prev => ({
+                                          ...prev,
+                                          modulePermissions: { ...(prev.modulePermissions || {}), [module.id]: 'read' },
+                                          allowedModules: [...new Set([...(prev.allowedModules || []), module.id])]
+                                        }))}
+                                        className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${currentPerm === 'read' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                      >
+                                        Lectura
+                                      </button>
+                                      <button
+                                        onClick={() => setNewUserFormData(prev => ({
+                                          ...prev,
+                                          modulePermissions: { ...(prev.modulePermissions || {}), [module.id]: 'edit' },
+                                          allowedModules: [...new Set([...(prev.allowedModules || []), module.id])]
+                                        }))}
+                                        className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all ${currentPerm === 'edit' ? 'bg-green-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                      >
+                                        Editar
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
