@@ -3145,9 +3145,30 @@ const ClubVencedoresSystem = () => {
       }
     }
 
+    let finalReceipt = financeFormData.receipt;
+    if (finalReceipt && finalReceipt.startsWith('data:')) {
+      setIsVerifyingReceipt(true); // Reutilizar el estado de carga
+      try {
+        const base64Data = finalReceipt.split(',')[1];
+        const mimeMatch = finalReceipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,/);
+        const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const extension = contentType.split('/')[1] || 'jpeg';
+        const transactionId = Date.now().toString();
+        const fileName = `receipts/${transactionId}_${Date.now()}.${extension}`;
+        const storageRef = ref(storage, fileName);
+
+        await uploadString(storageRef, base64Data, 'base64', { contentType });
+        finalReceipt = await getDownloadURL(storageRef);
+      } catch (e) {
+        console.error("Error subiendo factura a Firebase Storage:", e);
+      }
+      setIsVerifyingReceipt(false);
+    }
+
     const newTransaction = {
       ...financeFormData,
       id: Date.now().toString(),
+      receipt: finalReceipt,
       amount: parseFloat(financeFormData.amount),
       status: status
     };
@@ -19416,7 +19437,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           onClick={() => {
                                             const newWindow = window.open('', '_blank', 'width=800,height=600');
                                             if (newWindow) {
-                                              const isImage = transaction.receipt.startsWith('data:image');
+                                              const isImage = transaction.receipt.startsWith('data:image') || transaction.receipt.includes('firebasestorage') || !transaction.receipt.toLowerCase().includes('.pdf');
                                               const content = isImage
                                                 ? `<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f3f4f6;"><img src="${transaction.receipt}" style="max-width:100%;max-height:100%;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);" /></div>`
                                                 : `<iframe src="${transaction.receipt}" frameborder="0" style="border:0; width:100%; height:100%;"></iframe>`;
@@ -19915,16 +19936,35 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <input
                                 type="file"
                                 accept="image/*,application/pdf"
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                   const file = e.target.files[0];
                                   if (file) {
                                     const reader = new FileReader();
-                                    reader.onloadend = () => {
+                                    reader.onloadend = async () => {
+                                      let finalReceipt = reader.result;
+                                      
+                                      // Subir a Firebase Storage inmediatamente
+                                      if (finalReceipt.startsWith('data:')) {
+                                        try {
+                                          const base64Data = finalReceipt.split(',')[1];
+                                          const mimeMatch = finalReceipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,/);
+                                          const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                                          const extension = contentType.split('/')[1] || 'jpeg';
+                                          const fileName = `receipts/res_${resolvingTransaction.id}_${Date.now()}.${extension}`;
+                                          const storageRef = ref(storage, fileName);
+
+                                          await uploadString(storageRef, base64Data, 'base64', { contentType });
+                                          finalReceipt = await getDownloadURL(storageRef);
+                                        } catch (err) {
+                                          console.error("Error subiendo resolución de factura:", err);
+                                        }
+                                      }
+
                                       setTransactions(prev => prev.map(t =>
-                                        t.id === resolvingTransaction.id ? { ...t, receipt: reader.result, status: 'official' } : t
+                                        t.id === resolvingTransaction.id ? { ...t, receipt: finalReceipt, status: 'official' } : t
                                       ));
                                       setResolvingTransaction(null);
-                                      alert('✅ Factura subida. Gasto oficializado.');
+                                      alert('✅ Factura subida y guardada en la nube. Gasto oficializado.');
                                     };
                                     reader.readAsDataURL(file);
                                   }
@@ -21043,7 +21083,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   {/* Show Details only on start or single day, or maybe blindly if space allows?
                                   Let's keep it clean: Title always if Start/Single.
                                   If Middle/End, only showing empty bar color might be confusing if user doesn't see the start.
-                                  Let's try showing title on Every Cell but truncated?
+                                  Let's try showing text on Every Cell but truncated?
                                   No, continuous visual usually implies text only on first block or if wrapping.
                                   Let's show text on Start, Single, and Sundays (start of week row).
                               */}
@@ -21924,7 +21964,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     const printAllInvoices = () => {
                       if (invoiceTransactions.length === 0) return;
                       const pagesHtml = invoiceTransactions.map((t, idx) => {
-                        const isImage = t.receipt.startsWith('data:image');
+                        const isImage = t.receipt.startsWith('data:image') || t.receipt.includes('firebasestorage') || !t.receipt.toLowerCase().includes('.pdf');
                         const pageStyle = idx < invoiceTransactions.length - 1
                           ? 'page-break-after: always; padding: 20px;'
                           : 'padding: 20px;';
@@ -21945,7 +21985,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     const viewSingle = (t) => {
                       const newWindow = window.open('', '_blank', 'width=800,height=600');
                       if (newWindow) {
-                        const isImage = t.receipt.startsWith('data:image');
+                        const isImage = t.receipt.startsWith('data:image') || t.receipt.includes('firebasestorage') || !t.receipt.toLowerCase().includes('.pdf');
                         const content = isImage
                           ? `<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f3f4f6;"><img src="${t.receipt}" style="max-width:100%;max-height:100%;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);" /></div>`
                           : `<iframe src="${t.receipt}" frameborder="0" style="border:0;width:100%;height:100%;"></iframe>`;
@@ -22006,7 +22046,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   .slice()
                                   .sort((a, b) => new Date(b.date) - new Date(a.date))
                                   .map((t) => {
-                                    const isImage = t.receipt.startsWith('data:image');
+                                    const isImage = t.receipt.startsWith('data:image') || t.receipt.includes('firebasestorage') || !t.receipt.toLowerCase().includes('.pdf');
                                     return (
                                       <div key={t.id} className="flex items-center gap-4 p-4 border dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         {/* Thumbnail */}
