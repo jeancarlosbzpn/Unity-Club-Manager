@@ -2439,9 +2439,20 @@ const ClubVencedoresSystem = () => {
     setShowAnnouncementForm(true);
   };
 
-  const handleDeleteAnnouncement = (id) => {
+  const handleDeleteAnnouncement = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este anuncio?')) {
-      setAnnouncements(prev => prev.filter(a => a.id !== id));
+      const updatedAnnouncements = announcements.filter(a => String(a.id) !== String(id));
+      setAnnouncements(updatedAnnouncements);
+      
+      try {
+        setSyncStatus('saving');
+        await dataService.writeData('announcements', updatedAnnouncements);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus('idle'), 2000);
+      } catch (err) {
+        console.error("Error deleting announcement from cloud:", err);
+        setSyncStatus('error');
+      }
     }
   };
 
