@@ -10282,6 +10282,9 @@ const ClubVencedoresSystem = () => {
         qualifications={qualifications}
         attendanceRecords={attendanceRecords}
         pathfinderClasses={pathfinderClasses}
+        uniformItems={uniformItems}
+        uniformInspections={uniformInspections}
+        getApplicableUniformItems={getApplicableUniformItems}
       />
     );
   }
@@ -23426,7 +23429,10 @@ const MemberPortal = ({
   transactions = [],
   qualifications = [],
   attendanceRecords = [],
-  pathfinderClasses = []
+  pathfinderClasses = [],
+  uniformItems = [],
+  uniformInspections = [],
+  getApplicableUniformItems
 }) => {
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -23723,6 +23729,32 @@ const MemberPortal = ({
       .sort((a, b) => b.month.localeCompare(a.month));
   })();
 
+  // --- UNIFORMITY ---
+  const myUniformStats = (() => {
+    if (!uniformInspections || !uniformItems || !getApplicableUniformItems) return null;
+    
+    const myInspections = uniformInspections
+      .filter(i => isThisMember(i.memberId))
+      .sort((a, b) => b.date.localeCompare(a.date));
+      
+    const lastInspection = myInspections[0];
+    if (!lastInspection) return null;
+
+    const applicableItems = getApplicableUniformItems(member);
+    const missingIds = lastInspection.itemsMissing || [];
+    
+    const itemsMissing = applicableItems.filter(item => missingIds.includes(item.id));
+    const itemsOwned = applicableItems.filter(item => !missingIds.includes(item.id));
+    const totalNeeded = itemsMissing.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+    
+    return {
+      lastInspection,
+      itemsMissing,
+      itemsOwned,
+      totalNeeded
+    };
+  })();
+
   // Financial Stats
   const myTransactions = transactions.filter(t => isThisMember(t.memberId));
   const totalPaid = myTransactions
@@ -23851,6 +23883,71 @@ const MemberPortal = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Uniformity Section */}
+        {myUniformStats && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
+            <div className="flex items-center gap-2 px-1">
+              <Shirt className="w-4 h-4 text-indigo-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Uniformidad</h3>
+            </div>
+            
+            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Última Evaluación</div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </div>
+                </div>
+                {myUniformStats.itemsMissing.length === 0 ? (
+                  <div className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Completo</div>
+                ) : (
+                  <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {/* Owned */}
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" /> Tengo ({myUniformStats.itemsOwned.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {myUniformStats.itemsOwned.map(item => (
+                      <span key={item.id} className="px-2 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
+                        {item.label}
+                      </span>
+                    ))}
+                    {myUniformStats.itemsOwned.length === 0 && <span className="text-[10px] text-gray-400 italic">No se registraron piezas</span>}
+                  </div>
+                </div>
+
+                {/* Missing */}
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-red-500" /> Me Falta ({myUniformStats.itemsMissing.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {myUniformStats.itemsMissing.map(item => (
+                      <span key={item.id} className="px-2 py-1 bg-red-50 border border-red-100 rounded-lg text-[10px] font-bold text-red-700 shadow-sm">
+                        {item.label}
+                      </span>
+                    ))}
+                    {myUniformStats.itemsMissing.length === 0 && <span className="text-[10px] text-green-600 font-bold">¡Tienes todo lo necesario!</span>}
+                  </div>
+                </div>
+              </div>
+
+              {myUniformStats.totalNeeded > 0 && (
+                <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Presupuesto para completar</div>
+                  <div className="text-xl font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
+                </div>
+              )}
             </div>
           </section>
         )}
