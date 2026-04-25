@@ -23617,16 +23617,30 @@ const MemberPortal = ({
   // --- GALARDONES (Awards) ---
   const myAwards = (() => {
     const winners = {}; // month -> { winnerId, score }
-    const currentMonthPrefix = (() => {
-      const d = new Date();
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    })();
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+
+    // Helper for robust month normalization
+    const normalizeMonth = (mStr) => {
+      if (!mStr) return null;
+      const parts = String(mStr).split('-');
+      if (parts.length < 2) return null;
+      return `${parts[0]}-${parts[1].padStart(2, '0')}`;
+    };
+
+    const isMonthInPast = (mStr) => {
+      const normalized = normalizeMonth(mStr);
+      if (!normalized) return false;
+      return normalized < currentMonthPrefix;
+    };
 
     // Helper for grouping points by member correctly (ID or Access Code)
     const getCanonicalMemberId = (recordId) => {
       if (!recordId) return null;
       const rid = String(recordId).trim().toLowerCase();
-      // Try to find the actual member object to get their main ID
       const found = members.find(m => {
         const mid = String(m.id).trim().toLowerCase();
         const mcode = m.portalAccessCode ? String(m.portalAccessCode).trim().toLowerCase() : null;
@@ -23637,11 +23651,14 @@ const MemberPortal = ({
 
     // 1. Get all past months that have data
     const allMonths = new Set();
-    safePoints.forEach(p => { if (p.month && p.month < currentMonthPrefix) allMonths.add(p.month); });
+    safePoints.forEach(p => { 
+      const norm = normalizeMonth(p.month);
+      if (norm && norm < currentMonthPrefix) allMonths.add(norm); 
+    });
     meritEntries.forEach(e => { 
       if (e.date) {
-        const m = String(e.date).substring(0, 7);
-        if (m < currentMonthPrefix) allMonths.add(m);
+        const m = normalizeMonth(String(e.date).substring(0, 7));
+        if (m && m < currentMonthPrefix) allMonths.add(m);
       }
     });
     
@@ -23651,7 +23668,9 @@ const MemberPortal = ({
       const scores = {}; // canonicalMemberId -> totalScore
       
       // Sum Points from this specific month
-      safePoints.filter(p => p.month === mStr).forEach(p => {
+      safePoints.forEach(p => {
+        if (normalizeMonth(p.month) !== mStr) return;
+        
         let sum = Number(p.value) || 0;
         if (p.saturdays) {
           Object.values(p.saturdays).forEach(day => {
@@ -23670,7 +23689,9 @@ const MemberPortal = ({
       });
 
       // Sum Merits for this specific month
-      meritEntries.filter(e => e.date && String(e.date).startsWith(mStr)).forEach(e => {
+      meritEntries.forEach(e => {
+        if (!e.date || normalizeMonth(String(e.date).substring(0, 7)) !== mStr) return;
+        
         const mIds = Array.isArray(e.memberIds) ? e.memberIds : [e.memberId];
         mIds.forEach(id => {
           const cId = getCanonicalMemberId(id);
