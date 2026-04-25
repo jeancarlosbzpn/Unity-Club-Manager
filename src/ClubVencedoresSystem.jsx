@@ -830,6 +830,10 @@ const ClubVencedoresSystem = () => {
   const [uniformCategories, setUniformCategories] = useState(['Uniforme', 'Accesorios', 'Calzado']);
   const [showUniformCategoryModal, setShowUniformCategoryModal] = useState(false);
   const [newUniformCategory, setNewUniformCategory] = useState('');
+
+  // Homeworks Module State
+  const [homeworks, setHomeworks] = useState([]); // { id, club, className, title, description, dueDate, createdAt, instructorId }
+  const [memberHomeworkStatus, setMemberHomeworkStatus] = useState([]); // { memberId, homeworkId, completed, completedAt }
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [itemFormData, setItemFormData] = useState({ 
@@ -1333,7 +1337,8 @@ const ClubVencedoresSystem = () => {
           'financeCategories', 'inventoryCategories', 'tents', 'tentAssignments', 
           'uniformInspections', 'memberUniforms', 'uniformItems', 'uniformCategories', 
           'clubSettings', 'duesConfig', 'qualifications', 
-          'attendanceRecords', 'firstAidItems', 'disciplineRecords', 'announcements'
+          'attendanceRecords', 'firstAidItems', 'disciplineRecords', 'announcements',
+          'homeworks', 'memberHomeworkStatus'
         ];
         
         // Load all in parallel
@@ -2091,7 +2096,9 @@ const ClubVencedoresSystem = () => {
         evaluationGroups,
         memberProgress,
         requirementSections,
-        firstAidItems
+        firstAidItems,
+        homeworks,
+        memberHomeworkStatus
       };
 
       try {
@@ -2123,7 +2130,7 @@ const ClubVencedoresSystem = () => {
     const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
-  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders]);
+  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus]);
 
   // ========================================
 
@@ -2181,6 +2188,7 @@ const ClubVencedoresSystem = () => {
       'points':       ['Director','Subdirector','Secretario','Secretary','DUMC'],
       'attendance':   ['Director','Subdirector','Secretario','Secretary'],
       'reminders':    ['Director','Subdirector','Secretario','Secretary'],
+      'homeworks':    ['Director','Subdirector','Secretario','Secretary','DUMC','Instructor','Class Instructor'],
       'settings':     ['Director'],
     };
 
@@ -2218,6 +2226,7 @@ const ClubVencedoresSystem = () => {
         { id: 'birthdays', label: 'Cumpleaños', icon: Gift, available: true }
       ]
     },
+    { id: 'homeworks', label: 'Tareas', icon: ClipboardCheck, available: true },
     { id: 'directive', label: 'Directiva', icon: Award, available: true },
     {
       id: 'members',
@@ -7295,6 +7304,190 @@ const ClubVencedoresSystem = () => {
     );
   };
 
+  const [showHomeworkForm, setShowHomeworkForm] = useState(false);
+  const [editingHomework, setEditingHomework] = useState(null);
+  const [homeworkFormData, setHomeworkFormData] = useState({
+    club: 'conquistadores',
+    className: 'Amigo',
+    title: '',
+    description: '',
+    dueDate: ''
+  });
+
+  const renderHomeworksModule = () => {
+    const isReadOnly = getModuleAccessLevel('homeworks') === 'read';
+    const isInstructor = currentUser.position === 'Instructor' || currentUser.position === 'Class Instructor';
+    
+    // Identify assigned classes for instructor
+    const memberObj = members.find(m => String(m.id) === String(currentUser.id));
+    const assignedClasses = [];
+    if (memberObj?.directiveRoles) {
+      Object.entries(memberObj.directiveRoles).forEach(([club, roles]) => {
+        roles.forEach(r => {
+          if (r.position === 'Class Instructor' && r.instructorClass) {
+            assignedClasses.push({ club, className: r.instructorClass });
+          }
+        });
+      });
+    }
+
+    const canManageAll = ['Director', 'Subdirector', 'Secretario', 'Secretary', 'DUMC'].includes(currentUser.position);
+    
+    const filteredHomeworks = homeworks.filter(h => {
+      if (canManageAll) return true;
+      return assignedClasses.some(ac => ac.club === h.club && ac.className === h.className);
+    });
+
+    const handleSaveHomework = () => {
+      if (!homeworkFormData.title) return alert("Título requerido");
+      
+      if (editingHomework) {
+        setHomeworks(homeworks.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt } : h));
+      } else {
+        const newHomework = {
+          ...homeworkFormData,
+          id: Date.now().toString(),
+          instructorId: currentUser.id,
+          createdAt: new Date().toISOString()
+        };
+        setHomeworks([...homeworks, newHomework]);
+      }
+      setShowHomeworkForm(false);
+      setEditingHomework(null);
+      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '' });
+    };
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-gray-900">Gestión de Tareas</h2>
+            <p className="text-gray-500 text-sm">Asigna y gestiona las tareas para las clases.</p>
+          </div>
+          {!isReadOnly && (
+            <button 
+              onClick={() => {
+                if (isInstructor && assignedClasses.length > 0) {
+                  setHomeworkFormData({ ...homeworkFormData, club: assignedClasses[0].club, className: assignedClasses[0].className });
+                }
+                setShowHomeworkForm(true);
+              }}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4" /> Nueva Tarea
+            </button>
+          )}
+        </div>
+
+        {showHomeworkForm && (
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-xl space-y-4 animate-in slide-in-from-top-4 duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Título de la Tarea</label>
+                <input 
+                  type="text"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                  value={homeworkFormData.title}
+                  onChange={e => setHomeworkFormData({...homeworkFormData, title: e.target.value})}
+                  placeholder="Ej: Completar requisitos de nudos"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Fecha de Entrega</label>
+                <input 
+                  type="date"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                  value={homeworkFormData.dueDate}
+                  onChange={e => setHomeworkFormData({...homeworkFormData, dueDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Club</label>
+                <select 
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none"
+                  value={homeworkFormData.club}
+                  disabled={isInstructor && assignedClasses.length <= 1}
+                  onChange={e => setHomeworkFormData({...homeworkFormData, club: e.target.value})}
+                >
+                  <option value="aventureros">Aventureros</option>
+                  <option value="conquistadores">Conquistadores</option>
+                  <option value="guiasMayores">Guías Mayores</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Clase</label>
+                <select 
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none"
+                  value={homeworkFormData.className}
+                  onChange={e => setHomeworkFormData({...homeworkFormData, className: e.target.value})}
+                >
+                  {homeworkFormData.club === 'aventureros' && ['Abejas Laboriosas', 'Rayitos de Sol', 'Constructores', 'Manos Ayudadoras'].map(c => <option key={c} value={c}>{c}</option>)}
+                  {homeworkFormData.club === 'conquistadores' && ['Amigo', 'Compañero', 'Explorador', 'Orientador', 'Viajero', 'Guía'].map(c => <option key={c} value={c}>{c}</option>)}
+                  {homeworkFormData.club === 'guiasMayores' && ['Guía Mayor', 'Guía Mayor Master', 'Guía Mayor Master Avanzado'].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Descripción / Instrucciones</label>
+              <textarea 
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all min-h-[100px]"
+                value={homeworkFormData.description}
+                onChange={e => setHomeworkFormData({...homeworkFormData, description: e.target.value})}
+                placeholder="Describe los detalles de la tarea..."
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => { setShowHomeworkForm(false); setEditingHomework(null); }} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
+              <button onClick={handleSaveHomework} className="px-6 py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors">Guardar Tarea</button>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredHomeworks.map(homework => (
+            <div key={homework.id} className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                {!isReadOnly && (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => { setEditingHomework(homework); setHomeworkFormData(homework); setShowHomeworkForm(true); }}
+                      className="p-2 bg-white border border-gray-100 rounded-lg text-gray-400 hover:text-blue-600 shadow-sm"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => { if(confirm("¿Eliminar tarea?")) setHomeworks(homeworks.filter(h => h.id !== homework.id)); }}
+                      className="p-2 bg-white border border-gray-100 rounded-lg text-gray-400 hover:text-red-600 shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-md">{homework.className}</span>
+                <span className="text-[10px] font-bold text-gray-400 italic">Vence: {homework.dueDate || 'Sin fecha'}</span>
+              </div>
+              <h4 className="font-black text-gray-900 mb-1">{homework.title}</h4>
+              <p className="text-gray-500 text-xs line-clamp-3 mb-4">{homework.description}</p>
+              
+              <div className="pt-3 border-t border-gray-50 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <span>{homework.club}</span>
+                <span>Asignada el {new Date(homework.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
+          {filteredHomeworks.length === 0 && !showHomeworkForm && (
+            <div className="col-span-full py-12 flex flex-col items-center justify-center bg-gray-50 border border-dashed border-gray-200 rounded-3xl text-gray-400 italic">
+              <ClipboardList className="w-8 h-8 mb-2 opacity-30" />
+              <p>No hay tareas registradas para tus clases.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderRemindersModule = () => {
     const isReadOnly = getModuleAccessLevel('reminders') === 'read';
     // Sort reminders: Scheduled (future notice) last, then by date/time
@@ -10285,6 +10478,9 @@ const ClubVencedoresSystem = () => {
         uniformItems={uniformItems}
         uniformInspections={uniformInspections}
         getApplicableUniformItems={getApplicableUniformItems}
+        homeworks={homeworks}
+        memberHomeworkStatus={memberHomeworkStatus}
+        setMemberHomeworkStatus={setMemberHomeworkStatus}
       />
     );
   }
@@ -13419,7 +13615,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             }
 
             {
-              activeModule === 'announcements' && (
+              activeModule === 'reminders' && renderRemindersModule()
+            )}
+            {activeModule === 'homeworks' && (
+              renderHomeworksModule()
+            )}
+            {activeModule === 'announcements' && (
                 <div className="space-y-6 animate-in fade-in duration-500">
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-red-600">
                     <div className="flex items-center justify-between">
@@ -23432,7 +23633,10 @@ const MemberPortal = ({
   pathfinderClasses = [],
   uniformItems = [],
   uniformInspections = [],
-  getApplicableUniformItems
+  getApplicableUniformItems,
+  homeworks = [],
+  memberHomeworkStatus = [],
+  setMemberHomeworkStatus
 }) => {
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -23755,6 +23959,51 @@ const MemberPortal = ({
     };
   })();
 
+  // --- HOMEWORKS ---
+  const myHomeworks = (() => {
+    if (!homeworks) return [];
+    
+    // Filter tasks for this member's class
+    const myClass = member.currentClass || member.pathfinderClass || qualifications.find(q => isThisMember(q.memberId))?.classId;
+    if (!myClass) return [];
+
+    return homeworks
+      .filter(h => String(h.className).toLowerCase() === String(myClass).toLowerCase())
+      .map(h => {
+        const status = memberHomeworkStatus.find(s => s.homeworkId === h.id && isThisMember(s.memberId));
+        return {
+          ...h,
+          isCompleted: status ? status.completed : false,
+          completedAt: status ? status.completedAt : null
+        };
+      })
+      .sort((a, b) => {
+        if (a.isCompleted !== b.isCompleted) return a.isCompleted ? 1 : -1;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+  })();
+
+  const handleToggleHomework = (hwId) => {
+    const existingIndex = memberHomeworkStatus.findIndex(s => s.homeworkId === hwId && isThisMember(s.memberId));
+    
+    if (existingIndex >= 0) {
+      const newStatus = [...memberHomeworkStatus];
+      newStatus[existingIndex] = { 
+        ...newStatus[existingIndex], 
+        completed: !newStatus[existingIndex].completed,
+        completedAt: !newStatus[existingIndex].completed ? new Date().toISOString() : null
+      };
+      setMemberHomeworkStatus(newStatus);
+    } else {
+      setMemberHomeworkStatus([...memberHomeworkStatus, {
+        memberId: member.id,
+        homeworkId: hwId,
+        completed: true,
+        completedAt: new Date().toISOString()
+      }]);
+    }
+  };
+
   // Financial Stats
   const myTransactions = transactions.filter(t => isThisMember(t.memberId));
   const totalPaid = myTransactions
@@ -23948,6 +24197,38 @@ const MemberPortal = ({
                   <div className="text-xl font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
                 </div>
               )}
+            </div>
+          </section>
+        )}
+
+        {/* Homework Section */}
+        {myHomeworks.length > 0 && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-500">
+            <div className="flex items-center gap-2 px-1">
+              <ClipboardCheck className="w-4 h-4 text-red-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Tareas de Clase</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {myHomeworks.map(hw => (
+                <div key={hw.id} className={`p-4 rounded-3xl border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className={`font-black text-sm ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
+                        {hw.dueDate && <span className="text-[9px] font-bold text-red-500 uppercase">Vence: {hw.dueDate}</span>}
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2">{hw.description}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleToggleHomework(hw.id)}
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
         )}
