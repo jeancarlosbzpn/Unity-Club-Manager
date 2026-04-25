@@ -330,8 +330,20 @@ const ClubVencedoresSystem = () => {
         // Fallback to local session if it exists (for Electron/Development)
         const savedUser = localStorage.getItem('clubvencedores_current_user');
         if (savedUser) {
-          setCurrentUser(JSON.parse(savedUser));
-          setIsAuthenticated(true);
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            if (parsedUser.role === 'member') {
+              setPortalMember(parsedUser);
+              setCurrentUser(null);
+              setIsAuthenticated(false);
+            } else {
+              setCurrentUser(parsedUser);
+              setIsAuthenticated(true);
+            }
+          } catch (e) {
+            setCurrentUser(null);
+            setIsAuthenticated(false);
+          }
         } else {
           setCurrentUser(null);
           setIsAuthenticated(false);
@@ -618,8 +630,12 @@ const ClubVencedoresSystem = () => {
     if (savedUser) {
       try {
         const user = JSON.parse(savedUser);
-        setCurrentUser(user);
-        setIsAuthenticated(true);
+        if (user.role === 'member') {
+          setPortalMember(user);
+        } else {
+          setCurrentUser(user);
+          setIsAuthenticated(true);
+        }
       } catch (e) {
         console.error('Error restoring session:', e);
         localStorage.removeItem('clubvencedores_current_user');
