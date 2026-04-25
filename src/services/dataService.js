@@ -165,7 +165,7 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     } else {
       const STORAGE_PREFIX = 'clubvencedores_';
-      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'memberProgress', 'classRequirements', 'requirementSections', 'firstAidItems', 'uniformInspections', 'memberUniforms'];
 
       // Collection-based handling for shared data
       if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
@@ -233,13 +233,14 @@ export const dataService = {
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {}; // Browser only
     
-    // Subscribe logic for specific keys
-    if (key === 'members' || key === 'transactions') {
-      const colRef = collection(db, key);
+    const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'memberProgress', 'classRequirements', 'requirementSections', 'firstAidItems', 'uniformInspections', 'memberUniforms'];
+    
+    if (COLLECTION_KEYS.includes(key)) {
+      const STORAGE_PREFIX = 'clubvencedores_';
+      const colName = STORAGE_PREFIX + key;
+      const colRef = collection(db, colName);
       return onSnapshot(colRef, (snapshot) => {
-        // Skip updates initiated by THIS client to avoid echo/loops
         if (snapshot.metadata.hasPendingWrites) return;
-        
         const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         callback(data);
       });

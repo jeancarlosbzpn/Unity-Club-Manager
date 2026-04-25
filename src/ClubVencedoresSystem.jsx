@@ -10204,6 +10204,54 @@ const ClubVencedoresSystem = () => {
       (m.portalAccessCode && String(m.portalAccessCode) === String(portalMember.id))
     ) || portalMember;
 
+    const handleDataRefresh = async () => {
+      setSyncStatus('syncing');
+      try {
+        const allData = await loadFromStorage();
+        if (allData.announcements) setAnnouncements(allData.announcements);
+        if (allData.points) {
+          const pointsData = allData.points;
+          if (typeof pointsData === 'object' && !Array.isArray(pointsData)) {
+            const flattened = Object.entries(pointsData).flatMap(([mId, months]) => 
+              Object.entries(months).map(([month, data]) => ({
+                ...(typeof data === 'object' ? data : { value: data }),
+                memberId: mId,
+                month: month,
+                id: `${mId}-${month}`
+              }))
+            );
+            setPoints(flattened);
+          } else {
+            setPoints(pointsData);
+          }
+        }
+        if (allData.qualifications) {
+          const qualData = allData.qualifications;
+          if (typeof qualData === 'object' && !Array.isArray(qualData)) {
+            const flattened = Object.entries(qualData).map(([mId, data]) => ({
+              ...(typeof data === 'object' ? data : { scores: data }),
+              memberId: mId,
+              id: mId
+            }));
+            setQualifications(flattened);
+          } else {
+            setQualifications(qualData);
+          }
+        }
+        if (allData.transactions) setTransactions(allData.transactions);
+        if (allData.disciplineRecords) setDisciplineRecords(allData.disciplineRecords);
+        if (allData.attendanceRecords) setAttendanceRecords(allData.attendanceRecords);
+        if (allData.units) setUnits(allData.units);
+        
+        setSyncStatus('idle');
+        return true;
+      } catch (err) {
+        console.error("Refresh failed:", err);
+        setSyncStatus('error');
+        return false;
+      }
+    };
+
     return (
       <MemberPortal
         member={liveMember}
@@ -10211,6 +10259,8 @@ const ClubVencedoresSystem = () => {
           setPortalMember(null);
           localStorage.removeItem('clubvencedores_current_user');
         }}
+        onRefresh={handleDataRefresh}
+        isSyncing={syncStatus === 'syncing'}
         announcements={announcements}
         units={units}
         members={members}
@@ -23354,6 +23404,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 const MemberPortal = ({ 
   member, 
   onLogout, 
+  onRefresh,
+  isSyncing = false,
   announcements = [], 
   units = [], 
   members = [],
@@ -23542,12 +23594,21 @@ const MemberPortal = ({
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{myUnit?.name || 'Vencedor'}</p>
           </div>
         </div>
-        <button 
-          onClick={onLogout}
-          className="p-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-xl transition-all border border-gray-200"
-        >
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={onRefresh}
+            disabled={isSyncing}
+            className={`p-2 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-xl transition-all border border-gray-200 ${isSyncing ? 'animate-spin' : ''}`}
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={onLogout}
+            className="p-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-xl transition-all border border-gray-200"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
