@@ -18182,10 +18182,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         {selectedSaturday ? (
                           <>
                             {(() => {
-                              const isLockedFull = lockedSaturdays.includes(selectedSaturday);
+                              const isMonthLocked = selectedPointsMonth < getLocalYYYYMM();
+                              const isLockedFull = lockedSaturdays.includes(selectedSaturday) || isMonthLocked;
                               const isLockedAM = isLockedFull || lockedSaturdays.includes(selectedSaturday + '_AM');
                               const isLockedPM = isLockedFull || lockedSaturdays.includes(selectedSaturday + '_PM');
-                              const isLockedFriday = lockedSaturdays.includes(selectedSaturday + '_FRI');
+                              const isLockedFriday = isMonthLocked || lockedSaturdays.includes(selectedSaturday + '_FRI');
 
                               const selectedDate = new Date(selectedSaturday);
 
@@ -18203,6 +18204,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <>
                                             <button
                                               onClick={() => {
+                                                if (isMonthLocked) return;
                                                 if (window.confirm(`¿Estás seguro de ELIMINAR todos los datos del VIERNES para el Sábado ${selectedDate.getDate()}? Esta acción no se puede deshacer.`)) {
                                                   setPoints(prev => prev.map(p => {
                                                     if (p.month === selectedPointsMonth && p.saturdays[selectedSaturday]) {
@@ -23612,6 +23614,76 @@ const MemberPortal = ({
 
   const displayMonthPoints = monthPoints + monthMerits;
 
+  // --- GALARDONES (Awards) ---
+  const myAwards = (() => {
+    const winners = {}; // month -> { winnerId, score }
+    const currentMonthPrefix = (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    })();
+
+    // 1. Get all past months that have data
+    const allMonths = new Set();
+    safePoints.forEach(p => { if (p.month && p.month < currentMonthPrefix) allMonths.add(p.month); });
+    meritEntries.forEach(e => { 
+      if (e.date) {
+        const m = String(e.date).substring(0, 7);
+        if (m < currentMonthPrefix) allMonths.add(m);
+      }
+    });
+    
+    const monthsArray = Array.from(allMonths).sort();
+
+    monthsArray.forEach(mStr => {
+      const scores = {};
+      
+      // Sum Points from this specific month for all members
+      safePoints.filter(p => p.month === mStr).forEach(p => {
+        let sum = Number(p.value) || 0;
+        if (p.saturdays) {
+          Object.values(p.saturdays).forEach(day => {
+            sum += (Number(day.punctuality) || 0) + (Number(day.bible) || 0) + (Number(day.uniform) || 0) +
+                   (Number(day.discipline) || 0) + (Number(day.homework) || 0) + (Number(day.worshipFriday) || 0) +
+                   (Number(day.worshipSaturday) || 0) + (Number(day.sabbathSchool) || 0) + (Number(day.additional) || 0);
+          });
+        }
+        if (!scores[p.memberId]) scores[p.memberId] = 0;
+        scores[p.memberId] += sum;
+      });
+
+      // Sum Merits for this specific month for all members
+      meritEntries.filter(e => e.date && String(e.date).startsWith(mStr)).forEach(e => {
+        const mIds = e.memberIds || [e.memberId];
+        mIds.forEach(id => {
+          if (!scores[id]) scores[id] = 0;
+          scores[id] += (Number(e.points) || 0);
+        });
+      });
+
+      // Find winner of the month
+      let max = 0;
+      let winnerId = null;
+      Object.entries(scores).forEach(([id, score]) => {
+        if (score > max) {
+          max = score;
+          winnerId = id;
+        }
+      });
+      if (winnerId && max > 0) winners[mStr] = { winnerId, score: max };
+    });
+    
+    // Map to actual awards if current member is the winner
+    return Object.entries(winners)
+      .filter(([month, data]) => isThisMember(data.winnerId))
+      .map(([month, data]) => ({
+        month,
+        score: data.score,
+        name: new Date(month + '-02').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), // -02 to avoid TZ issues
+        title: 'Conquistador del Mes'
+      }))
+      .sort((a, b) => b.month.localeCompare(a.month));
+  })();
+
   // Financial Stats
   const myTransactions = transactions.filter(t => isThisMember(t.memberId));
   const totalPaid = myTransactions
@@ -23710,6 +23782,39 @@ const MemberPortal = ({
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Clase Actual</div>
           </div>
         </div>
+
+        {/* Awards Section */}
+        {myAwards.length > 0 && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-200">
+            <div className="flex items-center gap-2 px-1">
+              <Award className="w-4 h-4 text-amber-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Galardones</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {myAwards.map((award, idx) => (
+                <div key={idx} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                    <Trophy className="w-24 h-24 text-amber-600" />
+                  </div>
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-amber-100">
+                      <Medal className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-widest text-amber-600 mb-0.5">{award.title}</div>
+                      <div className="text-lg font-black tracking-tight text-gray-900 capitalize leading-none">{award.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right relative z-10">
+                    <div className="text-2xl font-black tracking-tighter text-amber-700 leading-none">{award.score}</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-amber-600/70">Puntos</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Announcements Feed */}
         <section className="space-y-4">
