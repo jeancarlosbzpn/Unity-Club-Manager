@@ -23420,7 +23420,27 @@ const MemberPortal = ({
 
   const safePoints = getPointsList();
   const myPointsRecords = safePoints.filter(p => p && isThisMember(p.memberId));
-  const totalPoints = myPointsRecords.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+  
+  // UNIFIED CALCULATION: Sum legacy value + all Saturday matrix categories
+  const totalPoints = myPointsRecords.reduce((sum, p) => {
+    let monthSum = Number(p.value) || 0;
+    if (p.saturdays && typeof p.saturdays === 'object') {
+      Object.values(p.saturdays).forEach(day => {
+        if (day && typeof day === 'object') {
+          monthSum += (Number(day.punctuality) || 0) +
+                      (Number(day.bible) || 0) +
+                      (Number(day.uniform) || 0) +
+                      (Number(day.discipline) || 0) +
+                      (Number(day.homework) || 0) +
+                      (Number(day.worshipFriday) || 0) +
+                      (Number(day.worshipSaturday) || 0) +
+                      (Number(day.sabbathSchool) || 0) +
+                      (Number(day.additional) || 0);
+        }
+      });
+    }
+    return sum + monthSum;
+  }, 0);
 
   // RESILIENT CALCULATION: Unit
   const myUnit = units.find(u => String(u.id) === String(member.unitId)) || 
@@ -23499,10 +23519,9 @@ const MemberPortal = ({
 
   // Class Info (Smart Detection)
   const myQual = qualifications.find(q => isThisMember(q.memberId));
-  const myClassName = (pathfinderClasses.find(c => String(c.value) === String(member.currentClass))?.label) || 
-                      member.currentClass || 
-                      (myQual?.className) || 
-                      (myQual?.classId) ||
+  const classValue = member.currentClass || member.pathfinderClass || myQual?.classId || myQual?.className;
+  const myClassName = (pathfinderClasses.find(c => String(c.value) === String(classValue))?.label) || 
+                      classValue || 
                       'No asignada';
 
   // Filter unit members (Privacy: same unit only)
