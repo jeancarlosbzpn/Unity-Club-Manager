@@ -1735,7 +1735,17 @@ const ClubVencedoresSystem = () => {
         }
 
         setTransactions(initialTransactions);
-        if (allData.activities) setActivities(allData.activities);
+        
+        // Robust loading for Activities
+        if (allData.activities && Array.isArray(allData.activities) && allData.activities.length > 0) {
+          setActivities(allData.activities);
+        } else {
+          // If missing in main payload, try direct fetch as fallback
+          const directActs = await dataService.readData('activities');
+          if (directActs && Array.isArray(directActs) && directActs.length > 0) {
+            setActivities(directActs);
+          }
+        }
 
         // Robust loading for Points (Handle Object vs Array)
         if (allData.points) {
@@ -2084,6 +2094,17 @@ const ClubVencedoresSystem = () => {
       };
 
       try {
+        // SAFETY: Only save if we have dataLoaded flag TRUE
+        if (!dataLoaded) return;
+
+        // CRITICAL DATA INTEGRITY CHECK:
+        // If we previously had members/activities but now they are empty, 
+        // something might have failed in load. Protect cloud from wipe!
+        if (members.length === 0 && activities.length === 0 && users.length > 0) {
+           console.warn("🛑 Safety trigger: Data state is unexpectedly empty. Aborting save to protect cloud.");
+           return;
+        }
+
         setSyncStatus('saving');
         // SANITIZATION STEP:
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
@@ -13545,13 +13566,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           />
                         </div>
                       </div>
-                      <button
-                        onClick={() => setShowForm(true)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                      >
-                        <Plus className="w-5 h-5" />
-                        Agregar Miembro
-                      </button>
+                      {accessLevels.members === 'write' && (
+                        <button
+                          onClick={() => setShowForm(true)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                        >
+                          <Plus className="w-5 h-5" />
+                          Agregar Miembro
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -13877,13 +13900,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                             </td>
                                             <td className="px-6 py-4">
                                               <div className="flex items-center gap-2">
-                                                <button
-                                                  onClick={() => handleEdit(member)}
-                                                  className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
-                                                  title="Editar"
-                                                >
-                                                  <Edit2 className="w-4 h-4" />
-                                                </button>
+                                                  {accessLevels.members === 'write' && (
+                                                    <button
+                                                      onClick={() => handleEdit(member)}
+                                                      className="p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                                      title="Editar"
+                                                    >
+                                                      <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                  )}
                                                 <button
                                                   onClick={() => printMemberForm(member)}
                                                   className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -13891,13 +13916,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 >
                                                   <FileText className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                  onClick={() => handleDeleteMember(member.id)}
-                                                  className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                                  title="Eliminar"
-                                                >
-                                                  <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                  {accessLevels.members === 'write' && (
+                                                    <button
+                                                      onClick={() => handleDeleteMember(member.id)}
+                                                      className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                      title="Eliminar"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                  )}
                                               </div>
                                             </td>
                                           </tr>
@@ -14974,13 +15001,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </div>
 
                   <div className="flex gap-4 mt-8">
-                    <button
-                      onClick={handleSubmit}
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
-                    >
-                      <Save className="w-5 h-5" />
-                      {editingMember ? 'Actualizar' : 'Guardar'}
-                    </button>
+                    {accessLevels.members === 'write' && (
+                      <button
+                        onClick={handleSubmit}
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                      >
+                        <Save className="w-5 h-5" />
+                        {editingMember ? 'Actualizar' : 'Guardar'}
+                      </button>
+                    )}
                     <button
                       onClick={handleCancel}
                       className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
@@ -19098,13 +19127,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
                         <div className="flex gap-4 flex-wrap">
-                          <button
-                            onClick={() => setShowFinanceForm(true)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
-                          >
-                            <Plus className="w-5 h-5" />
-                            Agregar Transacción
-                          </button>
+                          {accessLevels.finances === 'write' && (
+                            <button
+                              onClick={() => setShowFinanceForm(true)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2"
+                            >
+                              <Plus className="w-5 h-5" />
+                              Agregar Transacción
+                            </button>
+                          )}
 
                           <button
                             onClick={() => setShowMonthlyReport(!showMonthlyReport)}
@@ -19127,14 +19158,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <Settings className="w-5 h-5" />
                             {showCategoryManager ? 'Ocultar' : 'Gestionar'} Categorías
                           </button>
-                          <button
-                            onClick={handleClearAllTransactions}
-                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 ml-auto"
-                            title="Borrar todo el historial"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                            Eliminar Todo
-                          </button>
+                          {accessLevels.finances === 'write' && (
+                            <button
+                              onClick={handleClearAllTransactions}
+                              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 ml-auto"
+                              title="Borrar todo el historial"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                              Eliminar Todo
+                            </button>
+                          )}
 
                           {/* Publish to Web Button */}
                           <button
@@ -19517,17 +19550,19 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                      <button
-                                        onClick={() => {
-                                          if (window.confirm('¿Estás seguro de que deseas eliminar esta transacción? Esta acción no se puede deshacer.')) {
-                                            setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-                                          }
-                                        }}
-                                        className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                                        title="Eliminar transacción"
-                                      >
-                                        <Trash2 className="w-5 h-5" />
-                                      </button>
+                                      {accessLevels.finances === 'write' && (
+                                        <button
+                                          onClick={() => {
+                                            if (window.confirm('¿Estás seguro de que deseas eliminar esta transacción? Esta acción no se puede deshacer.')) {
+                                              setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+                                            }
+                                          }}
+                                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
+                                          title="Eliminar transacción"
+                                        >
+                                          <Trash2 className="w-5 h-5" />
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
@@ -21004,16 +21039,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <Printer className="w-5 h-5" />
                             <span className="hidden sm:inline">Imprimir Calendario</span>
                           </button>
-                          <button
-                            onClick={() => {
-                              setEditingActivity(null);
-                              setShowActivityForm(true);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-                          >
-                            <Plus className="w-5 h-5" />
-                            Nueva Actividad
-                          </button>
+                          {accessLevels.activities === 'write' && (
+                            <button
+                              onClick={() => {
+                                setEditingActivity(null);
+                                setShowActivityForm(true);
+                              }}
+                              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                            >
+                              <Plus className="w-5 h-5" />
+                              Nueva Actividad
+                            </button>
+                          )}
                           <div className="text-right">
                             <div className="text-3xl font-bold text-blue-600">{activities.length}</div>
                             <div className="text-sm text-gray-500">Actividades Totales</div>
