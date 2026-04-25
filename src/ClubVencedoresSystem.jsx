@@ -1842,7 +1842,7 @@ const ClubVencedoresSystem = () => {
       const keysToMigrate = ['members', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
       
       // Load all Master Members FIRST for identity mapping
-      const cloudMembers = await dataService.readData('members', { forceMaster: true }) || [];
+      const cloudMembers = await dataService.readData('members') || [];
       const masterMembers = cloudMembers.length > 0 ? cloudMembers : (members || []);
       console.log(`👤 Miembros para resolución: ${masterMembers.length} (${cloudMembers.length > 0 ? 'Desde Nube' : 'Desde Pantalla'}).`);
 
@@ -1867,7 +1867,7 @@ const ClubVencedoresSystem = () => {
       for (const key of keysToMigrate) {
         // LAYER 1: Load from Cloud Master
         console.log(`🔍 Buscando '${key}' en Nube...`);
-        let cloudData = await dataService.readData(key, { forceMaster: true });
+        let cloudData = await dataService.readData(key);
         
         // LAYER 2: Fallback to Current Screen State variables
         // Map keys to their actual React State variable names
@@ -1916,7 +1916,7 @@ const ClubVencedoresSystem = () => {
             if (monthlyData && typeof monthlyData === 'object') {
               return Object.entries(monthlyData).map(([month, record]) => {
                 const base = typeof record === 'object' && record !== null ? record : { value: record };
-                return { ...base, memberId: actualId, monthKey: month, id: `${actualId}-${month}` };
+                return { ...base, memberId: actualId, month: month, id: `${actualId}-${month}` };
               });
             } else if (monthlyData !== undefined && monthlyData !== null) {
               return [{ memberId: actualId, value: monthlyData, id: `flat-${actualId}-${Date.now()}` }];
@@ -1983,30 +1983,31 @@ const ClubVencedoresSystem = () => {
       if (Array.isArray(portalPoints) && portalPoints.length > 0) {
         const reconstructedPoints = {};
         portalPoints.forEach(p => {
-          if (p.memberId && p.monthKey) {
+          const month = p.month || p.monthKey;
+          if (p.memberId && month) {
             if (!reconstructedPoints[p.memberId]) reconstructedPoints[p.memberId] = {};
-            reconstructedPoints[p.memberId][p.monthKey] = p;
+            reconstructedPoints[p.memberId][month] = p;
           }
         });
         console.log(`✅ Puntos reconstruidos: ${Object.keys(reconstructedPoints).length} miembros.`);
         await dataService.writeData('points', reconstructedPoints);
-        setPoints(reconstructedPoints);
+        setPoints(portalPoints); // portalPoints is the array format from readData
       }
 
       // 2. Recover Member Progress (Member Progress)
       console.log('⏳ Recuperando PROGRESO DE CLASES...');
-      const portalQuals = await dataService.readData('qualifications') || [];
-      if (Array.isArray(portalQuals) && portalQuals.length > 0) {
-        const reconstructedQuals = {};
-        portalQuals.forEach(q => {
+      const portalProgress = await dataService.readData('memberProgress') || [];
+      if (Array.isArray(portalProgress) && portalProgress.length > 0) {
+        const reconstructedProgress = {};
+        portalProgress.forEach(q => {
           if (q.memberId && q.requirementId) {
-            if (!reconstructedQuals[q.memberId]) reconstructedQuals[q.memberId] = {};
-            reconstructedQuals[q.memberId][q.requirementId] = q;
+            if (!reconstructedProgress[q.memberId]) reconstructedProgress[q.memberId] = {};
+            reconstructedProgress[q.memberId][q.requirementId] = q;
           }
         });
-        console.log(`✅ Progreso reconstruido: ${Object.keys(reconstructedQuals).length} miembros.`);
-        await dataService.writeData('qualifications', reconstructedQuals);
-        setMemberProgress(reconstructedQuals);
+        console.log(`✅ Progreso reconstruido: ${Object.keys(reconstructedProgress).length} miembros.`);
+        await dataService.writeData('memberProgress', reconstructedProgress);
+        setMemberProgress(reconstructedProgress);
       }
 
       // 3. Recover Units
@@ -16485,6 +16486,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         } else {
                                           return [...prev, {
                                             ...qual,
+                                            id: `${member.id}-${selectedQualificationYear}`,
                                             scores: { ...qual.scores, [field]: newVal }
                                           }];
                                         }
@@ -18533,6 +18535,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                         const initialSat = { [targetField]: status };
                                                                         if (attendanceTypeMarking === 'satPM') initialSat.attendance = status;
                                                                         return [...prev, {
+                                                                          id: `${member.id}-${selectedPointsMonth}`,
                                                                           memberId: member.id,
                                                                           month: selectedPointsMonth,
                                                                           saturdays: {
@@ -18604,6 +18607,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                           });
                                                                         } else {
                                                                           return [...prev, {
+                                                                            id: `${member.id}-${selectedPointsMonth}`,
                                                                             memberId: member.id,
                                                                             month: selectedPointsMonth,
                                                                             saturdays: {
@@ -18654,7 +18658,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                         return p;
                                                                       });
                                                                     } else {
-                                                                      return [...prev, { memberId: member.id, month: selectedPointsMonth, saturdays: { [selectedSaturday]: { worshipFriday: val } } }];
+                                                                      return [...prev, { 
+                                                                          id: `${member.id}-${selectedPointsMonth}`,
+                                                                          memberId: member.id, 
+                                                                          month: selectedPointsMonth, 
+                                                                          saturdays: { [selectedSaturday]: { worshipFriday: val } } 
+                                                                        }];
                                                                     }
                                                                   });
                                                                 }}
@@ -18687,7 +18696,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                     onChange={(e) => {
                                                                       const val = e.target.value === '' ? '' : Math.min(maxPoints, parseInt(e.target.value) || 0);
                                                                       setPoints(prev => {
-                                                                        // Standard update logic reuse
                                                                         const existing = prev.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
                                                                         if (existing) {
                                                                           return prev.map(p => {
@@ -18697,7 +18705,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                             return p;
                                                                           });
                                                                         } else {
-                                                                          return [...prev, { memberId: member.id, month: selectedPointsMonth, saturdays: { [selectedSaturday]: { [category]: val } } }];
+                                                                          return [...prev, { 
+                                                                            id: `${member.id}-${selectedPointsMonth}`,
+                                                                            memberId: member.id, 
+                                                                            month: selectedPointsMonth, 
+                                                                            saturdays: { [selectedSaturday]: { [category]: val } } 
+                                                                          }];
                                                                         }
                                                                       });
                                                                     }}
@@ -18746,6 +18759,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                     });
                                                                   } else {
                                                                     return [...prev, {
+                                                                      id: `${member.id}-${selectedPointsMonth}`,
                                                                       memberId: member.id,
                                                                       month: selectedPointsMonth,
                                                                       saturdays: {

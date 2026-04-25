@@ -198,7 +198,7 @@ export const dataService = {
               updatedAt: new Date().toISOString() 
             }, { merge: true });
           } catch (e) {
-            console.warn(`Could not set collection metadata for ${key}`, e);
+            console.warn(`Could not set collection metadata for ${key} (Permission Denied for non-admins)`, e.message);
           }
         }
 
@@ -206,14 +206,22 @@ export const dataService = {
         
         // Also save to central doc for redundancy/legacy compatibility (UNLESS skipMaster)
         if (!skipMaster) {
-          await saveCollectionToFirestore(key, sanitizeData(data));
+          try {
+            await saveCollectionToFirestore(key, sanitizeData(data));
+          } catch (e) {
+            console.warn(`Could not update master document for ${key} (Permission Denied for non-admins)`, e.message);
+          }
         }
         return { success: true };
       }
 
       // Generic handling for non-collection data (Config, settings, etc)
       if (!skipMaster) {
-        await saveCollectionToFirestore(key, sanitizeData(data));
+        try {
+          await saveCollectionToFirestore(key, sanitizeData(data));
+        } catch (e) {
+          console.warn(`Could not update master document for generic key ${key}`, e.message);
+        }
       }
       return { success: true };
     }
