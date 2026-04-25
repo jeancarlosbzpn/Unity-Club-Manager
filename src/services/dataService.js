@@ -182,17 +182,20 @@ export const dataService = {
         // Sync deletions: find docs in cloud that are not in incoming array
         const colRef = collection(db, colName);
         const currentSnap = await getDocs(colRef);
-        const incomingIds = data.map(item => item.id || item.username || (item.firstName + '_' + item.lastName));
+        // FORCE all IDs to strings for robust comparison
+        const incomingIds = data.map(item => String(item.id || item.username || (item.firstName + '_' + item.lastName)));
         
         currentSnap.docs.forEach(docSnap => {
-          if (!incomingIds.includes(docSnap.id)) {
+          // Type-agnostic comparison: force everything to string
+          if (!incomingIds.includes(String(docSnap.id))) {
+            console.log(`🗑️ Cloud Sync: Deleting ghost record '${docSnap.id}' from '${colName}'`);
             batch.delete(docSnap.ref);
           }
         });
 
         // Upsert items
         for (const item of data) {
-          const itemId = item.id || item.username || (item.firstName ? (item.firstName + '_' + item.lastName) : Date.now().toString() + Math.random().toString(36).substring(2, 7));
+          const itemId = String(item.id || item.username || (item.firstName ? (item.firstName + '_' + item.lastName) : Date.now().toString() + Math.random().toString(36).substring(2, 7)));
           const itemRef = doc(db, colName, itemId);
           batch.set(itemRef, sanitizeData(item));
         }
