@@ -12716,22 +12716,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           try {
                             // Safe string coercion helper
                             const safeStr = (str) => String(str || '').trim();
-                            const regularMembers = (members || []).filter(m => {
-                              if (m.exemptFromScoring) return false;
-
-                              if (!m) return false; // Safety check for null members
-                              const pos = safeStr(m.position);
-                              return !pos;
+                            const activeMembers = (members || []).filter(m => {
+                              if (!m) return false;
+                              // Include everyone who is not explicitly exempt or inactive
+                              return m.membershipStatus !== 'Inactive';
                             });
 
                             const normalize = (str) => safeStr(str).toLowerCase();
 
                             const stats = {
-                              total: regularMembers.length,
+                              total: activeMembers.length,
                               units: Array.isArray(units) ? units.length : 0,
-                              baptized: regularMembers.filter(m => m.baptismDate).length,
-                              female: regularMembers.filter(m => ['female', 'femenino', 'f', 'mujer', 'femenina'].includes(normalize(m.gender))).length,
-                              male: regularMembers.filter(m => ['male', 'masculino', 'm', 'hombre', 'varon'].includes(normalize(m.gender))).length
+                              baptized: activeMembers.filter(m => m.baptismDate).length,
+                              female: activeMembers.filter(m => ['female', 'femenino', 'f', 'mujer', 'femenina'].includes(normalize(m.gender))).length,
+                              male: activeMembers.filter(m => ['male', 'masculino', 'm', 'hombre', 'varon'].includes(normalize(m.gender))).length
                             };
 
                             return (
