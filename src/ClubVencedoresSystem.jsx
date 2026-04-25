@@ -1635,10 +1635,17 @@ const ClubVencedoresSystem = () => {
         // En la web, si NO estamos autenticados (como admin o miembro), solo permitimos cargar la lista de usuarios
         // para que el login pueda funcionar con perfiles creados en otros equipos.
         if (!isAuthenticated && !portalMember && !window.electronAPI) {
-          console.log('📡 Sincronizando lista de usuarios para inicio de sesión...');
-          const cloudUsers = await dataService.readData('users');
+          console.log('📡 Sincronizando usuarios y miembros para inicio de sesión...');
+          const [cloudUsers, cloudMembers] = await Promise.all([
+            dataService.readData('users'),
+            dataService.readData('members')
+          ]);
+          
           if (cloudUsers && Array.isArray(cloudUsers) && cloudUsers.length > 0) {
             setUsers(cloudUsers);
+          }
+          if (cloudMembers && Array.isArray(cloudMembers) && cloudMembers.length > 0) {
+            setMembers(cloudMembers);
           }
           return;
         }
@@ -5671,9 +5678,10 @@ const ClubVencedoresSystem = () => {
       }
 
       const isComplete = newItemsMissing.length === 0;
+      const inspectionId = existingInspection.id || `${memberId}_${dateStr}`;
 
       // Update state
-      const newInspection = { ...existingInspection, memberId, date: dateStr, itemsMissing: newItemsMissing, isComplete, isInspected: true };
+      const newInspection = { ...existingInspection, id: inspectionId, memberId, date: dateStr, itemsMissing: newItemsMissing, isComplete, isInspected: true };
       const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
       setUniformInspections([...otherInspections, newInspection]);
     };
@@ -5681,16 +5689,18 @@ const ClubVencedoresSystem = () => {
     // Helper to mark inspection as fully complete
     const markInspectionComplete = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
+      const inspectionId = `${memberId}_${dateStr}`;
       const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
-      setUniformInspections([...otherInspections, { memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }]);
+      setUniformInspections([...otherInspections, { id: inspectionId, memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }]);
     };
 
     const toggleInspectedManual = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
       const existingInspection = getInspection(memberId, dateStr);
       const isInspected = !existingInspection.isInspected;
+      const inspectionId = existingInspection.id || `${memberId}_${dateStr}`;
 
-      const newInspection = { ...existingInspection, memberId, date: dateStr, isInspected };
+      const newInspection = { ...existingInspection, id: inspectionId, memberId, date: dateStr, isInspected };
       const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
       setUniformInspections([...otherInspections, newInspection]);
     };
