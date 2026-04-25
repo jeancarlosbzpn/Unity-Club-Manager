@@ -23530,21 +23530,21 @@ const MemberPortal = ({
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-red-500/30">
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-500/20">
       {/* Mobile Top Bar */}
-      <div className="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-lg border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-black shadow-lg shadow-red-900/20">
+          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-black shadow-lg shadow-red-500/20 text-white">
             {member.firstName ? member.firstName[0] : 'V'}
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-tighter">Mi Portal</h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{myUnit?.name || 'Vencedor'}</p>
+            <h1 className="text-sm font-black uppercase tracking-tighter text-gray-900">Mi Portal</h1>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{myUnit?.name || 'Vencedor'}</p>
           </div>
         </div>
         <button 
           onClick={onLogout}
-          className="p-2 bg-gray-800 hover:bg-red-900/40 text-gray-400 hover:text-red-400 rounded-xl transition-all border border-white/5"
+          className="p-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-xl transition-all border border-gray-200"
         >
           <LogOut className="w-5 h-5" />
         </button>
@@ -23553,82 +23553,85 @@ const MemberPortal = ({
       <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
         {/* Welcome Header */}
         <section className="animate-in fade-in slide-in-from-top-4 duration-700">
-          <h2 className="text-3xl font-black tracking-tighter leading-none mb-1">
-            ¡Hola, <span className="text-red-500">{member.firstName}</span>!
+          <h2 className="text-3xl font-black tracking-tighter leading-none mb-1 text-gray-900">
+            ¡Hola, <span className="text-red-600">{member.firstName}</span>!
           </h2>
-          <p className="text-gray-400 text-sm font-medium">Aquí tienes tu resumen actualizado.</p>
+          <p className="text-gray-500 text-sm font-medium">Aquí tienes tu resumen actualizado.</p>
         </section>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           {/* Main Stats */}
-          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
               <Trophy className="w-5 h-5 text-amber-500" />
             </div>
-            <div className="text-2xl font-black tracking-tighter">{displayTotalPoints}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Puntos Totales</div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">{displayTotalPoints}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos Totales</div>
           </div>
-          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
               <CalendarCheck className="w-5 h-5 text-blue-500" />
             </div>
-            <div className="text-2xl font-black tracking-tighter">{attendanceRate}%</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Asistencia</div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRate}%</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia</div>
           </div>
 
           {/* Secondary Stats */}
-          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group">
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
               <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
-            <div className="text-2xl font-black tracking-tighter">${totalPaid}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total Pagado</div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">${totalPaid}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Pagado</div>
           </div>
-          <div className="bg-gray-900 border border-white/5 rounded-3xl p-5 shadow-xl transition-transform active:scale-95 group overflow-hidden">
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden">
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
               <BookOpen className="w-5 h-5 text-indigo-500" />
             </div>
-            <div className="text-sm font-black tracking-tighter truncate leading-tight h-8 flex items-center">{myClassName}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mt-0.5">Clase Actual</div>
+            <div className="text-sm font-black tracking-tighter truncate leading-tight h-8 flex items-center text-gray-900">{myClassName}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Clase Actual</div>
           </div>
         </div>
 
         {/* Announcements Feed */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-              <Bell className="w-4 h-4 text-red-500" />
+            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900">
+              <Bell className="w-4 h-4 text-red-600" />
               Comunicados
             </h3>
             {filteredAnnouncements.length > 0 && (
-              <span className="text-[10px] font-bold text-gray-500">{filteredAnnouncements.length} anuncios</span>
+              <span className="text-[10px] font-bold text-gray-400">{filteredAnnouncements.length} anuncios</span>
             )}
           </div>
           
           <div className="space-y-4">
             {filteredAnnouncements.length === 0 ? (
-              <div className="bg-gray-900/50 rounded-3xl p-8 text-center border border-dashed border-white/5">
-                <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">No hay anuncios para ti</p>
+              <div className="bg-gray-50 rounded-3xl p-8 text-center border border-dashed border-gray-200">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No hay anuncios para ti</p>
               </div>
             ) : (
               filteredAnnouncements.map(announcement => (
-                <div key={announcement.id} className="bg-gray-900 border border-white/5 rounded-3xl overflow-hidden group">
+                <div key={announcement.id} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm group">
                   <div className={`h-1.5 ${
                     announcement.type === 'Alert' ? 'bg-red-500' : 
-                    announcement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-700'
+                    announcement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-300'
                   }`} />
                   <div className="p-6">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-black/40 px-2 py-0.5 rounded">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                        announcement.type === 'Alert' ? 'bg-red-50 text-red-600' : 
+                        announcement.type === 'Event' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
+                      }`}>
                         {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Aviso'}
                       </span>
-                      <span className="text-[10px] font-bold text-gray-600">
+                      <span className="text-[10px] font-bold text-gray-400">
                         {new Date(announcement.date).toLocaleDateString()}
                       </span>
                     </div>
-                    <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-400 transition-colors">{announcement.title}</h4>
-                    <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">{announcement.content}</p>
+                    <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-600 transition-colors text-gray-900">{announcement.title}</h4>
+                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">{announcement.content}</p>
                   </div>
                 </div>
               ))
@@ -23639,23 +23642,23 @@ const MemberPortal = ({
         {/* My Unit Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 px-1">
-            <Users className="w-4 h-4 text-red-500" />
-            <h3 className="text-sm font-black uppercase tracking-widest">Mi Unidad: {myUnit?.name || '-'}</h3>
+            <Users className="w-4 h-4 text-red-600" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
           </div>
           
-          <div className="bg-gray-900 border border-white/5 rounded-3xl overflow-hidden">
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
             {unitMembers.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-xs font-bold">Cargando compañeros...</div>
+              <div className="p-6 text-center text-gray-400 text-xs font-bold">Cargando compañeros...</div>
             ) : (
-              <div className="divide-y divide-white/5">
+              <div className="divide-y divide-gray-100">
                 {unitMembers.map(m => (
-                  <div key={m.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                  <div key={m.id} className="p-4 flex items-center justify-between hover:bg-white transition-colors">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center font-bold text-[10px]">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-[10px]">
                         {m.firstName ? m.firstName[0] : 'V'}
                       </div>
                       <div>
-                        <div className="text-sm font-bold">{m.firstName} {m.lastName}</div>
+                        <div className="text-sm font-bold text-gray-900">{m.firstName} {m.lastName}</div>
                         <div className="text-[9px] font-black uppercase tracking-widest text-gray-500">{m.unitRole || 'Miembro'}</div>
                       </div>
                     </div>
@@ -23669,10 +23672,10 @@ const MemberPortal = ({
 
         {/* Footer Info */}
         <footer className="pt-8 pb-12 text-center">
-          <div className="inline-block px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[9px] font-black uppercase tracking-widest text-gray-500 mb-2">
+          <div className="inline-block px-4 py-1 rounded-full bg-gray-100 border border-gray-200 text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">
             Vencedores Portal v1.0
           </div>
-          <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
             Club {clubSettings?.name || 'Vencedores'}
           </p>
         </footer>
