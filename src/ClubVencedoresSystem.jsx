@@ -23622,6 +23622,19 @@ const MemberPortal = ({
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     })();
 
+    // Helper for grouping points by member correctly (ID or Access Code)
+    const getCanonicalMemberId = (recordId) => {
+      if (!recordId) return null;
+      const rid = String(recordId).trim().toLowerCase();
+      // Try to find the actual member object to get their main ID
+      const found = members.find(m => {
+        const mid = String(m.id).trim().toLowerCase();
+        const mcode = m.portalAccessCode ? String(m.portalAccessCode).trim().toLowerCase() : null;
+        return rid === mid || (mcode && rid === mcode);
+      });
+      return found ? found.id : recordId;
+    };
+
     // 1. Get all past months that have data
     const allMonths = new Set();
     safePoints.forEach(p => { if (p.month && p.month < currentMonthPrefix) allMonths.add(p.month); });
@@ -23635,32 +23648,39 @@ const MemberPortal = ({
     const monthsArray = Array.from(allMonths).sort();
 
     monthsArray.forEach(mStr => {
-      const scores = {};
+      const scores = {}; // canonicalMemberId -> totalScore
       
-      // Sum Points from this specific month for all members
+      // Sum Points from this specific month
       safePoints.filter(p => p.month === mStr).forEach(p => {
         let sum = Number(p.value) || 0;
         if (p.saturdays) {
           Object.values(p.saturdays).forEach(day => {
-            sum += (Number(day.punctuality) || 0) + (Number(day.bible) || 0) + (Number(day.uniform) || 0) +
-                   (Number(day.discipline) || 0) + (Number(day.homework) || 0) + (Number(day.worshipFriday) || 0) +
-                   (Number(day.worshipSaturday) || 0) + (Number(day.sabbathSchool) || 0) + (Number(day.additional) || 0);
+            if (day && typeof day === 'object') {
+              sum += (Number(day.punctuality) || 0) + (Number(day.bible) || 0) + (Number(day.uniform) || 0) +
+                     (Number(day.discipline) || 0) + (Number(day.homework) || 0) + (Number(day.worshipFriday) || 0) +
+                     (Number(day.worshipSaturday) || 0) + (Number(day.sabbathSchool) || 0) + (Number(day.additional) || 0);
+            }
           });
         }
-        if (!scores[p.memberId]) scores[p.memberId] = 0;
-        scores[p.memberId] += sum;
+        
+        const cId = getCanonicalMemberId(p.memberId);
+        if (cId) {
+          scores[cId] = (scores[cId] || 0) + sum;
+        }
       });
 
-      // Sum Merits for this specific month for all members
+      // Sum Merits for this specific month
       meritEntries.filter(e => e.date && String(e.date).startsWith(mStr)).forEach(e => {
-        const mIds = e.memberIds || [e.memberId];
+        const mIds = Array.isArray(e.memberIds) ? e.memberIds : [e.memberId];
         mIds.forEach(id => {
-          if (!scores[id]) scores[id] = 0;
-          scores[id] += (Number(e.points) || 0);
+          const cId = getCanonicalMemberId(id);
+          if (cId) {
+            scores[cId] = (scores[cId] || 0) + (Number(e.points) || 0);
+          }
         });
       });
 
-      // Find winner of the month
+      // Find winner(s) of the month
       let max = 0;
       let winnerId = null;
       Object.entries(scores).forEach(([id, score]) => {
@@ -23669,7 +23689,9 @@ const MemberPortal = ({
           winnerId = id;
         }
       });
-      if (winnerId && max > 0) winners[mStr] = { winnerId, score: max };
+      if (winnerId && max > 0) {
+        winners[mStr] = { winnerId, score: max };
+      }
     });
     
     // Map to actual awards if current member is the winner
@@ -23678,7 +23700,7 @@ const MemberPortal = ({
       .map(([month, data]) => ({
         month,
         score: data.score,
-        name: new Date(month + '-02').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), // -02 to avoid TZ issues
+        name: new Date(month + '-02').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
         title: 'Conquistador del Mes'
       }))
       .sort((a, b) => b.month.localeCompare(a.month));
