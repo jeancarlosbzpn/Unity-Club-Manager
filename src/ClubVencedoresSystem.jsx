@@ -23616,28 +23616,23 @@ const MemberPortal = ({
 
   // --- GALARDONES (Awards) ---
   const myAwards = (() => {
-    const winners = {}; // month -> { winnerId, score }
+    const winners = {}; // month -> { winnerIds: [], score }
     
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
-    // Helper for robust month normalization
     const normalizeMonth = (mStr) => {
       if (!mStr) return null;
-      const parts = String(mStr).split('-');
+      const s = String(mStr).trim();
+      const parts = s.split(/[-/]/); 
       if (parts.length < 2) return null;
-      return `${parts[0]}-${parts[1].padStart(2, '0')}`;
+      const y = parts[0];
+      const m = parts[1].padStart(2, '0');
+      return `${y}-${m}`;
     };
 
-    const isMonthInPast = (mStr) => {
-      const normalized = normalizeMonth(mStr);
-      if (!normalized) return false;
-      return normalized < currentMonthPrefix;
-    };
-
-    // Helper for grouping points by member correctly (ID or Access Code)
     const getCanonicalMemberId = (recordId) => {
       if (!recordId) return null;
       const rid = String(recordId).trim().toLowerCase();
@@ -23649,28 +23644,25 @@ const MemberPortal = ({
       return found ? found.id : recordId;
     };
 
-    // 1. Get all past months that have data
-    const allMonths = new Set();
+    // 1. Collect all months that appear in the data and are in the past
+    const allPastMonths = new Set();
     safePoints.forEach(p => { 
       const norm = normalizeMonth(p.month);
-      if (norm && norm < currentMonthPrefix) allMonths.add(norm); 
+      if (norm && norm < currentMonthPrefix) allPastMonths.add(norm); 
     });
     meritEntries.forEach(e => { 
       if (e.date) {
-        const m = normalizeMonth(String(e.date).substring(0, 7));
-        if (m && m < currentMonthPrefix) allMonths.add(m);
+        const norm = normalizeMonth(String(e.date).substring(0, 7));
+        if (norm && norm < currentMonthPrefix) allPastMonths.add(norm);
       }
     });
     
-    const monthsArray = Array.from(allMonths).sort();
-
-    monthsArray.forEach(mStr => {
-      const scores = {}; // canonicalMemberId -> totalScore
+    Array.from(allPastMonths).forEach(mStr => {
+      const scores = {}; // canonicalId -> score
       
-      // Sum Points from this specific month
+      // Points
       safePoints.forEach(p => {
         if (normalizeMonth(p.month) !== mStr) return;
-        
         let sum = Number(p.value) || 0;
         if (p.saturdays) {
           Object.values(p.saturdays).forEach(day => {
@@ -23681,49 +23673,53 @@ const MemberPortal = ({
             }
           });
         }
-        
         const cId = getCanonicalMemberId(p.memberId);
-        if (cId) {
-          scores[cId] = (scores[cId] || 0) + sum;
-        }
+        if (cId) scores[cId] = (scores[cId] || 0) + sum;
       });
 
-      // Sum Merits for this specific month
+      // Merits
       meritEntries.forEach(e => {
         if (!e.date || normalizeMonth(String(e.date).substring(0, 7)) !== mStr) return;
-        
         const mIds = Array.isArray(e.memberIds) ? e.memberIds : [e.memberId];
         mIds.forEach(id => {
           const cId = getCanonicalMemberId(id);
-          if (cId) {
-            scores[cId] = (scores[cId] || 0) + (Number(e.points) || 0);
-          }
+          if (cId) scores[cId] = (scores[cId] || 0) + (Number(e.points) || 0);
         });
       });
 
-      // Find winner(s) of the month
-      let max = 0;
-      let winnerId = null;
+      // Determine Winner(s)
+      let maxScore = 0;
+      let topIds = [];
       Object.entries(scores).forEach(([id, score]) => {
-        if (score > max) {
-          max = score;
-          winnerId = id;
+        if (score > maxScore) {
+          maxScore = score;
+          topIds = [id];
+        } else if (score === maxScore && maxScore > 0) {
+          topIds.push(id);
         }
       });
-      if (winnerId && max > 0) {
-        winners[mStr] = { winnerId, score: max };
+      
+      if (topIds.length > 0) {
+        winners[mStr] = { winnerIds: topIds, score: maxScore };
       }
     });
     
-    // Map to actual awards if current member is the winner
     return Object.entries(winners)
-      .filter(([month, data]) => isThisMember(data.winnerId))
-      .map(([month, data]) => ({
-        month,
-        score: data.score,
-        name: new Date(month + '-02').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-        title: 'Conquistador del Mes'
-      }))
+      .filter(([month, data]) => data.winnerIds.some(id => isThisMember(id)))
+      .map(([month, data]) => {
+        let monthName = month;
+        try {
+          const [y, m] = month.split('-');
+          monthName = new Date(y, parseInt(m) - 1, 2).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        } catch(e) {}
+        
+        return {
+          month,
+          score: data.score,
+          name: monthName,
+          title: 'Conquistador del Mes'
+        };
+      })
       .sort((a, b) => b.month.localeCompare(a.month));
   })();
 
