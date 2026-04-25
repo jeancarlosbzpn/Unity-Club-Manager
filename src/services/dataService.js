@@ -102,6 +102,8 @@ export const dataService = {
 
         // LAYER 1: Collections
         console.log(`🔍 Intentando cargar '${key}' desde colecciones Cloud...`);
+        const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'memberProgress', 'classRequirements', 'requirementSections', 'firstAidItems', 'uniformInspections', 'memberUniforms'];
+        
         for (const colName of uniqueCandidates) {
           try {
             const colRef = collection(db, colName);
@@ -109,6 +111,11 @@ export const dataService = {
             if (!querySnapshot.empty) {
               console.log(`✅ ÉXITO: ${querySnapshot.size} elementos de '${key}' cargados desde colección: ${colName}`);
               return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            } else if (COLLECTION_KEYS.includes(key)) {
+              // IMPORTANT: If it's a collection-tracked key and the collection is EMPTY,
+              // it means there are actually 0 items. DO NOT fall back to Master Doc ghosts.
+              console.log(`ℹ️ La colección '${colName}' está vacía. Retornando lista vacía.`);
+              return [];
             }
           } catch (e) {
             if (e.code === 'permission-denied') {
