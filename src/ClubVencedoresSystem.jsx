@@ -23572,6 +23572,46 @@ const MemberPortal = ({
   // UNIFIED POINTS: Merits + Legacy Points
   const displayTotalPoints = myScore + totalPoints;
 
+  // CURRENT MONTH POINTS CALCULATION
+  const currentMonthStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+  
+  const currentMonthName = new Date().toLocaleDateString('es-ES', { month: 'long' });
+
+  const monthPoints = myPointsRecords
+    .filter(p => p.month === currentMonthStr)
+    .reduce((sum, p) => {
+      let monthSum = Number(p.value) || 0;
+      if (p.saturdays && typeof p.saturdays === 'object') {
+        Object.values(p.saturdays).forEach(day => {
+          if (day && typeof day === 'object') {
+            monthSum += (Number(day.punctuality) || 0) +
+                        (Number(day.bible) || 0) +
+                        (Number(day.uniform) || 0) +
+                        (Number(day.discipline) || 0) +
+                        (Number(day.homework) || 0) +
+                        (Number(day.worshipFriday) || 0) +
+                        (Number(day.worshipSaturday) || 0) +
+                        (Number(day.sabbathSchool) || 0) +
+                        (Number(day.additional) || 0);
+          }
+        });
+      }
+      return sum + monthSum;
+    }, 0);
+
+  const monthMerits = meritEntries
+    .filter(e => {
+      const isMember = isThisMember(e.memberId) || (e.memberIds && e.memberIds.some(id => isThisMember(id)));
+      const isCurrentMonth = e.date && String(e.date).startsWith(currentMonthStr);
+      return isMember && isCurrentMonth;
+    })
+    .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
+
+  const displayMonthPoints = monthPoints + monthMerits;
+
   // Financial Stats
   const myTransactions = transactions.filter(t => isThisMember(t.memberId));
   const totalPaid = myTransactions
@@ -23640,14 +23680,20 @@ const MemberPortal = ({
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos Totales</div>
           </div>
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
+              <Star className="w-5 h-5 text-orange-500" />
+            </div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">{displayMonthPoints}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos de {currentMonthName}</div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
               <CalendarCheck className="w-5 h-5 text-blue-500" />
             </div>
             <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRate}%</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia</div>
           </div>
-
-          {/* Secondary Stats */}
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
               <DollarSign className="w-5 h-5 text-emerald-500" />
@@ -23655,7 +23701,8 @@ const MemberPortal = ({
             <div className="text-2xl font-black tracking-tighter text-gray-900">${totalPaid}</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Pagado</div>
           </div>
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden">
+
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden col-span-2">
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
               <BookOpen className="w-5 h-5 text-indigo-500" />
             </div>
