@@ -17,8 +17,9 @@ const sanitizeData = (obj) => {
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const val = obj[key];
-        // Strip large base64 from Firestore to prevent 1MB limit issues
-        if (typeof val === 'string' && val.length > 5000 && val.startsWith('data:image')) {
+        // Strip very large base64 from Firestore to prevent 1MB limit issues
+        // Increased from 5,000 to 100,000 (~75KB) to allow signatures and member photos
+        if (typeof val === 'string' && val.length > 100000 && val.startsWith('data:image')) {
           newObj[key] = null;
           continue;
         }
