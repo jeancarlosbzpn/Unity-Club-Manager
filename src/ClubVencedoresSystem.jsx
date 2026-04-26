@@ -6874,7 +6874,7 @@ const ClubVencedoresSystem = () => {
             </div>
           )
         }
-      </div >
+      </div>
     );
   };
 
@@ -8494,11 +8494,11 @@ const ClubVencedoresSystem = () => {
 
     let certificateText = "";
     if (advancedOption === 'advanced-only') {
-      certificateText = `Por haber cumplido satisfactoriamente los requisitos exigidos por el plan de estudios del Club de Conquistadores para la clase avanzada de < strong > ${className}</strong >, demostrando fidelidad, esfuerzo y compromiso con los ideales del Club.`;
+      certificateText = `Por haber cumplido satisfactoriamente los requisitos exigidos por el plan de estudios del Club de Conquistadores para la clase avanzada de <strong>${className}</strong>, demostrando fidelidad, esfuerzo y compromiso con los ideales del Club.`;
     } else if (advancedOption === 'both' || isAdvanced) {
-      certificateText = `Por haber cumplido satisfactoriamente los requisitos exigidos por el plan de estudios del Club de Conquistadores para la clase de < strong > ${className}</strong > y su parte avanzada, demostrando fidelidad, esfuerzo y compromiso con los ideales del Club.`;
+      certificateText = `Por haber cumplido satisfactoriamente los requisitos exigidos por el plan de estudios del Club de Conquistadores para la clase de <strong>${className}</strong> y su parte avanzada, demostrando fidelidad, esfuerzo y compromiso con los ideales del Club.`;
     } else {
-      certificateText = `Por haber cumplido satisfactoriamente los requisitos exigidos por el plan de estudios del Club de Conquistadores para la clase de < strong > ${className}</strong >, demostrando fidelidad, esfuerzo y compromiso con los ideales del Club.`;
+      certificateText = `Por haber cumplido satisfactoriamente los requisitos exigidos por el plan de estudios del Club de Conquistadores para la clase de <strong>${className}</strong>, demostrando fidelidad, esfuerzo y compromiso con los ideales del Club.`;
     }
 
     let ribbonSrc = null;
@@ -8532,7 +8532,7 @@ const ClubVencedoresSystem = () => {
   // Helper: Generate HTML for a single certificate
   const getCertificateHTML = (data) => {
     return `
-  < div class="container" style = "position: relative; width: 11in; height: 8.5in; overflow: hidden; page-break-after: always;" >
+    <div class="container" style="position: relative; width: 11in; height: 8.5in; overflow: hidden; page-break-after: always;">
         <img src="${data.bgImage}" class="bg-image" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;" />
         
         <div class="content-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;">
@@ -8548,7 +8548,7 @@ const ClubVencedoresSystem = () => {
             
             <!-- Grade -->
             <div class="grade-container" style="position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%); text-align: center; color: white; font-weight: 900; font-size: 14pt; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; z-index: 10;">
-              <span style="margin-top: -2px;">${data.grade} Pts</span>
+              ${data.grade > 0 ? `<span style="margin-top: -2px;">${data.grade} Pts</span>` : ''}
             </div>
             
             <!-- Director Signature -->
@@ -8569,7 +8569,7 @@ const ClubVencedoresSystem = () => {
             <!-- Highest Club Grade Ribbon -->
             ${data.isHighestClubGrade ? `<img src="${data.RibbonMaxClub}" class="highest-club-ribbon" style="position: absolute; top: 80%; transform: translateY(-50%); left: 30px; width: 150px; height: auto; z-index: 20;" />` : ''}
         </div>
-      </div >
+      </div>
   `;
   };
 
@@ -8580,7 +8580,7 @@ const ClubVencedoresSystem = () => {
 
     const printWindow = window.open('', '', 'width=1100,height=850');
     printWindow.document.write(`
-  < html >
+    <html>
         <head>
           <title>Certificado de Investidura-${member.firstName} ${member.lastName}</title>
           <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -8592,7 +8592,7 @@ const ClubVencedoresSystem = () => {
             window.onload = function() { setTimeout(function() { window.print(); }, 1000); }
           </script>
         </body>
-      </html >
+    </html>
   `);
     printWindow.document.close();
   };
@@ -18784,7 +18784,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         );
                                       })()}
                                     </div>
-                                  </div >
+                                  </div>
                                 </>
                               );
                             })()}
