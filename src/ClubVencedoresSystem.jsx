@@ -472,6 +472,7 @@ const ClubVencedoresSystem = () => {
   const [memberViewMode, setMemberViewMode] = useState('table'); // 'table' or 'grid'
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'saving', 'saved', 'error'
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Reminders State
   const [reminders, setReminders] = useState([]);
@@ -627,17 +628,19 @@ const ClubVencedoresSystem = () => {
     }
   }, [darkMode]);
 
-  // PREVENT ACCIDENTAL RELOADS/CLOSES
+  // PREVENT ACCIDENTAL RELOADS/CLOSES (ONLY IF UNSAVED)
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = ''; // Chrome requires this to be set
-      return '';
+      if (hasUnsavedChanges || syncStatus === 'saving' || syncStatus === 'error') {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires this to be set
+        return '';
+      }
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
+  }, [hasUnsavedChanges, syncStatus]);
 
   // RESTORE SESSION
   useEffect(() => {
@@ -2223,6 +2226,7 @@ const ClubVencedoresSystem = () => {
         const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await saveToElectron(cleanData);
         setSyncStatus('saved');
+        setHasUnsavedChanges(false);
         
         // Return to idle after a few seconds
         setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
@@ -2232,10 +2236,13 @@ const ClubVencedoresSystem = () => {
       }
     };
 
+    if (dataLoaded) {
+      setHasUnsavedChanges(true);
+    }
     const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
-  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus]);
+  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus, dataLoaded]);
 
   // ========================================
 
