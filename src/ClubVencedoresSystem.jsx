@@ -1867,7 +1867,7 @@ const ClubVencedoresSystem = () => {
     if (isManual) setIsSyncingPortal(true);
     try {
       console.log(`${isManual ? '🖱️' : '🚀'} Iniciando sincronización HÍBRIDA (Maestro + Pantalla)...`);
-      const keysToMigrate = ['members', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+      const keysToMigrate = ['members', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'uniformInspections', 'homeworks', 'memberHomeworkStatus', 'memberProgress'];
       
       // Load all Master Members FIRST for identity mapping
       const cloudMembers = await dataService.readData('members') || [];
@@ -10356,6 +10356,10 @@ const ClubVencedoresSystem = () => {
         if (allData.disciplineRecords) setDisciplineRecords(allData.disciplineRecords);
         if (allData.attendanceRecords) setAttendanceRecords(allData.attendanceRecords);
         if (allData.units) setUnits(allData.units);
+        if (allData.uniformInspections) setUniformInspections(allData.uniformInspections);
+        if (allData.homeworks) setHomeworks(allData.homeworks);
+        if (allData.memberHomeworkStatus) setMemberHomeworkStatus(allData.memberHomeworkStatus);
+        if (allData.memberProgress) setMemberProgress(allData.memberProgress);
         
         setSyncStatus('idle');
         return true;

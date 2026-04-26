@@ -176,7 +176,7 @@ export const dataService = {
 
       // Collection-based handling for shared data
       if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
-        const batch = writeBatch(db);
+        const operations = [];
         const colName = STORAGE_PREFIX + key;
         
         // Sync deletions: find docs in cloud that are not in incoming array
@@ -189,7 +189,7 @@ export const dataService = {
           // Type-agnostic comparison: force everything to string
           if (!incomingIds.includes(String(docSnap.id))) {
             console.log(`🗑️ Cloud Sync: Deleting ghost record '${docSnap.id}' from '${colName}'`);
-            batch.delete(docSnap.ref);
+            operations.push({ type: 'delete', ref: docSnap.ref });
           }
         });
 
@@ -197,7 +197,19 @@ export const dataService = {
         for (const item of data) {
           const itemId = String(item.id || item.username || (item.firstName ? (item.firstName + '_' + item.lastName) : Date.now().toString() + Math.random().toString(36).substring(2, 7)));
           const itemRef = doc(db, colName, itemId);
-          batch.set(itemRef, sanitizeData(item));
+          operations.push({ type: 'set', ref: itemRef, data: sanitizeData(item) });
+        }
+
+        // Process in chunks of 450 to stay safely under Firestore's 500 limit
+        const chunkSize = 450;
+        for (let i = 0; i < operations.length; i += chunkSize) {
+          const chunk = operations.slice(i, i + chunkSize);
+          const chunkBatch = writeBatch(db);
+          for (const op of chunk) {
+            if (op.type === 'delete') chunkBatch.delete(op.ref);
+            else if (op.type === 'set') chunkBatch.set(op.ref, op.data);
+          }
+          await chunkBatch.commit();
         }
 
         if (!skipMaster) {
@@ -212,8 +224,6 @@ export const dataService = {
           }
         }
 
-        await batch.commit();
-        
         // Also save to central doc for redundancy/legacy compatibility (UNLESS skipMaster)
         if (!skipMaster) {
           try {
