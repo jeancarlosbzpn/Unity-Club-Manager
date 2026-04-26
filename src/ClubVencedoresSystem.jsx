@@ -22949,6 +22949,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Todos los cambios se sincronizan automáticamente en tu base de datos de Firebase</p>
                         </div>
                       </div>
+                    </div>
+
                     {/* Backup & Restore */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -23020,7 +23022,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
-                  </div>
 
                   {/* Firebase Cloud Sync-Configured */}
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg shadow-md p-6 border-2 border-blue-200 dark:border-blue-800">
@@ -24092,6 +24093,7 @@ const MemberPortal = ({
         </footer>
       </div>
     </div>
+  </div>
   );
 };
 
