@@ -481,10 +481,46 @@ const ClubVencedoresSystem = () => {
     title: '',
     date: '',
     time: '',
-    notificationTime: '08:00', // Added for visibility control
-    recurrence: 'none', // 'none', 'daily', 'weekly', 'monthly', 'yearly'
-    description: ''
+    notificationTime: '08:00',
+    recurrence: 'none',
+    description: '',
+    target: 'Global',
+    unitId: ''
   });
+
+  const mainContentRef = useRef(null);
+  const [memberListScrollPos, setMemberListScrollPos] = useState(0);
+
+  // Reset scroll to top when changing modules
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [activeModule]);
+
+  // Handle Scroll Save/Restore for Members Module (Sub-views)
+  useEffect(() => {
+    if (activeModule === 'members') {
+      if (showForm || viewingMember) {
+        // Entering Form or Profile
+        if (mainContentRef.current) {
+          // Save scroll ONLY if we are currently at the list (not already at 0)
+          if (mainContentRef.current.scrollTop > 0) {
+            setMemberListScrollPos(mainContentRef.current.scrollTop);
+          }
+          mainContentRef.current.scrollTop = 0;
+        }
+      } else {
+        // Returning to List
+        if (mainContentRef.current && memberListScrollPos > 0) {
+          const savedPos = memberListScrollPos;
+          setTimeout(() => {
+            if (mainContentRef.current) mainContentRef.current.scrollTop = savedPos;
+          }, 100);
+        }
+      }
+    }
+  }, [showForm, viewingMember]);
   // Tab System State
   const [tabs, setTabs] = useState([{ id: 1, module: 'dashboard', label: 'Inicio', icon: Home }]);
   const [activeTabId, setActiveTabId] = useState(1);
@@ -10763,7 +10799,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto">
+        <div ref={mainContentRef} className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
 
 
