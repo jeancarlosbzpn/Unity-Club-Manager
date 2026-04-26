@@ -18,8 +18,9 @@ const sanitizeData = (obj) => {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const val = obj[key];
         // Strip very large base64 from Firestore to prevent 1MB limit issues
-        // Increased from 5,000 to 100,000 (~75KB) to allow signatures and member photos
-        if (typeof val === 'string' && val.length > 100000 && val.startsWith('data:image')) {
+        // Increased to 500,000 (~375KB) to accommodate signatures and photos
+        if (typeof val === 'string' && val.length > 500000 && val.startsWith('data:image')) {
+          console.warn(`⚠️ La imagen en el campo '${key}' es demasiado grande (${Math.round(val.length/1024)}KB) y ha sido omitida para evitar errores de Firestore.`);
           newObj[key] = null;
           continue;
         }
