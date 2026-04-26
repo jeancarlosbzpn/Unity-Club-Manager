@@ -488,39 +488,6 @@ const ClubVencedoresSystem = () => {
     unitId: ''
   });
 
-  const mainContentRef = useRef(null);
-  const [memberListScrollPos, setMemberListScrollPos] = useState(0);
-
-  // Reset scroll to top when changing modules
-  useEffect(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollTop = 0;
-    }
-  }, [activeModule]);
-
-  // Handle Scroll Save/Restore for Members Module (Sub-views)
-  useEffect(() => {
-    if (activeModule === 'members') {
-      if (showForm || viewingMember) {
-        // Entering Form or Profile
-        if (mainContentRef.current) {
-          // Save scroll ONLY if we are currently at the list (not already at 0)
-          if (mainContentRef.current.scrollTop > 0) {
-            setMemberListScrollPos(mainContentRef.current.scrollTop);
-          }
-          mainContentRef.current.scrollTop = 0;
-        }
-      } else {
-        // Returning to List
-        if (mainContentRef.current && memberListScrollPos > 0) {
-          const savedPos = memberListScrollPos;
-          setTimeout(() => {
-            if (mainContentRef.current) mainContentRef.current.scrollTop = savedPos;
-          }, 100);
-        }
-      }
-    }
-  }, [showForm, viewingMember]);
   // Tab System State
   const [tabs, setTabs] = useState([{ id: 1, module: 'dashboard', label: 'Inicio', icon: Home }]);
   const [activeTabId, setActiveTabId] = useState(1);
@@ -1055,6 +1022,40 @@ const ClubVencedoresSystem = () => {
   // Profile View State
   const [viewingMember, setViewingMember] = useState(null);
   const [lastActiveModule, setLastActiveModule] = useState('dashboard');
+
+  const mainContentRef = useRef(null);
+  const [memberListScrollPos, setMemberListScrollPos] = useState(0);
+
+  // Reset scroll to top when changing modules
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTop = 0;
+    }
+  }, [activeModule]);
+
+  // Handle Scroll Save/Restore for Members Module (Sub-views)
+  useEffect(() => {
+    if (activeModule === 'members') {
+      if (showForm || viewingMember) {
+        // Entering Form or Profile
+        if (mainContentRef.current) {
+          // Save scroll ONLY if we are currently at the list (not already at 0)
+          if (mainContentRef.current.scrollTop > 0) {
+            setMemberListScrollPos(mainContentRef.current.scrollTop);
+          }
+          mainContentRef.current.scrollTop = 0;
+        }
+      } else {
+        // Returning to List
+        if (mainContentRef.current && memberListScrollPos > 0) {
+          const savedPos = memberListScrollPos;
+          setTimeout(() => {
+            if (mainContentRef.current) mainContentRef.current.scrollTop = savedPos;
+          }, 100);
+        }
+      }
+    }
+  }, [showForm, viewingMember]);
 
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
