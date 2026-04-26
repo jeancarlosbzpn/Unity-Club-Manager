@@ -415,6 +415,14 @@ const ClubVencedoresSystem = () => {
           updatedUser.position = profile.position;
           changed = true;
         }
+        if (profile.positions && JSON.stringify(profile.positions) !== JSON.stringify(currentUser.positions)) {
+          updatedUser.positions = profile.positions;
+          changed = true;
+        }
+        if (profile.instructorClass && profile.instructorClass !== currentUser.instructorClass) {
+          updatedUser.instructorClass = profile.instructorClass;
+          changed = true;
+        }
         // Force role from DB for non-masters, or keep for masters
         if (!isMaster && profile.role && profile.role !== currentUser.role) {
           updatedUser.role = profile.role;
@@ -7233,7 +7241,14 @@ const ClubVencedoresSystem = () => {
       Object.entries(memberObj.directiveRoles).forEach(([club, roles]) => {
         roles.forEach(r => {
           if ((r.position === 'Instructor' || r.position === 'Class Instructor') && r.instructorClass) {
-            assignedClasses.push({ club, className: r.instructorClass });
+            // Find the label for this class value if possible
+            let label = r.instructorClass;
+            const pf = pathfinderClasses.find(c => c.value === r.instructorClass);
+            const av = aventurerosClasses.find(c => c.value === r.instructorClass);
+            if (pf) label = pf.label;
+            else if (av) label = av.label;
+
+            assignedClasses.push({ club, className: r.instructorClass, label });
           }
         });
       });
@@ -7241,11 +7256,13 @@ const ClubVencedoresSystem = () => {
 
     // Also check instructor class assigned directly in user profile
     if (currentUser.instructorClass) {
-      // Find which club this class belongs to (Aventureros or Conquistadores)
-      const isAventurero = aventurerosClasses.some(c => c.value === currentUser.instructorClass);
+      const pf = pathfinderClasses.find(c => c.value === currentUser.instructorClass);
+      const av = aventurerosClasses.find(c => c.value === currentUser.instructorClass);
+      
       assignedClasses.push({ 
-        club: isAventurero ? 'aventureros' : 'conquistadores', 
-        className: currentUser.instructorClass 
+        club: av ? 'aventureros' : 'conquistadores', 
+        className: currentUser.instructorClass,
+        label: pf ? pf.label : (av ? av.label : currentUser.instructorClass)
       });
     }
 
@@ -7253,7 +7270,7 @@ const ClubVencedoresSystem = () => {
     
     const filteredHomeworks = homeworks.filter(h => {
       if (canManageAll) return true;
-      return assignedClasses.some(ac => ac.club === h.club && ac.className === h.className);
+      return assignedClasses.some(ac => ac.club === h.club && (ac.className === h.className || ac.label === h.className));
     });
 
     const handleSaveHomework = () => {
@@ -7286,7 +7303,7 @@ const ClubVencedoresSystem = () => {
             <button 
               onClick={() => {
                 if (isInstructor && assignedClasses.length > 0) {
-                  setHomeworkFormData({ ...homeworkFormData, club: assignedClasses[0].club, className: assignedClasses[0].className });
+                  setHomeworkFormData({ ...homeworkFormData, club: assignedClasses[0].club, className: assignedClasses[0].label });
                 }
                 setShowHomeworkForm(true);
               }}
@@ -7340,17 +7357,17 @@ const ClubVencedoresSystem = () => {
                   disabled={!canManageAll && isInstructor && assignedClasses.length <= 1}
                   onChange={e => setHomeworkFormData({...homeworkFormData, className: e.target.value})}
                 >
-                  {homeworkFormData.club === 'aventureros' && ['Abejas Laboriosas', 'Rayitos de Sol', 'Constructores', 'Manos Ayudadoras']
-                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'aventureros' && ac.className === c))
-                    .map(c => <option key={c} value={c}>{c}</option>)}
+                  {homeworkFormData.club === 'aventureros' && aventurerosClasses
+                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'aventureros' && (ac.className === c.value || ac.label === c.label)))
+                    .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                   
-                  {homeworkFormData.club === 'conquistadores' && ['Amigo', 'Compañero', 'Explorador', 'Orientador', 'Viajero', 'Guía']
-                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'conquistadores' && ac.className === c))
-                    .map(c => <option key={c} value={c}>{c}</option>)}
+                  {homeworkFormData.club === 'conquistadores' && pathfinderClasses.slice(0, 6)
+                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'conquistadores' && (ac.className === c.value || ac.label === c.label)))
+                    .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                   
-                  {homeworkFormData.club === 'guiasMayores' && ['Guía Mayor', 'Guía Mayor Master', 'Guía Mayor Master Avanzado']
-                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'guiasMayores' && ac.className === c))
-                    .map(c => <option key={c} value={c}>{c}</option>)}
+                  {homeworkFormData.club === 'guiasMayores' && pathfinderClasses.slice(6)
+                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'guiasMayores' && (ac.className === c.value || ac.label === c.label)))
+                    .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                 </select>
               </div>
             </div>
