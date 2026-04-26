@@ -23852,17 +23852,19 @@ const MemberPortal = ({
       .sort((a, b) => b.date.localeCompare(a.date));
       
     const lastInspection = myInspections[0];
-    if (!lastInspection) return null;
-
     const applicableItems = getApplicableUniformItems(member);
-    const missingIds = lastInspection.itemsMissing || [];
+    
+    // Si no ha sido inspeccionado, asumimos que le falta todo el uniforme correspondiente
+    const missingIds = lastInspection ? (lastInspection.itemsMissing || []) : applicableItems.map(i => i.id);
     
     const itemsMissing = applicableItems.filter(item => missingIds.includes(item.id));
     const itemsOwned = applicableItems.filter(item => !missingIds.includes(item.id));
     const totalNeeded = itemsMissing.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
     
+    if (applicableItems.length === 0) return null;
+    
     return {
-      lastInspection,
+      lastInspection: lastInspection || null,
       itemsMissing,
       itemsOwned,
       totalNeeded
@@ -24059,13 +24061,17 @@ const MemberPortal = ({
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Última Evaluación</div>
                   <div className="text-sm font-bold text-gray-900">
-                    {new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {myUniformStats.lastInspection ? new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Nunca evaluado'}
                   </div>
                 </div>
-                {myUniformStats.itemsMissing.length === 0 ? (
-                  <div className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Completo</div>
+                {myUniformStats.lastInspection ? (
+                   myUniformStats.itemsMissing.length === 0 ? (
+                    <div className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Completo</div>
+                  ) : (
+                    <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
+                  )
                 ) : (
-                  <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
+                   <div className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full">Pendiente</div>
                 )}
               </div>
 
@@ -24112,7 +24118,7 @@ const MemberPortal = ({
         )}
 
         {/* Homework Section */}
-        {myHomeworks.length > 0 && (
+        {true && (
           <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-500">
             <div className="flex items-center gap-2 px-1">
               <ClipboardCheck className="w-4 h-4 text-red-600" />
@@ -24120,25 +24126,32 @@ const MemberPortal = ({
             </div>
             
             <div className="grid grid-cols-1 gap-3">
-              {myHomeworks.map(hw => (
-                <div key={hw.id} className={`p-4 rounded-3xl border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-black text-sm ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
-                        {hw.dueDate && <span className="text-[9px] font-bold text-red-500 uppercase">Vence: {hw.dueDate}</span>}
-                      </div>
-                      <p className="text-xs text-gray-500 line-clamp-2">{hw.description}</p>
-                    </div>
-                    <button 
-                      onClick={() => handleToggleHomework(hw.id)}
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                  </div>
+              {myHomeworks.length === 0 ? (
+                <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
+                  <ClipboardList className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">No hay tareas asignadas</p>
                 </div>
-              ))}
+              ) : (
+                myHomeworks.map(hw => (
+                  <div key={hw.id} className={`p-4 rounded-3xl border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className={`font-black text-sm ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
+                          {hw.dueDate && <span className="text-[9px] font-bold text-red-500 uppercase">Vence: {hw.dueDate}</span>}
+                        </div>
+                        <p className="text-xs text-gray-500 line-clamp-2">{hw.description}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleToggleHomework(hw.id)}
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </section>
         )}
