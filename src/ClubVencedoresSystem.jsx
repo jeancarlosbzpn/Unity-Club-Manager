@@ -1026,36 +1026,40 @@ const ClubVencedoresSystem = () => {
   const mainContentRef = useRef(null);
   const [memberListScrollPos, setMemberListScrollPos] = useState(0);
 
-  // Reset scroll to top when changing modules
-  useEffect(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollTop = 0;
-    }
-  }, [activeModule]);
-
   // Handle Scroll Save/Restore for Members Module (Sub-views)
   useEffect(() => {
     if (activeModule === 'members') {
       if (showForm || viewingMember) {
-        // Entering Form or Profile
+        // Entering Form or Profile: Save current position and scroll to top
         if (mainContentRef.current) {
-          // Save scroll ONLY if we are currently at the list (not already at 0)
+          // Only save if it's > 0 (to avoid overwriting with 0 during transition)
           if (mainContentRef.current.scrollTop > 0) {
             setMemberListScrollPos(mainContentRef.current.scrollTop);
           }
-          mainContentRef.current.scrollTop = 0;
+          
+          // Force scroll to top with multiple attempts to beat browser autofocus/scroll-persistence
+          const toTop = () => { if (mainContentRef.current) mainContentRef.current.scrollTop = 0; };
+          toTop();
+          setTimeout(toTop, 10);
+          setTimeout(toTop, 100);
         }
       } else {
-        // Returning to List
-        if (mainContentRef.current && memberListScrollPos > 0) {
-          const savedPos = memberListScrollPos;
-          setTimeout(() => {
-            if (mainContentRef.current) mainContentRef.current.scrollTop = savedPos;
-          }, 100);
+        // Returning to List: Restore position
+        if (mainContentRef.current) {
+          const targetPos = memberListScrollPos;
+          const restore = () => { if (mainContentRef.current) mainContentRef.current.scrollTop = targetPos; };
+          
+          // Wait slightly longer for the list to re-render
+          restore();
+          setTimeout(restore, 50);
+          setTimeout(restore, 250);
         }
       }
+    } else {
+      // Clear saved position when leaving the members module entirely
+      setMemberListScrollPos(0);
     }
-  }, [showForm, viewingMember]);
+  }, [showForm, viewingMember, activeModule]);
 
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
