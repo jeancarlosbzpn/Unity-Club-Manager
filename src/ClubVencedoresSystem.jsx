@@ -8447,6 +8447,8 @@ const ClubVencedoresSystem = () => {
     };
 
     const SignatureDirector = members.find(m =>
+      m.position === 'Director' ||
+      (m.positions && m.positions.includes('Director')) ||
       m.directiveRoles?.conquistadores?.some(r => r.position === 'Director') ||
       m.directiveRoles?.aventureros?.some(r => r.position === 'Director') ||
       m.directiveRoles?.guiasMayores?.some(r => r.position === 'Director')
@@ -8645,40 +8647,64 @@ const ClubVencedoresSystem = () => {
           <title>Certificados de Investidura-Masivo</title>
           <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
           <style>@page { size: 11in 8.5in; margin: 0; } body { margin: 0; padding: 0; }</style>
-        </head>
-        <body>
-          ${combinedHTML}
-          <script>
-            window.onload = function() { setTimeout(function() { window.print(); }, 1500); }
-          </script>
-        </body>
-      </html >
-  `);
-    printWindow.document.close();
-  };
+  // Helper for certificate styles to avoid repetition
+  const getCertificateStyles = (palette) => `
+    @media print {
+      @page { size: 11in 8.5in; margin: 0; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page-break { page-break-after: always; }
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: white; }
+    body { font-family: 'Montserrat', sans-serif; }
+    .certificate-container { width: 11in; height: 8.5in; max-width: 11in; max-height: 8.5in; background: #fafafa; display: flex; overflow: hidden; position: relative; page-break-after: always; margin: 0 auto; }
+    .sidebar { width: 20%; height: 100%; background-color: #f3f4f6; display: flex; flex-direction: column; }
+    .geo-block { width: 100%; aspect-ratio: 1/1; position: relative; overflow: hidden; }
+    .block-1 { background: conic-gradient(from 90deg, ${palette.dark} 0 90deg, ${palette.secondary} 90deg 180deg, ${palette.dark} 180deg 270deg, ${palette.secondary} 270deg 360deg); background-size: 50% 50%; }
+    .block-2 { background: repeating-radial-gradient(circle at 0 100%, transparent 0, transparent 10px, ${palette.primary} 10px, ${palette.primary} 20px); background-color: white; }
+    .block-3 { background-color: ${palette.secondary}; position: relative; }
+    .block-3::after { content: ''; position: absolute; width: 50%; height: 50%; background: #fff; border-radius: 50%; top: 25%; left: 25%; }
+    .unit-watermark { position: absolute; top: 50%; left: 55%; transform: translate(-50%, -50%); width: 85%; height: 85%; opacity: 0.05; z-index: 0; object-fit: contain; pointer-events: none; }
+    .block-4 { background-color: ${palette.dark}; background-image: linear-gradient(45deg, ${palette.lighter} 25%, transparent 25%, transparent 75%, ${palette.lighter} 75%, ${palette.lighter}), linear-gradient(45deg, ${palette.lighter} 25%, transparent 25%, transparent 75%, ${palette.lighter} 75%, ${palette.lighter}); background-size: 20px 20px; background-position: 0 0, 10px 10px; }
+    .block-5 { background: radial-gradient(circle at 100% 0%, ${palette.accent} 50%, transparent 50%); background-color: ${palette.darkest}; }
+    .sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(10, 1fr); height: 100%; }
+    .span-2 { grid-column: span 2; }
+    .span-row-2 { grid-row: span 2; }
+    .main-content { flex: 1; height: 100%; padding: 30px 60px 30px 40px; display: flex; flex-direction: column; justify-content: space-between; background: white; box-sizing: border-box; }
+    .header-top { display: flex; align-items: center; margin-bottom: 20px; }
+    .header-info { margin-left: 15px; }
+    .company-name { font-size: 10pt; font-weight: 700; letter-spacing: 1px; color: #6b7280; text-transform: uppercase; }
+    .main-title { font-weight: 900; font-size: 36pt; line-height: 1.1; color: ${palette.primary}; text-transform: uppercase; }
+    .recipient-section { margin: 20px 0; }
+    .recipient-label { font-size: 14pt; color: #4b5563; margin-bottom: 15px; }
+    .recipient-name { font-family: 'Roboto Slab', serif; font-weight: 700; font-size: 40pt; color: ${palette.dark}; border-bottom: 3px solid #e5e7eb; padding-bottom: 10px; display: inline-block; width: 100%; }
+    .body-text { font-size: 14pt; color: #374151; line-height: 1.6; max-width: 90%; }
+    .footer-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; }
+    .signature-area { display: flex; gap: 60px; }
+    .sig-block { display: flex; flex-direction: column; }
+    .sig-line { border-bottom: 1px solid #1f2937; width: 200px; margin-bottom: 8px; }
+    .sig-label { font-size: 10pt; color: #4b5563; font-weight: 500; }
+    .sig-img-container { height: 80px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 5px; }
+    .sig-img { max-height: 100%; max-width: 180px; }
+    .date-val { font-size: 14pt; font-weight: 700; color: ${palette.primary}; border-bottom: 1px solid #1f2937; display: inline-block; min-width: 150px; text-align: right; }
+    .badges-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    .id-badge, .website { background: ${palette.primary}; color: white; padding: 10px 20px; font-size: 10pt; font-weight: 500; border-radius: 4px; }
+    .bg-blue { background-color: ${palette.primary}; }
+    .bg-pink { background-color: ${palette.dark}; }
+    .bg-cyan { background-color: ${palette.accentLight}; }
+    .bg-light-blue { background-color: ${palette.light}; }
+  `;
 
 
 
 
 
-  // Helper to calculate grade from Qualifications module
-  // Helper to calculate grade from Qualifications module OR use manual member grade
   const calculateMemberGrade = (memberId, year) => {
-    // 1. Try to find the member to check for manual grades first
     const member = members.find(m => m.id === memberId);
     if (member) {
-      // If Advanced Only, return advanced grade
       if (member.advancedClassOption === 'advanced-only' && member.advancedGrade) {
         return parseInt(member.advancedGrade);
       }
-      // If Both, we might need a way to know WHICH one is requested, but for general 'grade' usually progressive comes first?
-      // Actually, the prompt implies we generate certificates based on selection.
-      // If we are generating for "Progressive", return regularGrade.
-      // If we are generating for "Advanced", return advancedGrade.
-
-      // However, this helper is used by the table to show "Grade".
-      // Let's stick to the existing logic for the table, but the certificate generation will pass the specific grade.
-
       if (member.regularGrade) return parseInt(member.regularGrade);
     }
 
@@ -8694,573 +8720,30 @@ const ClubVencedoresSystem = () => {
     }
     return progTotal;
   };
-  const generateCertificate = (member, monthYear, score, category = 'Conquistador') => {
-    // Dynamic styles based on category
-    const isDirectivo = category === 'Directivo';
 
-    // Find Director Signature
+  const generateCertificate = (member, monthYear, score, category = 'Conquistador', existingWindow = null) => {
+    const isDirectivo = category === 'Directivo';
     const SignatureDirector = members.find(m =>
+      m.position === 'Director' ||
+      (m.positions && m.positions.includes('Director')) ||
       m.directiveRoles?.conquistadores?.some(r => r.position === 'Director') ||
       m.directiveRoles?.aventureros?.some(r => r.position === 'Director') ||
       m.directiveRoles?.guiasMayores?.some(r => r.position === 'Director')
     )?.signature || null;
 
-    // Color Palette
     const palette = isDirectivo ? {
-      primary: '#b45309',   // Amber 700
-      secondary: '#d97706', // Amber 600
-      dark: '#92400e',      // Amber 800
-      light: '#fcd34d',     // Amber 300
-      lighter: '#fde68a',   // Amber 200
-      accent: '#f59e0b',    // Amber 500
-      accentLight: '#fbbf24', // Amber 400
-      darkest: '#451a03',   // Amber 950
-      bgLight: '#fffbeb'    // Amber 50
+      primary: '#b45309', secondary: '#d97706', dark: '#92400e', light: '#fcd34d', lighter: '#fde68a', accent: '#f59e0b', accentLight: '#fbbf24', darkest: '#451a03', bgLight: '#fffbeb'
     } : {
-      primary: '#b91c1c',
-      secondary: '#dc2626',
-      dark: '#991b1b',
-      light: '#fca5a5',
-      lighter: '#fecaca',
-      accent: '#ef4444',
-      accentLight: '#f87171',
-      darkest: '#7f1d1d',
-      bgLight: '#fef2f2'
+      primary: '#b91c1c', secondary: '#dc2626', dark: '#991b1b', light: '#fca5a5', lighter: '#fecaca', accent: '#ef4444', accentLight: '#f87171', darkest: '#7f1d1d', bgLight: '#fef2f2'
     };
 
-    const primaryColor = palette.primary;
-    const secondaryColor = palette.secondary;
-    const darkColor = palette.dark;
-    const ultraLightColor = palette.bgLight;
-    const lightBorderColor = palette.lighter;
-
-    const printWindow = window.open('', '', 'width=1100,height=850');
-    // Use AppLogo or Custom Club Logo
-    const logoSrc = clubSettings.logo || AppLogo;
-
-    // Find Unit Logo
     const unit = units.find(u => u.id === member.unitId);
     const unitLogoSrc = unit ? unit.logo : '';
-
-    const date = new Date();
-    const day = date.getDate();
-    // Capitalize month
-    let month = date.toLocaleString('es-ES', { month: 'long' });
-    month = month.charAt(0).toUpperCase() + month.slice(1);
-    const year = date.getFullYear();
-
-    // ID for verification (random enough for this demo)
     const certId = Math.floor(100000000000 + Math.random() * 900000000000);
-
-    printWindow.document.write(`
-  < html >
-        <head>
-          <title>Certificado-${member.firstName} ${member.lastName}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
-          <style>
-            @media print {
-              @page { size: 11in 8.5in; margin: 0; }
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            }
-            * { box-sizing: border-box; }
-            html, body {
-              width: 100%;
-              height: 100%;
-              margin: 0;
-              padding: 0;
-              background-color: white;
-            }
-            body {
-              font-family: 'Montserrat', sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              overflow: hidden; /* Prevent spillover */
-            }
-            .certificate-container {
-              width: 11in;
-              height: 8.5in;
-              max-width: 11in;
-              max-height: 8.5in;
-              background: #fafafa;
-              display: flex;
-              overflow: hidden;
-              position: relative;
-              page-break-after: always;
-            }
-            
-            /* SIDEBAR WITH GEOMETRIC PATTERNS */
-            .sidebar {
-              width: 20%;
-              height: 100%;
-              background-color: #f3f4f6;
-              display: flex;
-              flex-direction: column;
-            }
-            
-            .geo-block {
-              width: 100%;
-              aspect-ratio: 1/1;
-              position: relative;
-              overflow: hidden;
-            }
-
-            /* Pattern 1: Checkerboard / Stripes */
-            .p-stripes {
-              background: ${palette.secondary}; /* Red */
-              background-image: linear-gradient(45deg, ${palette.accent} 25%, transparent 25%, transparent 50%, ${palette.accent} 50%, ${palette.accent} 75%, transparent 75%, transparent);
-              background-size: 20px 20px;
-            }
-            
-            /* Pattern 2: Quarter Circles */
-            .p-circles {
-              background-color: ${palette.dark}; /* Dark Red */
-            }
-            .circle-acc {
-               position: absolute;
-               width: 100%; height: 100%;
-               border-radius: 50%;
-               border: 15px solid ${palette.light};
-               top: 20%; left: 20%;
-            }
-
-            /* Pattern 3: Triangles / Polygon */
-            .p-poly {
-              background-color: ${palette.primary};
-              clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
-            }
-            .tri-inner {
-              width: 100%; height: 100%;
-              background: ${palette.accentLight};
-              clip-path: polygon(0 0, 100% 0, 0 100%);
-            }
-            
-            /* Pattern Colors */
-            .bg-blue { background-color: ${palette.primary}; } /* Red 700 */
-            .bg-pink { background-color: ${palette.dark}; } /* Red 800 */
-            .bg-cyan { background-color: ${palette.accentLight}; } /* Red 400 */
-            .bg-light-blue { background-color: ${palette.light}; } /* Red 300 */
-            
-            /* Specific Geometric Constructions mimicking the reference */
-            
-            /* Top Block: Red/Dark Red stripes */
-            .block-1 {
-              background: conic-gradient(from 90deg, ${palette.dark} 0 90deg, ${palette.secondary} 90deg 180deg, ${palette.dark} 180deg 270deg, ${palette.secondary} 270deg 360deg);
-              background-size: 50% 50%;
-            }
-
-            /* Concentric Circles Block */
-            .block-2 {
-              background: repeating-radial-gradient(
-                circle at 0 100%,
-                transparent 0,
-                transparent 10px,
-                ${palette.primary} 10px,
-                ${palette.primary} 20px
-              );
-              background-color: white;
-            }
-            
-            /* Overlapping Circles Block */
-            .block-3 {
-              background-color: ${palette.secondary}; 
-              position: relative;
-            }
-            .block-3::after {
-              content: '';
-              position: absolute;
-              width: 50%; height: 50%;
-              background: #fff;
-              border-radius: 50%;
-              top: 25%; left: 25%;
-            }
-
-            .unit-watermark {
-              position: absolute;
-              top: 50%;
-              left: 55%; 
-              transform: translate(-50%, -50%);
-              width: 85%; /* Much larger */
-              height: 85%;
-              opacity: 0.05;
-              z-index: 0;
-              object-fit: contain;
-              pointer-events: none;
-            }
-
-             /* Cross Pattern */
-            .block-4 {
-               background-color: ${palette.dark};
-               background-image: 
-                 linear-gradient(45deg, ${palette.lighter} 25%, transparent 25%, transparent 75%, ${palette.lighter} 75%, ${palette.lighter}),
-                 linear-gradient(45deg, ${palette.lighter} 25%, transparent 25%, transparent 75%, ${palette.lighter} 75%, ${palette.lighter});
-               background-size: 20px 20px;
-               background-position: 0 0, 10px 10px;
-            }
-
-            /* Bottom Curves */
-            .block-5 {
-              background: radial-gradient(circle at 100% 0%, ${palette.accent} 50%, transparent 50%);
-              background-color: ${palette.darkest};
-            }
-
-            /* Styles for Sidebar Grid */
-            .sidebar-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              grid-template-rows: repeat(10, 1fr);
-              height: 100%;
-            }
-            .span-2 { grid-column: span 2; }
-            .span-row-2 { grid-row: span 2; }
-
-            /* MAIN CONTENT */
-            .main-content {
-              flex: 1; 
-              height: 100%;
-              padding: 30px 60px 30px 40px; 
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              background: white;
-              box-sizing: border-box;
-            }
-
-            .header-top {
-              display: flex;
-              align-items: center;
-              margin-bottom: 20px;
-            }
-            .header-info {
-              margin-left: 15px;
-            }
-            .company-name {
-              font-size: 10pt;
-              font-weight: 700;
-              letter-spacing: 1px;
-              color: #6b7280;
-              text-transform: uppercase;
-            }
-
-            .title-section {
-              margin-bottom: 30px;
-            }
-            .main-title {
-              font-family: 'Montserrat', sans-serif;
-              font-weight: 900;
-              font-size: 36pt; /* Reduced from 42pt */
-              line-height: 1.1;
-              color: ${primaryColor};
-              text-transform: uppercase;
-            }
-            .main-title span {
-              color: ${secondaryColor};
-            }
-
-            .recipient-section {
-              margin: 20px 0;
-            }
-            .recipient-label {
-              font-size: 14pt;
-              color: #4b5563;
-              margin-bottom: 15px;
-            }
-            .recipient-name {
-              font-family: 'Roboto Slab', serif;
-              font-weight: 700;
-              font-size: 40pt; /* Reduced from 48pt */
-              color: ${palette.dark}; /* Darker Red */
-              border-bottom: 3px solid #e5e7eb;
-              padding-bottom: 10px;
-              display: inline-block;
-              width: 100%;
-            }
-
-            .body-text {
-              font-size: 14pt; /* Reduced from 16pt */
-              color: #374151;
-              line-height: 1.6;
-              max-width: 90%;
-            }
-
-            .footer-section {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-end;
-              margin-top: 20px; /* Reduced margin */
-            }
-
-            .signature-area {
-              display: flex;
-              gap: 60px;
-            }
-            .sig-block {
-              display: flex;
-              flex-direction: column;
-            }
-            .sig-line {
-              border-bottom: 1px solid #1f2937;
-              width: 200px;
-              margin-bottom: 8px;
-            }
-            .sig-label {
-              font-size: 10pt;
-              color: #4b5563;
-              font-weight: 500;
-            }
-            .sig-img-container {
-              height: 80px;
-              display: flex;
-              align-items: flex-end;
-              justify-content: center;
-              margin-bottom: 5px;
-            }
-            .sig-img {
-              max-height: 100%;
-              max-width: 180px;
-            }
-
-            .date-block {
-               text-align: right;
-            }
-            .date-val {
-              font-size: 14pt;
-              font-weight: 700;
-              color: ${palette.primary};
-              margin-bottom: 5px;
-              border-bottom: 1px solid #1f2937;
-              display: inline-block;
-              min-width: 150px;
-              text-align: right;
-            }
-            
-            .badges-footer {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              margin-top: 20px; /* Reduced margin */
-              border-top: 0px solid #eee;
-              padding-top: 0px;
-            }
-            
-            .id-badge {
-              background: ${palette.primary};
-              color: white;
-              padding: 10px 20px;
-              font-size: 10pt;
-              font-weight: 500;
-              border-radius: 4px;
-            }
-            
-            .website {
-              background: ${palette.primary};
-              color: white;
-              padding: 10px 20px;
-              font-size: 10pt;
-              font-weight: 500;
-              border-radius: 4px;
-            }
-
-          </style>
-        </head>
-        <body>
-          <div class="certificate-container">
-            
-            <!-- SIDEBAR -->
-            <div class="sidebar">
-              <div class="sidebar-grid">
-                <div class="geo-block block-1 span-2"></div>
-                <div class="geo-block bg-blue"></div>
-                <div class="geo-block block-2"></div>
-                <div class="geo-block block-3 span-2 span-row-2"></div>
-                <div class="geo-block bg-pink"></div>
-                <div class="geo-block block-4"></div>
-                 <div class="geo-block block-2" style="background: repeating-radial-gradient(circle at 100% 0, transparent 0, transparent 10px, ${palette.dark} 10px, ${palette.dark} 20px);"></div>
-                <div class="geo-block bg-cyan"></div>
-                <div class="geo-block block-5 span-2 span-row-2"></div>
-                 <div class="geo-block bg-blue"></div>
-                 <div class="geo-block block-1"></div>
-                 <div class="geo-block bg-pink span-2"></div>
-                 <div class="geo-block block-2"></div>
-                 <div class="geo-block bg-blue"></div>
-                 <div class="geo-block block-5 span-2"></div>
-              </div>
-            </div>
-
-            <!-- MAIN CONTENT -->
-            <div class="main-content">
-              ${unitLogoSrc ? `<img src="${unitLogoSrc}" class="unit-watermark" />` : ''}
-              
-              <div>
-                <div class="header-top">
-                  <span style="color: #ec4899; font-size: 24px; margin-right: 10px;">✖</span>
-                  <div class="header-info">
-                    <div class="company-name">Club de Conquistadores Vencedores</div>
-                  </div>
-                </div>
-
-                <div class="title-section">
-                  <div class="main-title">${category.toUpperCase()}<br>DEL MES</div>
-                </div>
-
-                <div class="recipient-section">
-                  <div class="recipient-label">Este reconocimiento se le otorga a</div>
-                  <div class="recipient-name">${member.firstName} ${member.lastName}</div>
-                </div>
-
-                <div class="body-text">
-                  Por su excelencia, disciplina y dedicación ejemplar durante el mes de <strong>${monthYear}</strong>, obteniendo el puntaje más alto con <strong>${score} puntos</strong>.
-                </div>
-                
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 20px 0;">
-                  <div class="award-badge" style="background-color: ${primaryColor}; color: white; padding: 10px 30px; border-radius: 50px; font-weight: bold; font-size: 14pt;">${category.toUpperCase()} DEL MES</div>
-                  <div style="font-size: 18pt; color: ${darkColor}; font-weight: 700; background: ${ultraLightColor}; padding: 5px 20px; border-radius: 20px; border: 1px solid ${lightBorderColor};">
-                    Puntaje Obtenido: ${score} Pts
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div class="footer-section">
-                  <div class="signature-area">
-                    <div class="sig-block">
-                      <div class="sig-img-container">
-                        <img src="${SignatureDirector}" class="sig-img" />
-                      </div>
-                      <div class="sig-line"></div>
-                      <div class="sig-label">Director(a)</div>
-                    </div>
-                     <div class="sig-block">
-                      <div class="sig-img-container">
-                        <img src="${SignatureDumc}" class="sig-img" />
-                      </div>
-                      <div class="sig-line"></div>
-                      <div class="sig-label">DUMC</div>
-                    </div>
-                  </div>
-                  
-                  <div class="date-block">
-                    <div class="date-val">${day}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${year}</div>
-                    <div class="sig-label">Certificado en</div>
-                  </div>
-                </div>
-
-                <div class="badges-footer">
-                  <div class="id-badge">ID del certificado: ${certId}</div>
-                  <div class="website">www.clubvencedores.org</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-          <script>
-            window.onload = function() { setTimeout(function() { window.print(); }, 800); }
-          </script>
-        </body>
-      </html >
-  `);
-    printWindow.document.close();
-  };
-
-  const generateUnitCertificate = (unit, monthYear, average, memberCount) => {
-    const palette = {
-      primary: '#7e22ce',    // Purple 700
-      secondary: '#9333ea',  // Purple 600
-      dark: '#581c87',       // Purple 900
-      light: '#d8b4fe',      // Purple 300
-      lighter: '#e9d5ff',    // Purple 200
-      accent: '#a855f7',     // Purple 500
-      accentLight: '#c084fc',// Purple 400
-      darkest: '#3b0764',    // Purple 950
-      bgLight: '#faf5ff'     // Purple 50
-    };
-
-    const SignatureDirector = members.find(m =>
-      m.directiveRoles?.conquistadores?.some(r => r.position === 'Director') ||
-      m.directiveRoles?.aventureros?.some(r => r.position === 'Director') ||
-      m.directiveRoles?.guiasMayores?.some(r => r.position === 'Director')
-    )?.signature || null;
-
-    const primaryColor = palette.primary;
-    const secondaryColor = palette.secondary;
-    const darkColor = palette.dark;
-    const ultraLightColor = palette.bgLight;
-    const lightBorderColor = palette.lighter;
-
-    const printWindow = window.open('', '', 'width=1100,height=850');
-    const logoSrc = clubSettings.logo || AppLogo;
-    const unitLogoSrc = unit?.logo || '';
-
     const date = new Date();
-    const day = date.getDate();
-    let month = date.toLocaleString('es-ES', { month: 'long' });
-    month = month.charAt(0).toUpperCase() + month.slice(1);
-    const year = date.getFullYear();
-    const certId = Math.floor(100000000000 + Math.random() * 900000000000);
 
-    printWindow.document.write(`
-  <html>
-    <head>
-      <title>Certificado-Unidad ${unit.name}</title>
-      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
-      <style>
-        @media print {
-          @page { size: 11in 8.5in; margin: 0; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        }
-        * { box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: white; }
-        body { font-family: 'Montserrat', sans-serif; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .certificate-container { width: 11in; height: 8.5in; max-width: 11in; max-height: 8.5in; background: #fafafa; display: flex; overflow: hidden; position: relative; page-break-after: always; }
-        .sidebar { width: 20%; height: 100%; background-color: #f3f4f6; display: flex; flex-direction: column; }
-        .geo-block { width: 100%; aspect-ratio: 1/1; position: relative; overflow: hidden; }
-        .p-stripes { background: ${palette.secondary}; background-image: linear-gradient(45deg, ${palette.accent} 25%, transparent 25%, transparent 50%, ${palette.accent} 50%, ${palette.accent} 75%, transparent 75%, transparent); background-size: 20px 20px; }
-        .p-circles { background-color: ${palette.dark}; }
-        .circle-acc { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 15px solid ${palette.light}; top: 20%; left: 20%; }
-        .p-poly { background-color: ${palette.primary}; clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%); }
-        .tri-inner { width: 100%; height: 100%; background: ${palette.accentLight}; clip-path: polygon(0 0, 100% 0, 0 100%); }
-        .bg-blue { background-color: ${palette.primary}; }
-        .bg-pink { background-color: ${palette.dark}; }
-        .bg-cyan { background-color: ${palette.accentLight}; }
-        .bg-light-blue { background-color: ${palette.light}; }
-        .block-1 { background: conic-gradient(from 90deg, ${palette.dark} 0 90deg, ${palette.secondary} 90deg 180deg, ${palette.dark} 180deg 270deg, ${palette.secondary} 270deg 360deg); background-size: 50% 50%; }
-        .block-2 { background: repeating-radial-gradient(circle at 0 100%, transparent 0, transparent 10px, ${palette.primary} 10px, ${palette.primary} 20px); background-color: white; }
-        .block-3 { background-color: ${palette.secondary}; position: relative; }
-        .block-3::after { content: ''; position: absolute; width: 50%; height: 50%; background: #fff; border-radius: 50%; top: 25%; left: 25%; }
-        .unit-watermark { position: absolute; top: 50%; left: 55%; transform: translate(-50%, -50%); width: 85%; height: 85%; opacity: 0.05; z-index: 0; object-fit: contain; pointer-events: none; }
-        .block-4 { background-color: ${palette.dark}; background-image: linear-gradient(45deg, ${palette.lighter} 25%, transparent 25%, transparent 75%, ${palette.lighter} 75%, ${palette.lighter}), linear-gradient(45deg, ${palette.lighter} 25%, transparent 25%, transparent 75%, ${palette.lighter} 75%, ${palette.lighter}); background-size: 20px 20px; background-position: 0 0, 10px 10px; }
-        .block-5 { background: radial-gradient(circle at 100% 0%, ${palette.accent} 50%, transparent 50%); background-color: ${palette.darkest}; }
-        .sidebar-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(10, 1fr); height: 100%; }
-        .span-2 { grid-column: span 2; }
-        .span-row-2 { grid-row: span 2; }
-        .main-content { flex: 1; height: 100%; padding: 30px 60px 30px 40px; display: flex; flex-direction: column; justify-content: space-between; background: white; box-sizing: border-box; }
-        .header-top { display: flex; align-items: center; margin-bottom: 20px; }
-        .header-info { margin-left: 15px; }
-        .company-name { font-size: 10pt; font-weight: 700; letter-spacing: 1px; color: #6b7280; text-transform: uppercase; }
-        .title-section { margin-bottom: 30px; }
-        .main-title { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 36pt; line-height: 1.1; color: ${primaryColor}; text-transform: uppercase; }
-        .main-title span { color: ${secondaryColor}; }
-        .recipient-section { margin: 20px 0; }
-        .recipient-label { font-size: 14pt; color: #4b5563; margin-bottom: 15px; }
-        .recipient-name { font-family: 'Roboto Slab', serif; font-weight: 700; font-size: 40pt; color: ${darkColor}; border-bottom: 3px solid #e5e7eb; padding-bottom: 10px; display: inline-block; width: 100%; }
-        .body-text { font-size: 14pt; color: #374151; line-height: 1.6; max-width: 90%; }
-        .footer-section { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; }
-        .signature-area { display: flex; gap: 60px; }
-        .sig-block { display: flex; flex-direction: column; }
-        .sig-line { border-bottom: 1px solid #1f2937; width: 200px; margin-bottom: 8px; }
-        .sig-label { font-size: 10pt; color: #4b5563; font-weight: 500; }
-        .sig-img-container { height: 80px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 5px; }
-        .sig-img { max-height: 100%; max-width: 180px; }
-        .date-block { text-align: right; }
-        .date-val { font-size: 14pt; font-weight: 700; color: ${primaryColor}; margin-bottom: 5px; border-bottom: 1px solid #1f2937; display: inline-block; min-width: 150px; text-align: right; }
-        .badges-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
-        .id-badge { background: ${primaryColor}; color: white; padding: 10px 20px; font-size: 10pt; font-weight: 500; border-radius: 4px; }
-        .website { background: ${primaryColor}; color: white; padding: 10px 20px; font-size: 10pt; font-weight: 500; border-radius: 4px; }
-      </style>
-    </head>
-    <body>
+    const certHTML = `
       <div class="certificate-container">
-        <!-- SIDEBAR -->
         <div class="sidebar">
           <div class="sidebar-grid">
             <div class="geo-block block-1 span-2"></div>
@@ -9280,15 +8763,124 @@ const ClubVencedoresSystem = () => {
             <div class="geo-block block-5 span-2"></div>
           </div>
         </div>
-        <!-- MAIN CONTENT -->
+        <div class="main-content">
+          ${unitLogoSrc ? `<img src="${unitLogoSrc}" class="unit-watermark" />` : ''}
+          <div>
+            <div class="header-top">
+              <span style="color: #ec4899; font-size: 24px; margin-right: 10px;">✖</span>
+              <div class="header-info"><div class="company-name">Club de Conquistadores Vencedores</div></div>
+            </div>
+            <div class="title-section">
+              <div class="main-title">${category.toUpperCase()}<br>DEL MES</div>
+            </div>
+            <div class="recipient-section">
+              <div class="recipient-label">Este reconocimiento se le otorga a</div>
+              <div class="recipient-name">${member.firstName} ${member.lastName}</div>
+            </div>
+            <div class="body-text">
+              Por su excelencia, disciplina y dedicación ejemplar durante el mes de <strong>${monthYear}</strong>, obteniendo el puntaje más alto con <strong>${score} puntos</strong>.
+            </div>
+          </div>
+          <div>
+            <div class="footer-section">
+              <div class="signature-area">
+                <div class="sig-block">
+                  <div class="sig-img-container">${SignatureDirector ? `<img src="${SignatureDirector}" class="sig-img" />` : ''}</div>
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Director(a)</div>
+                </div>
+                <div class="sig-block">
+                  <div class="sig-img-container">${SignatureDumc ? `<img src="${SignatureDumc}" class="sig-img" />` : ''}</div>
+                  <div class="sig-line"></div>
+                  <div class="sig-label">DUMC</div>
+                </div>
+              </div>
+              <div class="date-block">
+                <div class="date-val">${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}</div>
+                <div class="sig-label">Certificado en</div>
+              </div>
+            </div>
+            <div class="badges-footer">
+              <div class="id-badge">ID del certificado: ${certId}</div>
+              <div class="website">www.clubvencedores.org</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (existingWindow) {
+      if (!existingWindow.stylesAdded) {
+        existingWindow.document.write(`
+          <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+          <style>${getCertificateStyles(palette)}</style>
+        `);
+        existingWindow.stylesAdded = true;
+      }
+      existingWindow.document.write(certHTML);
+    } else {
+      const printWindow = window.open('', '', 'width=1100,height=850');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+            <style>${getCertificateStyles(palette)}</style>
+          </head>
+          <body>
+            ${certHTML}
+            <script>window.onload = function() { setTimeout(function() { window.print(); }, 800); }</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+
+  const generateUnitCertificate = (unit, monthYear, average, memberCount, existingWindow = null) => {
+    const palette = {
+      primary: '#7e22ce', secondary: '#9333ea', dark: '#581c87', light: '#d8b4fe', lighter: '#e9d5ff', accent: '#a855f7', accentLight: '#c084fc', darkest: '#3b0764', bgLight: '#faf5ff'
+    };
+
+    const SignatureDirector = members.find(m =>
+      m.position === 'Director' ||
+      (m.positions && m.positions.includes('Director')) ||
+      m.directiveRoles?.conquistadores?.some(r => r.position === 'Director') ||
+      m.directiveRoles?.aventureros?.some(r => r.position === 'Director') ||
+      m.directiveRoles?.guiasMayores?.some(r => r.position === 'Director')
+    )?.signature || null;
+
+    const unitLogoSrc = unit?.logo || '';
+    const certId = Math.floor(100000000000 + Math.random() * 900000000000);
+    const date = new Date();
+
+    const certHTML = `
+      <div class="certificate-container">
+        <div class="sidebar">
+          <div class="sidebar-grid">
+            <div class="geo-block block-1 span-2"></div>
+            <div class="geo-block bg-blue"></div>
+            <div class="geo-block block-2"></div>
+            <div class="geo-block block-3 span-2 span-row-2"></div>
+            <div class="geo-block bg-pink"></div>
+            <div class="geo-block block-4"></div>
+            <div class="geo-block block-2" style="background: repeating-radial-gradient(circle at 100% 0, transparent 0, transparent 10px, ${palette.dark} 10px, ${palette.dark} 20px);"></div>
+            <div class="geo-block bg-cyan"></div>
+            <div class="geo-block block-5 span-2 span-row-2"></div>
+            <div class="geo-block bg-blue"></div>
+            <div class="geo-block block-1"></div>
+            <div class="geo-block bg-pink span-2"></div>
+            <div class="geo-block block-2"></div>
+            <div class="geo-block bg-blue"></div>
+            <div class="geo-block block-5 span-2"></div>
+          </div>
+        </div>
         <div class="main-content">
           ${unitLogoSrc ? `<img src="${unitLogoSrc}" class="unit-watermark" />` : ''}
           <div>
             <div class="header-top">
               <span style="color: #a855f7; font-size: 24px; margin-right: 10px;">✖</span>
-              <div class="header-info">
-                <div class="company-name">Club de Conquistadores Vencedores</div>
-              </div>
+              <div class="header-info"><div class="company-name">Club de Conquistadores Vencedores</div></div>
             </div>
             <div class="title-section">
               <div class="main-title">UNIDAD<br>DEL MES</div>
@@ -9300,24 +8892,23 @@ const ClubVencedoresSystem = () => {
             <div class="body-text">
               Por su excelencia colectiva, disciplina y dedicación durante el mes de <strong>${monthYear}</strong>, obteniendo el mayor puntaje promedio con <strong>${average.toFixed(1)} puntos por integrante</strong> en un total de <strong>${memberCount} miembros activos</strong>.
             </div>
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 20px 0;">
-              <div style="background-color: ${primaryColor}; color: white; padding: 10px 30px; border-radius: 50px; font-weight: bold; font-size: 14pt;">UNIDAD DEL MES</div>
-              <div style="font-size: 18pt; color: ${darkColor}; font-weight: 700; background: ${ultraLightColor}; padding: 5px 20px; border-radius: 20px; border: 1px solid ${lightBorderColor};">
-                Promedio: ${average.toFixed(1)} Pts (${memberCount} integrantes)
-              </div>
-            </div>
           </div>
           <div>
             <div class="footer-section">
               <div class="signature-area">
                 <div class="sig-block">
-                  <div class="sig-img-container"><img src="${SignatureDirector}" class="sig-img" /></div>
+                  <div class="sig-img-container">${SignatureDirector ? `<img src="${SignatureDirector}" class="sig-img" />` : ''}</div>
                   <div class="sig-line"></div>
                   <div class="sig-label">Director(a)</div>
                 </div>
+                <div class="sig-block">
+                  <div class="sig-img-container">${SignatureDumc ? `<img src="${SignatureDumc}" class="sig-img" />` : ''}</div>
+                  <div class="sig-line"></div>
+                  <div class="sig-label">DUMC</div>
+                </div>
               </div>
               <div class="date-block">
-                <div class="date-val">${day}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${year}</div>
+                <div class="date-val">${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}</div>
                 <div class="sig-label">Certificado en</div>
               </div>
             </div>
@@ -9328,11 +8919,33 @@ const ClubVencedoresSystem = () => {
           </div>
         </div>
       </div>
-      <script>window.onload = function() { setTimeout(function() { window.print(); }, 800); }</script>
-    </body>
-  </html>
-    `);
-    printWindow.document.close();
+    `;
+
+    if (existingWindow) {
+      if (!existingWindow.stylesAdded) {
+        existingWindow.document.write(`
+          <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+          <style>${getCertificateStyles(palette)}</style>
+        `);
+        existingWindow.stylesAdded = true;
+      }
+      existingWindow.document.write(certHTML);
+    } else {
+      const printWindow = window.open('', '', 'width=1100,height=850');
+      printWindow.document.write(`
+        <html>
+          <head>
+            <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;900&family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+            <style>${getCertificateStyles(palette)}</style>
+          </head>
+          <body>
+            ${certHTML}
+            <script>window.onload = function() { setTimeout(function() { window.print(); }, 800); }</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   };
 
 
@@ -18143,9 +17756,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                               <button
                                 onClick={() => {
+                                  const printWindow = window.open('', '', 'width=1100,height=850');
+                                  printWindow.document.write('<html><head><title>Reconocimientos - Conquistadores</title></head><body>');
                                   topScorers.forEach(scorer => {
-                                    generateCertificate(scorer.member, firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), scorer.totalMonth);
+                                    generateCertificate(scorer.member, firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), scorer.totalMonth, 'Conquistador', printWindow);
                                   });
+                                  printWindow.document.write('<script>window.onload = function() { setTimeout(function() { window.print(); }, 1000); }</script></body></html>');
+                                  printWindow.document.close();
                                 }}
                                 className="mb-4 text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow-sm flex items-center gap-1 transition-colors"
                               >
@@ -18198,9 +17815,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                               <button
                                 onClick={() => {
+                                  const printWindow = window.open('', '', 'width=1100,height=850');
+                                  printWindow.document.write('<html><head><title>Reconocimientos - Unidades</title></head><body>');
                                   topUnitScorers.forEach(scorer => {
-                                    generateUnitCertificate(scorer.unit, firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), scorer.average, scorer.members);
+                                    generateUnitCertificate(scorer.unit, firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), scorer.average, scorer.members, printWindow);
                                   });
+                                  printWindow.document.write('<script>window.onload = function() { setTimeout(function() { window.print(); }, 1000); }</script></body></html>');
+                                  printWindow.document.close();
                                 }}
                                 className="mb-4 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded shadow-sm flex items-center gap-1 transition-colors"
                               >
@@ -18251,9 +17872,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                               <button
                                 onClick={() => {
+                                  const printWindow = window.open('', '', 'width=1100,height=850');
+                                  printWindow.document.write('<html><head><title>Reconocimientos - Directivos</title></head><body>');
                                   topStaffScorers.forEach(scorer => {
-                                    generateCertificate(scorer.member, firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), scorer.totalMonth, 'Directivo');
+                                    generateCertificate(scorer.member, firstDay.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), scorer.totalMonth, 'Directivo', printWindow);
                                   });
+                                  printWindow.document.write('<script>window.onload = function() { setTimeout(function() { window.print(); }, 1000); }</script></body></html>');
+                                  printWindow.document.close();
                                 }}
                                 className="mb-4 text-xs bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded shadow-sm flex items-center gap-1 transition-colors"
                               >
