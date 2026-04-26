@@ -473,6 +473,7 @@ const ClubVencedoresSystem = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'saving', 'saved', 'error'
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   // Reminders State
   const [reminders, setReminders] = useState([]);
@@ -2242,7 +2243,7 @@ const ClubVencedoresSystem = () => {
     const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
     return () => clearTimeout(debounceSave);
 
-  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus, dataLoaded]);
+  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus, dataLoaded, retryTrigger]);
 
   // ========================================
 
@@ -10782,10 +10783,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </>
                 )}
                 {syncStatus === 'error' && (
-                  <>
+                  <button 
+                    onClick={() => setRetryTrigger(prev => prev + 1)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-600 hover:bg-red-200 transition-colors dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                  >
                     <AlertCircle className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Reintentando...</span>
-                  </>
+                    <span>Error al guardar - Reintentar</span>
+                  </button>
                 )}
               </div>
             )}
@@ -22910,11 +22914,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                   {/* Data Management Section */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    {/* Local Storage Status */}
+                    {/* Cloud Storage Status */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                        <Save className="w-5 h-5 text-blue-600" />
-                        Estado de Almacenamiento Local
+                        <Cloud className="w-5 h-5 text-blue-600" />
+                        Estado de Almacenamiento en la Nube
                       </h3>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
@@ -22937,13 +22941,14 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <span className="font-medium text-gray-700 dark:text-gray-300">Unidades</span>
                           <span className="text-teal-700 dark:text-teal-300 font-bold">{units.length}</span>
                         </div>
-                        <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/40 border border-green-300 dark:border-green-800 rounded">
-                          <p className="text-sm text-green-800 dark:text-green-200 font-semibold">✅ Autoguardado activado</p>
-                          <p className="text-xs text-green-700 dark:text-green-300 mt-1">Todos los cambios se guardan automáticamente en tu navegador</p>
+                        <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-800 rounded">
+                          <p className="text-sm text-blue-800 dark:text-blue-200 font-semibold flex items-center gap-2">
+                            <Cloud className="w-4 h-4" />
+                            Firebase Cloud Sync Activo
+                          </p>
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">Todos los cambios se sincronizan automáticamente en tu base de datos de Firebase</p>
                         </div>
                       </div>
-                    </div>
-
                     {/* Backup & Restore */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -23017,65 +23022,42 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   </div>
 
-                  {/* Firebase Cloud Sync-Coming Soon */}
-                  <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg shadow-md p-6 border-2 border-orange-200 dark:border-orange-800">
+                  {/* Firebase Cloud Sync-Configured */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg shadow-md p-6 border-2 border-blue-200 dark:border-blue-800">
                     <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                      <Settings className="w-5 h-5 text-orange-600" />
-                      Sincronización en la Nube (Firebase)-Listo para Configurar
+                      <Cloud className="w-5 h-5 text-blue-600" />
+                      Sincronización en la Nube (Firebase)
                     </h3>
-
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4">
-                      <p className="text-gray-700 dark:text-gray-300 mb-3">
-                        ¡Tu sistema está <strong>listo para la integración con Firebase</strong>! Sigue estos pasos para habilitar la sincronización en la nube:
-                      </p>
-
-                      <div className="space-y-3 text-sm">
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
-                          <div>
-                            <p className="font-semibold text-gray-800 dark:text-white">Crear Proyecto Firebase</p>
-                            <p className="text-gray-600 dark:text-gray-400">Ve a <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline">console.firebase.google.com</a></p>
-                            <p className="text-gray-600 dark:text-gray-400">Haz clic en "Agregar proyecto" y sigue el asistente</p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
-                          <div>
-                            <p className="font-semibold text-gray-800 dark:text-white">Habilitar Base de Datos Firestore</p>
-                            <p className="text-gray-600 dark:text-gray-400">En tu proyecto Firebase, ve a "Firestore Database"</p>
-                            <p className="text-gray-600 dark:text-gray-400">Haz clic en "Crear base de datos" y selecciona "Comenzar en modo de prueba"</p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
-                          <div>
-                            <p className="font-semibold text-gray-800 dark:text-white">Obtener Claves de Configuración</p>
-                            <p className="text-gray-600 dark:text-gray-400">Ve a Configuración del Proyecto → General</p>
-                            <p className="text-gray-600 dark:text-gray-400">Desplázate hasta "Tus apps" y copia el objeto de configuración</p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 w-6 h-6 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold">4</div>
-                          <div>
-                            <p className="font-semibold text-gray-800 dark:text-white">Proporcionar Configuración al Desarrollador</p>
-                            <p className="text-gray-600 dark:text-gray-400">Envía la configuración de Firebase para integrar con este sistema</p>
-                          </div>
-                        </div>
+                    
+                    <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-5 mb-4 backdrop-blur-sm">
+                      <div className="flex items-center gap-3 text-green-600 dark:text-green-400 mb-3">
+                        <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="font-bold text-sm">Sistema Conectado y Sincronizado</span>
                       </div>
+                      <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                        Tu sistema está utilizando <strong>Google Firebase Cloud Firestore</strong> para el almacenamiento. 
+                        Los cambios se guardan instantáneamente y se reflejan en todos tus dispositivos conectados.
+                      </p>
                     </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">✨ Beneficios de Firebase:</p>
-                      <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 ml-4">
-                        <li>☁️ Accede a los datos desde cualquier dispositivo</li>
-                        <li>🔄 Sincronización en tiempo real</li>
-                        <li>👥 Múltiples usuarios pueden colaborar</li>
-                        <li>💾 Respaldos automáticos en la nube por Google</li>
-                        <li>🔒 Seguro y encriptado</li>
-                        <li>📱 Funciona en móvil y escritorio</li>
+                    <div className="bg-blue-100/50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-5">
+                      <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                        <Award className="w-4 h-4" />
+                        Ventajas de tu configuración actual:
+                      </p>
+                      <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          Acceso multi-dispositivo (Laptop, Tablet, Móvil)
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          Colaboración en tiempo real con otros administradores
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                          Seguridad de nivel bancario proporcionada por Google
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -23086,13 +23068,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Método de Almacenamiento</p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">Almacenamiento Local</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Basado en el navegador</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                           <Cloud className="w-5 h-5" />
+                           Firebase Cloud
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sincronización remota activa</p>
                       </div>
                       <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Sincronización en Nube</p>
-                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">No Configurado</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sigue los pasos arriba para habilitar</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">Totalmente Configurado</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Conectado a Firestore Database</p>
                       </div>
                       <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Autoguardado</p>
@@ -23102,7 +23087,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded">
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Versión</p>
                         <p className="text-lg font-bold text-gray-900 dark:text-white">1.0</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sistema TriClub Manager</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Sistema Vencedores Manager</p>
                       </div>
                     </div>
                   </div>
