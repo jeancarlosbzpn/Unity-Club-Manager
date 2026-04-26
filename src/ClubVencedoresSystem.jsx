@@ -363,7 +363,9 @@ const ClubVencedoresSystem = () => {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
-    position: ''
+    position: '',
+    positions: [],
+    instructorClass: ''
   });
   const [accountErrors, setAccountErrors] = useState({});
   const [newUserFormData, setNewUserFormData] = useState({
@@ -372,6 +374,8 @@ const ClubVencedoresSystem = () => {
     password: '',
     confirmPassword: '',
     position: '',
+    positions: [],
+    instructorClass: '',
     role: 'user',
     allowedModules: [],
     modulePermissions: {} // New: { moduleId: 'edit' | 'read' | 'none' }
@@ -2214,6 +2218,7 @@ const ClubVencedoresSystem = () => {
     }
 
     const pos = currentUser.position || '';
+    const positions = currentUser.positions || (pos ? [pos] : []);
 
     // Positions with WRITE access per module
     const writeAccess = {
@@ -2246,7 +2251,7 @@ const ClubVencedoresSystem = () => {
 
     // Check for write access
     const writers = writeAccess[moduleId] || [];
-    if (writers.includes(pos)) return 'write';
+    if (writers.some(w => positions.includes(w))) return 'write';
 
     // Modules that are CRITICAL and should be hidden from regular members (Read access denied)
     const restrictedModules = new Set(['finances','cuotas','points','reminders','settings','directive','inventory']);
@@ -7218,7 +7223,8 @@ const ClubVencedoresSystem = () => {
 
   const renderHomeworksModule = () => {
     const isReadOnly = getModuleAccessLevel('homeworks') === 'read';
-    const isInstructor = currentUser.position === 'Instructor' || currentUser.position === 'Class Instructor';
+    const userPositions = currentUser.positions || (currentUser.position ? [currentUser.position] : []);
+    const isInstructor = userPositions.includes('Instructor') || userPositions.includes('Class Instructor');
     
     // Identify assigned classes for instructor
     const memberObj = members.find(m => String(m.id) === String(currentUser.id));
@@ -7226,14 +7232,24 @@ const ClubVencedoresSystem = () => {
     if (memberObj?.directiveRoles) {
       Object.entries(memberObj.directiveRoles).forEach(([club, roles]) => {
         roles.forEach(r => {
-          if (r.position === 'Class Instructor' && r.instructorClass) {
+          if ((r.position === 'Instructor' || r.position === 'Class Instructor') && r.instructorClass) {
             assignedClasses.push({ club, className: r.instructorClass });
           }
         });
       });
     }
 
-    const canManageAll = ['Director', 'Subdirector', 'Secretario', 'Secretary', 'DUMC'].includes(currentUser.position);
+    // Also check instructor class assigned directly in user profile
+    if (currentUser.instructorClass) {
+      // Find which club this class belongs to (Aventureros or Conquistadores)
+      const isAventurero = aventurerosClasses.some(c => c.value === currentUser.instructorClass);
+      assignedClasses.push({ 
+        club: isAventurero ? 'aventureros' : 'conquistadores', 
+        className: currentUser.instructorClass 
+      });
+    }
+
+    const canManageAll = userPositions.some(p => ['Director', 'Subdirector', 'Secretario', 'Secretary', 'DUMC'].includes(p));
     
     const filteredHomeworks = homeworks.filter(h => {
       if (canManageAll) return true;
@@ -9891,7 +9907,7 @@ const ClubVencedoresSystem = () => {
       }
     }
 
-    if (!newUserFormData.position) errors.position = 'Position  is required';
+    if (!(newUserFormData.positions || []).length && !newUserFormData.position) errors.position = 'Debe seleccionar al menos un cargo';
 
     setNewUserErrors(errors);
     return Object.keys(errors).length === 0;
@@ -9978,7 +9994,9 @@ const ClubVencedoresSystem = () => {
         ...editingUser,
         name: newUserFormData.name,
         username: newUserFormData.username,
-        position: newUserFormData.position,
+        position: newUserFormData.positions?.[0] || newUserFormData.position,
+        positions: newUserFormData.positions || [newUserFormData.position],
+        instructorClass: newUserFormData.instructorClass || '',
         role: 'user',
         allowedModules: newUserFormData.allowedModules || [],
         modulePermissions: newUserFormData.modulePermissions || {}
@@ -9997,7 +10015,9 @@ const ClubVencedoresSystem = () => {
         name: newUserFormData.name,
         username: newUserFormData.username,
         password: newUserFormData.password,
-        position: newUserFormData.position,
+        position: newUserFormData.positions?.[0] || newUserFormData.position,
+        positions: newUserFormData.positions || [newUserFormData.position],
+        instructorClass: newUserFormData.instructorClass || '',
         role: 'user',
         allowedModules: newUserFormData.allowedModules || [],
         modulePermissions: newUserFormData.modulePermissions || {}
@@ -10012,6 +10032,8 @@ const ClubVencedoresSystem = () => {
       password: '',
       confirmPassword: '',
       position: '',
+      positions: [],
+      instructorClass: '',
       role: 'user',
       allowedModules: [],
       modulePermissions: {}
@@ -10027,6 +10049,8 @@ const ClubVencedoresSystem = () => {
       password: '',
       confirmPassword: '',
       position: user.position,
+      positions: user.positions || [user.position],
+      instructorClass: user.instructorClass || '',
       role: user.role,
       allowedModules: user.allowedModules || [],
       modulePermissions: user.modulePermissions || {}
@@ -11206,25 +11230,81 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           {newUserErrors.username && <p className="text-red-500 text-sm mt-1">{newUserErrors.username}</p>}
                         </div>
 
-                        <div>
+                        <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Posición <span className="text-red-500">*</span>
+                            Cargos / Posiciones <span className="text-red-500">*</span>
                           </label>
-                          <select
-                            name="position"
-                            value={newUserFormData.position}
-                            onChange={handleNewUserInputChange}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.position ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
-                          >
-                            <option value="">Seleccionar Posición</option>
-                            <option value="Subdirector">Subdirector</option>
-                            <option value="Secretario">Secretario</option>
-                            <option value="Tesorera">Tesorera / Tesorero</option>
-                            <option value="DUMC">DUMC</option>
-                            <option value="Consejero">Consejero</option>
-                            <option value="Instructor">Instructor</option>
-                            <option value="Capitan">Capitán de Unidad</option>
-                          </select>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                            {[
+                              { id: 'Director', label: 'Director' },
+                              { id: 'Subdirector', label: 'Subdirector' },
+                              { id: 'Secretario', label: 'Secretario' },
+                              { id: 'Tesorera', label: 'Tesorera / Tesorero' },
+                              { id: 'DUMC', label: 'DUMC' },
+                              { id: 'Consejero', label: 'Consejero' },
+                              { id: 'Instructor', label: 'Instructor' },
+                              { id: 'Capitan', label: 'Capitán de Unidad' }
+                            ].map(pos => {
+                              const isSelected = (newUserFormData.positions || []).includes(pos.id) || newUserFormData.position === pos.id;
+                              return (
+                                <button
+                                  key={pos.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setNewUserFormData(prev => {
+                                      const currentPositions = prev.positions || (prev.position ? [prev.position] : []);
+                                      const newPositions = currentPositions.includes(pos.id)
+                                        ? currentPositions.filter(p => p !== pos.id)
+                                        : [...currentPositions, pos.id];
+                                      return { 
+                                        ...prev, 
+                                        positions: newPositions,
+                                        position: newPositions[0] || '' // Backward compatibility
+                                      };
+                                    });
+                                  }}
+                                  className={`flex items-center justify-between px-3 py-2 rounded-lg border text-[10px] font-bold transition-all ${
+                                    isSelected 
+                                      ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-700 dark:text-purple-300 shadow-sm' 
+                                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-purple-300'
+                                  }`}
+                                >
+                                  {pos.label}
+                                  {isSelected ? <CheckCircle className="w-3 h-3" /> : <Plus className="w-3 h-3 opacity-30" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {(newUserFormData.positions || []).includes('Instructor') && (
+                            <div className="mt-2 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl animate-in fade-in slide-in-from-top-2 mb-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="p-1.5 bg-indigo-100 dark:bg-indigo-800 rounded-lg">
+                                  <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                </div>
+                                <label className="block text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                                  Clase Asignada para Tareas
+                                </label>
+                              </div>
+                              <select
+                                value={newUserFormData.instructorClass}
+                                onChange={(e) => setNewUserFormData(prev => ({ ...prev, instructorClass: e.target.value }))}
+                                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
+                              >
+                                <option value="">Seleccionar Clase</option>
+                                <optgroup label="Aventureros">
+                                  {aventurerosClasses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                </optgroup>
+                                <optgroup label="Conquistadores">
+                                  {pathfinderClasses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                                </optgroup>
+                              </select>
+                              <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-2 italic flex items-center gap-1">
+                                <Info className="w-3 h-3" />
+                                El instructor solo podrá gestionar tareas de la clase seleccionada aquí.
+                              </p>
+                            </div>
+                          )}
                           {newUserErrors.position && <p className="text-red-500 text-sm mt-1">{newUserErrors.position}</p>}
                         </div>
 
