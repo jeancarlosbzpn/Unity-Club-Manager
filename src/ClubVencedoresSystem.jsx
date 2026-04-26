@@ -8438,12 +8438,12 @@ const ClubVencedoresSystem = () => {
     };
 
     const instructorSignatures = {
-      'Amigo': members.find(m => m.directiveRoles?.conquistadores?.some(r => r.position === 'Class Instructor' && r.instructorClass === 'Amigo'))?.signature || null,
-      'Compañero': members.find(m => m.directiveRoles?.conquistadores?.some(r => r.position === 'Class Instructor' && r.instructorClass === 'Compañero'))?.signature || null,
-      'Explorador': members.find(m => m.directiveRoles?.conquistadores?.some(r => r.position === 'Class Instructor' && r.instructorClass === 'Explorador'))?.signature || null,
-      'Orientador': members.find(m => m.directiveRoles?.conquistadores?.some(r => r.position === 'Class Instructor' && r.instructorClass === 'Orientador'))?.signature || null,
-      'Viajero': members.find(m => m.directiveRoles?.conquistadores?.some(r => r.position === 'Class Instructor' && r.instructorClass === 'Viajero'))?.signature || null,
-      'Guía': members.find(m => m.directiveRoles?.conquistadores?.some(r => r.position === 'Class Instructor' && r.instructorClass === 'Guía'))?.signature || null
+      'Amigo': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Amigo'))?.signature || null,
+      'Compañero': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Compañero'))?.signature || null,
+      'Explorador': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Explorador'))?.signature || null,
+      'Orientador': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Orientador'))?.signature || null,
+      'Viajero': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Viajero'))?.signature || null,
+      'Guía': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Guía'))?.signature || null
     };
 
     const SignatureDirector = members.find(m =>
@@ -8547,7 +8547,7 @@ const ClubVencedoresSystem = () => {
             </div>
             
             <!-- Grade -->
-            <div class="grade-container" style="position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%); text-align: center; color: white; font-weight: 900; font-size: 14pt; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; z-index: 10;">
+            <div class="grade-container" style="position: absolute; bottom: 180px; left: 50%; transform: translateX(-50%); text-align: center; color: white; font-weight: 900; font-size: 14pt; font-family: 'Montserrat', sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; z-index: 10;">
               ${data.grade > 0 ? `<span style="margin-top: -2px;">${data.grade} Pts</span>` : ''}
             </div>
             
