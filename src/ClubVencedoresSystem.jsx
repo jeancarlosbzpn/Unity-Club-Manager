@@ -8437,13 +8437,24 @@ const ClubVencedoresSystem = () => {
       'Guía': RibbonMaxGuia
     };
 
+    const findInstructorSig = (clsLabel) => {
+      const classEntry = pathfinderClasses.find(c => c.label === clsLabel);
+      const clsValue = classEntry ? classEntry.value : null;
+      return members.find(m => 
+        m.directiveRoles?.conquistadores?.some(r => 
+          (r.position === 'Class Instructor' || r.position === 'Instructor') && 
+          (r.instructorClass === clsLabel || (clsValue && r.instructorClass === clsValue))
+        )
+      )?.signature || null;
+    };
+
     const instructorSignatures = {
-      'Amigo': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Amigo'))?.signature || null,
-      'Compañero': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Compañero'))?.signature || null,
-      'Explorador': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Explorador'))?.signature || null,
-      'Orientador': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Orientador'))?.signature || null,
-      'Viajero': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Viajero'))?.signature || null,
-      'Guía': members.find(m => m.directiveRoles?.conquistadores?.some(r => (r.position === 'Class Instructor' || r.position === 'Instructor') && r.instructorClass === 'Guía'))?.signature || null
+      'Amigo': findInstructorSig('Amigo'),
+      'Compañero': findInstructorSig('Compañero'),
+      'Explorador': findInstructorSig('Explorador'),
+      'Orientador': findInstructorSig('Orientador'),
+      'Viajero': findInstructorSig('Viajero'),
+      'Guía': findInstructorSig('Guía')
     };
 
     const SignatureDirector = members.find(m =>
