@@ -1278,6 +1278,24 @@ const ClubVencedoresSystem = () => {
         } else {
           if (effectiveIndex < itemClassIndex) return false;
         }
+
+        // --- NEW: Advanced Class Filter ---
+        if (item.requiresAdvancedClass) {
+           let hasAdvanced = false;
+           // 1. If it's their current class, check modality
+           if (memberClassValue === item.applicableClass) {
+              if (member.membershipClassModality === 'advanced' || member.membershipClassModality === 'both') {
+                 hasAdvanced = true;
+              }
+           }
+           // 2. If it's a completed class, check completedAdvancedClasses
+           if (!hasAdvanced && member.completedAdvancedClasses && Array.isArray(member.completedAdvancedClasses)) {
+              if (member.completedAdvancedClasses.includes(item.applicableClass)) {
+                 hasAdvanced = true;
+              }
+           }
+           if (!hasAdvanced) return false;
+        }
       }
 
       return true;
@@ -6715,18 +6733,34 @@ const ClubVencedoresSystem = () => {
                   </div>
 
                   {itemFormData.applicableClass && (
-                    <div className="flex items-center mb-4 bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
-                      <input
-                        type="checkbox"
-                        id="earnedOnCompletion"
-                        checked={!itemFormData.showInCurrentClass}
-                        onChange={(e) => setItemFormData({ ...itemFormData, showInCurrentClass: !e.target.checked })}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="earnedOnCompletion" className="ml-2 block text-sm text-gray-900 dark:text-gray-200">
-                        ¿Se obtiene <strong>al completar</strong> la clase?
-                        <span className="block text-xs text-gray-500 dark:text-gray-400">Ej: Botones, barras. Solo se pedirá en el nivel siguiente.</span>
-                      </label>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <input
+                          type="checkbox"
+                          id="earnedOnCompletion"
+                          checked={!itemFormData.showInCurrentClass}
+                          onChange={(e) => setItemFormData({ ...itemFormData, showInCurrentClass: !e.target.checked })}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="earnedOnCompletion" className="ml-2 block text-sm text-gray-900 dark:text-gray-200">
+                          ¿Se obtiene <strong>al completar</strong> la clase?
+                          <span className="block text-xs text-gray-500 dark:text-gray-400">Ej: Botones, barras. Solo se pedirá en el nivel siguiente.</span>
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center bg-blue-50 dark:bg-blue-900/20 p-2 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <input
+                          type="checkbox"
+                          id="requiresAdvancedClass"
+                          checked={itemFormData.requiresAdvancedClass || false}
+                          onChange={(e) => setItemFormData({ ...itemFormData, requiresAdvancedClass: e.target.checked })}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor="requiresAdvancedClass" className="ml-2 block text-sm text-blue-900 dark:text-blue-200">
+                          ¿Solo para la clase <strong>Avanzada</strong>?
+                          <span className="block text-xs text-blue-600/70 dark:text-blue-400">Si se marca, el miembro debe estar tomando (o haber terminado) la versión avanzada de esta clase.</span>
+                        </label>
+                      </div>
                     </div>
                   )}
 
@@ -14625,25 +14659,52 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   <div className="grid grid-cols-2 gap-2">
                                     {pathfinderClasses.slice(0, 6).map(c => {
                                       const isCompleted = formData.completedClasses && formData.completedClasses.includes(c.value);
+                                      const isAdvancedCompleted = formData.completedAdvancedClasses && formData.completedAdvancedClasses.includes(c.value);
                                       return (
-                                        <label key={`completed-${c.value}`} className="flex items-center gap-2 cursor-pointer group">
-                                          <input
-                                            type="checkbox"
-                                            checked={isCompleted}
-                                            onChange={(e) => {
-                                              const current = formData.completedClasses || [];
-                                              if (e.target.checked) {
-                                                handleMembershipChange('completedClasses', [...current, c.value]);
-                                              } else {
-                                                handleMembershipChange('completedClasses', current.filter(cls => cls !== c.value));
-                                              }
-                                            }}
-                                            className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 border-gray-300 dark:border-gray-600"
-                                          />
-                                          <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                            {c.label}
-                                          </span>
-                                        </label>
+                                        <div key={`completed-${c.value}`} className="flex flex-col gap-1 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50 bg-white dark:bg-gray-800/50">
+                                          <label className="flex items-center gap-2 cursor-pointer group">
+                                            <input
+                                              type="checkbox"
+                                              checked={isCompleted}
+                                              onChange={(e) => {
+                                                const current = formData.completedClasses || [];
+                                                if (e.target.checked) {
+                                                  handleMembershipChange('completedClasses', [...current, c.value]);
+                                                } else {
+                                                  handleMembershipChange('completedClasses', current.filter(cls => cls !== c.value));
+                                                  // Remove advanced if base is unchecked
+                                                  const currentAdv = formData.completedAdvancedClasses || [];
+                                                  handleMembershipChange('completedAdvancedClasses', currentAdv.filter(cls => cls !== c.value));
+                                                }
+                                              }}
+                                              className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 border-gray-300 dark:border-gray-600"
+                                            />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                              {c.label}
+                                            </span>
+                                          </label>
+                                          
+                                          {isCompleted && (
+                                            <label className="flex items-center gap-2 ml-6 cursor-pointer group animate-in slide-in-from-top-1 fade-in duration-200">
+                                              <input
+                                                type="checkbox"
+                                                checked={isAdvancedCompleted}
+                                                onChange={(e) => {
+                                                  const current = formData.completedAdvancedClasses || [];
+                                                  if (e.target.checked) {
+                                                    handleMembershipChange('completedAdvancedClasses', [...current, c.value]);
+                                                  } else {
+                                                    handleMembershipChange('completedAdvancedClasses', current.filter(cls => cls !== c.value));
+                                                  }
+                                                }}
+                                                className="w-3 h-3 text-blue-500 rounded focus:ring-2 focus:ring-blue-400 border-gray-300 dark:border-gray-600"
+                                              />
+                                              <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 group-hover:text-blue-500 transition-colors">
+                                                También la Avanzada
+                                              </span>
+                                            </label>
+                                          )}
+                                        </div>
                                       );
                                     })}
                                   </div>
