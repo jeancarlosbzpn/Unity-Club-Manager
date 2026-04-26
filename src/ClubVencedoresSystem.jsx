@@ -1266,17 +1266,20 @@ const ClubVencedoresSystem = () => {
           maxCompletedIndex = Math.max(-1, ...completedIndexes);
         }
         
-        // Effective index is the higher of what they are working on vs what they completed
-        const effectiveIndex = Math.max(memberClassIndex, maxCompletedIndex);
-
-        if (effectiveIndex === -1) return false;
-
-        // If the item specifically requires them to be working on it currently (e.g. advanced badge)?
-        // Wait, for uniform items, progressive classes are cumulative.
         if (item.showInCurrentClass === false) {
-          if (effectiveIndex <= itemClassIndex) return false;
+          // Earned ON COMPLETION of the class.
+          // They get it if they explicitly completed this class (or higher), 
+          // OR if they are currently enrolled in a HIGHER class (which implies completion).
+          if (!(maxCompletedIndex >= itemClassIndex || memberClassIndex > itemClassIndex)) {
+            return false;
+          }
         } else {
-          if (effectiveIndex < itemClassIndex) return false;
+          // Earned AT THE START of the class.
+          // They get it if they explicitly completed it (or higher),
+          // OR if they are currently enrolled in this class (or higher).
+          if (!(maxCompletedIndex >= itemClassIndex || memberClassIndex >= itemClassIndex)) {
+            return false;
+          }
         }
 
         // --- NEW: Advanced Class Filter ---
