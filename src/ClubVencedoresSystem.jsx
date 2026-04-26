@@ -7266,7 +7266,7 @@ const ClubVencedoresSystem = () => {
       });
     }
 
-    const canManageAll = currentUser.role === 'administrator' || userPositions.some(p => ['Director', 'Subdirector', 'Secretario', 'Secretary', 'DUMC'].includes(p));
+    const canManageAll = currentUser.role === 'administrator' || userPositions.some(p => ['Director', 'Subdirector', 'Secretario', 'Secretary'].includes(p));
     
     const filteredHomeworks = homeworks.filter(h => {
       if (canManageAll) return true;
