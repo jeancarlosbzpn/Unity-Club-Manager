@@ -450,7 +450,7 @@ const ClubVencedoresSystem = () => {
         setCurrentUser(updatedUser);
       }
     }
-  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.role]);
+  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.positions, currentUser?.instructorClass, currentUser?.role]);
 
   // Admin credentials (reference to main admin)
   const [adminUser, setAdminUser] = useState(users[0]);
@@ -7266,10 +7266,11 @@ const ClubVencedoresSystem = () => {
       });
     }
 
-    const canManageAll = userPositions.some(p => ['Director', 'Subdirector', 'Secretario', 'Secretary', 'DUMC'].includes(p));
+    const canManageAll = currentUser.role === 'administrator' || userPositions.some(p => ['Director', 'Subdirector', 'Secretario', 'Secretary', 'DUMC'].includes(p));
     
     const filteredHomeworks = homeworks.filter(h => {
       if (canManageAll) return true;
+      if (!isInstructor) return false; // Only instructors or managers can manage tasks
       return assignedClasses.some(ac => ac.club === h.club && (ac.className === h.className || ac.label === h.className));
     });
 
@@ -7354,19 +7355,19 @@ const ClubVencedoresSystem = () => {
                 <select 
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                   value={homeworkFormData.className}
-                  disabled={!canManageAll && isInstructor && assignedClasses.length <= 1}
+                  disabled={!canManageAll && isInstructor}
                   onChange={e => setHomeworkFormData({...homeworkFormData, className: e.target.value})}
                 >
                   {homeworkFormData.club === 'aventureros' && aventurerosClasses
-                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'aventureros' && (ac.className === c.value || ac.label === c.label)))
+                    .filter(c => canManageAll || (isInstructor && assignedClasses.some(ac => ac.club === 'aventureros' && (ac.className === c.value || ac.label === c.label))))
                     .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                   
                   {homeworkFormData.club === 'conquistadores' && pathfinderClasses.slice(0, 6)
-                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'conquistadores' && (ac.className === c.value || ac.label === c.label)))
+                    .filter(c => canManageAll || (isInstructor && assignedClasses.some(ac => ac.club === 'conquistadores' && (ac.className === c.value || ac.label === c.label))))
                     .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                   
                   {homeworkFormData.club === 'guiasMayores' && pathfinderClasses.slice(6)
-                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'guiasMayores' && (ac.className === c.value || ac.label === c.label)))
+                    .filter(c => canManageAll || (isInstructor && assignedClasses.some(ac => ac.club === 'guiasMayores' && (ac.className === c.value || ac.label === c.label))))
                     .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                 </select>
               </div>
