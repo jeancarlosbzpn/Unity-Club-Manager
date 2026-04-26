@@ -1259,12 +1259,24 @@ const ClubVencedoresSystem = () => {
         const memberClassIndex = PATHFINDER_HIERARCHY.indexOf(memberClassValue);
         const itemClassIndex = PATHFINDER_HIERARCHY.indexOf(item.applicableClass);
         
-        if (memberClassIndex === -1) return false;
+        // Find the highest class the member has COMPLETED
+        let maxCompletedIndex = -1;
+        if (member.completedClasses && Array.isArray(member.completedClasses)) {
+          const completedIndexes = member.completedClasses.map(c => PATHFINDER_HIERARCHY.indexOf(c));
+          maxCompletedIndex = Math.max(-1, ...completedIndexes);
+        }
+        
+        // Effective index is the higher of what they are working on vs what they completed
+        const effectiveIndex = Math.max(memberClassIndex, maxCompletedIndex);
 
+        if (effectiveIndex === -1) return false;
+
+        // If the item specifically requires them to be working on it currently (e.g. advanced badge)?
+        // Wait, for uniform items, progressive classes are cumulative.
         if (item.showInCurrentClass === false) {
-          if (memberClassIndex <= itemClassIndex) return false;
+          if (effectiveIndex <= itemClassIndex) return false;
         } else {
-          if (memberClassIndex < itemClassIndex) return false;
+          if (effectiveIndex < itemClassIndex) return false;
         }
       }
 
@@ -14600,6 +14612,43 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     </label>
                                   </div>
                                 )}
+
+                              {/* Completed Classes (Invested) */}
+                              {assignedClub !== 'aventureros' && (
+                                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
+                                    Clases Ya Investidas (Completadas)
+                                  </label>
+                                  <p className="text-[10px] text-gray-500 mb-3 leading-tight">
+                                    Selecciona las clases que este miembro ya terminó. Esto asegura que sus parches aparezcan correctamente en la inspección de uniformidad, incluso si ahora está haciendo una clase avanzada anterior.
+                                  </p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {pathfinderClasses.slice(0, 6).map(c => {
+                                      const isCompleted = formData.completedClasses && formData.completedClasses.includes(c.value);
+                                      return (
+                                        <label key={`completed-${c.value}`} className="flex items-center gap-2 cursor-pointer group">
+                                          <input
+                                            type="checkbox"
+                                            checked={isCompleted}
+                                            onChange={(e) => {
+                                              const current = formData.completedClasses || [];
+                                              if (e.target.checked) {
+                                                handleMembershipChange('completedClasses', [...current, c.value]);
+                                              } else {
+                                                handleMembershipChange('completedClasses', current.filter(cls => cls !== c.value));
+                                              }
+                                            }}
+                                            className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 border-gray-300 dark:border-gray-600"
+                                          />
+                                          <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                            {c.label}
+                                          </span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* Directive Roles Section-ALL CLUBS */}
