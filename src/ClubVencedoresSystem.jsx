@@ -6334,59 +6334,7 @@ const ClubVencedoresSystem = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                       <div className="flex flex-wrap gap-2">
-                                        {uniformItems.map(item => {
-                                          // Reuse Gender/Directive Filter Logic
-                                          const normalizeSex = (s) => {
-                                            if (!s) return '';
-                                            const lower = s.toLowerCase();
-                                            if (lower === 'male' || lower === 'm' || lower === 'masculino') return 'M';
-                                            if (lower === 'female' || lower === 'f' || lower === 'femenino') return 'F';
-                                            return 'Unisex';
-                                          };
-                                          const itemGender = item.gender === 'Unisex' ? 'Unisex' : normalizeSex(item.gender);
-                                          const memberSex = normalizeSex(member.sex || member.gender);
-                                          if (itemGender !== 'Unisex' && itemGender !== memberSex) return null;
-                                          const isMemberDirective = isDirective(member);
-                                          if (item.onlyForDirective) {
-                                            if (!isMemberDirective) return null;
-
-                                            // Sub-filter: Specific roles
-                                            if (item.applicablePositions && item.applicablePositions.length > 0) {
-                                              const memberRoles = [];
-                                              if (member.directiveRoles) {
-                                                Object.values(member.directiveRoles).forEach(clubRoles => {
-                                                  if (Array.isArray(clubRoles)) {
-                                                    clubRoles.forEach(r => memberRoles.push(r.position));
-                                                  }
-                                                });
-                                              }
-                                              // Also check primary position field
-                                              if (member.position) memberRoles.push(member.position);
-
-                                              const hasRequiredRole = item.applicablePositions.some(pos => memberRoles.includes(pos));
-                                              if (!hasRequiredRole) return null;
-                                            }
-                                          }
-
-                                          // Cumulative Class Logic (Refined)
-                                          if (item.applicableClass) {
-                                            const memberClassValue = member.membershipClass || member.pathfinderClass;
-                                            const memberClassIndex = PATHFINDER_HIERARCHY.indexOf(memberClassValue);
-                                            const itemClassIndex = PATHFINDER_HIERARCHY.indexOf(item.applicableClass);
-                                            
-                                            if (memberClassIndex === -1) return null;
-
-                                            if (item.showInCurrentClass === false) {
-                                              // Earned after completion (e.g. Buttons)
-                                              if (memberClassIndex <= itemClassIndex) return null;
-                                            } else {
-                                              // Earned during class (e.g. Patches)
-                                              if (memberClassIndex < itemClassIndex) return null;
-                                            }
-                                          }
-
-
-                                          return (
+                                        {getApplicableUniformItems(member).map(item => (
                                             <button
                                               key={item.id}
                                               onClick={() => toggleInspectionItem(member.id, bgDate, item.id)}
@@ -6398,8 +6346,7 @@ const ClubVencedoresSystem = () => {
                                             >
                                               {item.label}
                                             </button>
-                                          );
-                                        })}
+                                          ))}
                                       </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
