@@ -11267,10 +11267,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             {[
                               // Módulos Principales
                               { id: 'dashboard', label: 'Inicio' },
+                              { id: 'announcements', label: 'Anuncios' },
                               { id: 'attendance', label: 'Asistencia' },
                               { id: 'activities', label: 'Calendario y Actividades' },
                               { id: 'directive', label: 'Directiva y Cargos' },
                               { id: 'members', label: 'Gestión de Miembros' },
+                              { id: 'homeworks', label: 'Tareas' },
                               { id: 'finances', label: 'Finanzas y Gastos' },
                               { id: 'inventory', label: 'Inventario General' },
                               { id: 'uniformity', label: 'Uniformidad e Inspección' },
