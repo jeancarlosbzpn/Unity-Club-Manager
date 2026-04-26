@@ -7322,9 +7322,9 @@ const ClubVencedoresSystem = () => {
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Club</label>
                 <select 
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                   value={homeworkFormData.club}
-                  disabled={isInstructor && assignedClasses.length <= 1}
+                  disabled={!canManageAll && isInstructor && assignedClasses.length <= 1}
                   onChange={e => setHomeworkFormData({...homeworkFormData, club: e.target.value})}
                 >
                   <option value="aventureros">Aventureros</option>
@@ -7335,13 +7335,22 @@ const ClubVencedoresSystem = () => {
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Clase</label>
                 <select 
-                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                   value={homeworkFormData.className}
+                  disabled={!canManageAll && isInstructor && assignedClasses.length <= 1}
                   onChange={e => setHomeworkFormData({...homeworkFormData, className: e.target.value})}
                 >
-                  {homeworkFormData.club === 'aventureros' && ['Abejas Laboriosas', 'Rayitos de Sol', 'Constructores', 'Manos Ayudadoras'].map(c => <option key={c} value={c}>{c}</option>)}
-                  {homeworkFormData.club === 'conquistadores' && ['Amigo', 'Compañero', 'Explorador', 'Orientador', 'Viajero', 'Guía'].map(c => <option key={c} value={c}>{c}</option>)}
-                  {homeworkFormData.club === 'guiasMayores' && ['Guía Mayor', 'Guía Mayor Master', 'Guía Mayor Master Avanzado'].map(c => <option key={c} value={c}>{c}</option>)}
+                  {homeworkFormData.club === 'aventureros' && ['Abejas Laboriosas', 'Rayitos de Sol', 'Constructores', 'Manos Ayudadoras']
+                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'aventureros' && ac.className === c))
+                    .map(c => <option key={c} value={c}>{c}</option>)}
+                  
+                  {homeworkFormData.club === 'conquistadores' && ['Amigo', 'Compañero', 'Explorador', 'Orientador', 'Viajero', 'Guía']
+                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'conquistadores' && ac.className === c))
+                    .map(c => <option key={c} value={c}>{c}</option>)}
+                  
+                  {homeworkFormData.club === 'guiasMayores' && ['Guía Mayor', 'Guía Mayor Master', 'Guía Mayor Master Avanzado']
+                    .filter(c => canManageAll || !isInstructor || assignedClasses.some(ac => ac.club === 'guiasMayores' && ac.className === c))
+                    .map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
             </div>
