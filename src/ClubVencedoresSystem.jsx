@@ -8642,11 +8642,22 @@ const ClubVencedoresSystem = () => {
 
     const printWindow = window.open('', '', 'width=1100,height=850');
     printWindow.document.write(`
-  < html >
+      <html>
         <head>
           <title>Certificados de Investidura-Masivo</title>
           <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
           <style>@page { size: 11in 8.5in; margin: 0; } body { margin: 0; padding: 0; }</style>
+        </head>
+        <body>
+          ${combinedHTML}
+          <script>
+            window.onload = function() { setTimeout(function() { window.print(); }, 1500); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
   // Helper for certificate styles to avoid repetition
   const getCertificateStyles = (palette) => `
     @media print {
