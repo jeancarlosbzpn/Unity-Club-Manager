@@ -1281,15 +1281,11 @@ const ClubVencedoresSystem = () => {
 
         // --- NEW: Advanced Class Filter ---
         if (item.requiresAdvancedClass) {
+           // The user specified that advanced class items are ONLY earned AFTER completion.
+           // Therefore, we only check if it is in the completedAdvancedClasses list.
            let hasAdvanced = false;
-           // 1. If it's their current class, check modality
-           if (memberClassValue === item.applicableClass) {
-              if (member.membershipClassModality === 'advanced' || member.membershipClassModality === 'both') {
-                 hasAdvanced = true;
-              }
-           }
-           // 2. If it's a completed class, check completedAdvancedClasses
-           if (!hasAdvanced && member.completedAdvancedClasses && Array.isArray(member.completedAdvancedClasses)) {
+           
+           if (member.completedAdvancedClasses && Array.isArray(member.completedAdvancedClasses)) {
               if (member.completedAdvancedClasses.includes(item.applicableClass)) {
                  hasAdvanced = true;
               }
@@ -6758,7 +6754,7 @@ const ClubVencedoresSystem = () => {
                         />
                         <label htmlFor="requiresAdvancedClass" className="ml-2 block text-sm text-blue-900 dark:text-blue-200">
                           ¿Solo para la clase <strong>Avanzada</strong>?
-                          <span className="block text-xs text-blue-600/70 dark:text-blue-400">Si se marca, el miembro debe estar tomando (o haber terminado) la versión avanzada de esta clase.</span>
+                          <span className="block text-xs text-blue-600/70 dark:text-blue-400">Si se marca, el miembro obtendrá este artículo solo DESPUÉS de haber terminado (investido) la versión avanzada.</span>
                         </label>
                       </div>
                     </div>
