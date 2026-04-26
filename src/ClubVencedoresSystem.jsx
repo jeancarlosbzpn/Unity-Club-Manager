@@ -13393,8 +13393,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       ))
                     )}
                   </div>
+                </div>
 
-                  {showAnnouncementForm && (
+                {showAnnouncementForm && (
                     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
                       <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-white/20 transform animate-in zoom-in-95 duration-300">
                         <div className="px-8 py-6 bg-red-600 flex items-center justify-between text-white border-b border-red-700 shadow-lg relative">
@@ -23022,6 +23023,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
+                  </div>
 
                   {/* Firebase Cloud Sync-Configured */}
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg shadow-md p-6 border-2 border-blue-200 dark:border-blue-800">
