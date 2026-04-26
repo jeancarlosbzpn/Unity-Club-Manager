@@ -24073,7 +24073,7 @@ const MemberPortal = ({
                 {/* Owned */}
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-green-500" /> Tengo ({myUniformStats.itemsOwned.length})
+                    <CheckCircle className="w-3 h-3 text-green-500" /> Tengo ({myUniformStats.itemsOwned.length})
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {myUniformStats.itemsOwned.map(item => (
