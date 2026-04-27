@@ -23884,6 +23884,12 @@ const MemberPortal = ({
                       classValue || 
                       'No asignada';
 
+  const myInstructor = members.find(m => 
+    (m.role === 'maestro' || m.role === 'instructor') && 
+    (m.instructorClass === myClassName || (classValue && String(m.instructorClass) === String(classValue)))
+  );
+  const instructorName = myInstructor ? `${myInstructor.firstName} ${myInstructor.lastName}` : 'No asignado';
+
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
@@ -23932,7 +23938,7 @@ const MemberPortal = ({
         </div>
       </div>
 
-      <div className="p-6 space-y-8 pb-32 max-w-2xl mx-auto">
+      <div className="p-6 space-y-8 pb-32 max-w-4xl mx-auto">
         {/* Welcome Header */}
         <section className="animate-in fade-in slide-in-from-top-4 duration-700">
           <h2 className="text-3xl font-black tracking-tighter leading-none mb-1 text-gray-900">
@@ -23953,7 +23959,7 @@ const MemberPortal = ({
             </div>
             <div className="text-2xl font-black tracking-tighter text-gray-900">{displayTotalPoints}</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos Totales</div>
-            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1 transition-colors group-active:text-amber-800">
               Ver Galardones <ChevronRight className="w-3 h-3" />
             </div>
           </div>
