@@ -23891,11 +23891,6 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
-  const currentMonthStr = (() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  })();
-
   // --- REUSABLE SCORE LOGIC (Unified for Individual & Unit) ---
   const calculateTotalForMember = (m) => {
     const mid = String(m.id).trim().toLowerCase();
