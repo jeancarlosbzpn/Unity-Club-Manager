@@ -10122,6 +10122,7 @@ const ClubVencedoresSystem = () => {
         homeworks={homeworks}
         memberHomeworkStatus={memberHomeworkStatus}
         setMemberHomeworkStatus={setMemberHomeworkStatus}
+        activities={activities}
       />
     );
   }
@@ -23399,7 +23400,8 @@ const MemberPortal = ({
   getApplicableUniformItems,
   homeworks = [],
   memberHomeworkStatus = [],
-  setMemberHomeworkStatus
+  setMemberHomeworkStatus,
+  activities = []
 }) => {
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -23696,6 +23698,18 @@ const MemberPortal = ({
       .sort((a, b) => b.month.localeCompare(a.month));
   })();
 
+  // --- ACTIVITIES ---
+  const upcomingActivities = activities
+    .filter(a => {
+      if (!a.date) return false;
+      const actDate = new Date(`${a.date}T12:00:00 `);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return actDate >= today;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 5); // Show next 5
+
   // --- UNIFORMITY ---
   const myUniformStats = (() => {
     if (!uniformInspections || !uniformItems || !getApplicableUniformItems) return null;
@@ -23900,6 +23914,66 @@ const MemberPortal = ({
             </div>
           </section>
         )}
+
+        {/* Upcoming Activities Section */}
+        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Próximas Actividades</h3>
+            </div>
+            {upcomingActivities.length > 0 && (
+              <span className="text-[10px] font-bold text-gray-400">{upcomingActivities.length} próximas</span>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            {upcomingActivities.length === 0 ? (
+              <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
+                <Calendar className="w-8 h-8 mx-auto text-gray-300 mb-2 opacity-30" />
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No hay actividades programadas</p>
+              </div>
+            ) : (
+              upcomingActivities.map((activity, idx) => {
+                const actDate = new Date(`${activity.date}T12:00:00 `);
+                const day = actDate.getDate();
+                const month = actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+                
+                return (
+                  <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
+                    {/* Date Card */}
+                    <div className="flex flex-col items-center justify-center min-w-[50px] h-[60px] bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-blue-600">
+                      <span className="text-xl font-black leading-none">{day}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-1">{month}</span>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                          activity.type === 'Outdoor' ? 'bg-green-50 text-green-600' :
+                          activity.type === 'Spiritual' ? 'bg-purple-50 text-purple-600' :
+                          activity.type === 'Training' ? 'bg-orange-50 text-orange-600' :
+                          'bg-blue-50 text-blue-600'
+                        }`}>
+                          {activity.type || 'Actividad'}
+                        </span>
+                        {activity.time && (
+                          <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {activity.time}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-black text-sm text-gray-900 truncate group-hover:text-blue-600 transition-colors">{activity.title}</h4>
+                      <p className="text-[10px] text-gray-500 font-medium truncate flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-gray-400" /> {activity.location || 'Club Local'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
 
         {/* Uniformity Section */}
         {myUniformStats && (
