@@ -19323,7 +19323,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 }));
                                 await saveCollectionToFirestore('transactions', lightTransactions);
                                 await saveCollectionToFirestore('financeCategories', financeCategories);
-                                await saveCollectionToFirestore('clubSettings', { name: clubSettings?.name || 'Mi Club' });
+                                await saveCollectionToFirestore('publicClubSettings', { 
+                                  name: clubSettings?.name || 'Mi Club',
+                                  logo: clubSettings?.logo || '',
+                                  aventurerosName: clubSettings?.aventurerosName || '',
+                                  conquistadoresName: clubSettings?.conquistadoresName || '',
+                                  guiasName: clubSettings?.guiasName || ''
+                                });
                                 await saveCollectionToFirestore('membersSummary', membersSummary);
                                 await saveCollectionToFirestore('fixedPaymentConcepts', fixedPaymentConcepts);
                                 await saveCollectionToFirestore('fixedPayments', fixedPayments);
