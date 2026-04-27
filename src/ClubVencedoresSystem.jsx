@@ -1900,14 +1900,20 @@ const ClubVencedoresSystem = () => {
           }
         }
 
+        // Track what actually loaded to prevent wiping empty states
+        window.__loadedKeys = Object.keys(allData).filter(k => allData[k] !== null);
+        console.log(`📊 Claves cargadas correctamente: ${window.__loadedKeys.length}`);
+
+        if (allData.members) setMembers(allData.members);
+        if (allData.transactions) setTransactions(allData.transactions);
+        if (allData.activities) setActivities(allData.activities);
+        if (allData.points) setPoints(allData.points);
         if (allData.lockedSaturdays) setLockedSaturdays(allData.lockedSaturdays);
         if (allData.units) setUnits(Array.isArray(allData.units) ? allData.units : []);
         if (allData.users) setUsers(allData.users);
         if (allData.inventory) setInventory(allData.inventory);
         if (allData.inventoryCategories && Array.isArray(allData.inventoryCategories)) {
           setInventoryCategories(allData.inventoryCategories);
-        } else {
-          setInventoryCategories(['Camping Gear', 'Cooking', 'Uniforms', 'Electronics', 'Furniture', 'Flags/Banners', 'Other']);
         }
         if (allData.cuotaAmount) setCuotaAmount(allData.cuotaAmount);
         if (allData.masterGuideData) setMasterGuideData(allData.masterGuideData);
@@ -1931,7 +1937,6 @@ const ClubVencedoresSystem = () => {
         if (allData.qualifications) {
           const qualData = allData.qualifications;
           if (typeof qualData === 'object' && !Array.isArray(qualData)) {
-            console.log('🔄 Autofix: Converting Qualifications Map to List...');
             const flattened = Object.entries(qualData).map(([mId, data]) => ({
               ...(typeof data === 'object' ? data : { scores: data }),
               memberId: mId,
@@ -1956,13 +1961,14 @@ const ClubVencedoresSystem = () => {
         if (allData.firstAidItems) setFirstAidItems(allData.firstAidItems);
         if (allData.disciplineRecords) setDisciplineRecords(allData.disciplineRecords);
         if (allData.announcements) setAnnouncements(allData.announcements);
+        if (allData.homeworks) setHomeworks(allData.homeworks);
+        if (allData.memberHomeworkStatus) setMemberHomeworkStatus(allData.memberHomeworkStatus);
 
-
+        window.__lastDataInit = Date.now(); // Reset lockout timer
         setDataLoaded(true); // Enable auto-save now that we have loaded data
         console.log('✅ Data loaded successfully!');
       } catch (error) {
         console.error('❌ Error loading data:', error);
-        // Optionally set an error state here to show a specific message
       }
     };
 

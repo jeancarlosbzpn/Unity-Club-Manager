@@ -179,7 +179,22 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     } else {
       const STORAGE_PREFIX = 'clubvencedores_';
-      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
+      const COLLECTION_KEYS = [
+        'members', 'transactions', 'users', 'points', 'units', 
+        'disciplineRecords', 'announcements', 'attendanceRecords', 
+        'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus',
+        'inventory', 'inventoryCategories', 'uniformItems', 'uniformCategories',
+        'uniformInspections', 'memberUniforms', 'firstAidItems', 'tents', 
+        'tentAssignments', 'fixedPayments', 'fixedPaymentConcepts'
+      ];
+
+      // LOCKOUT: Prevent any write for the first 5 seconds after script load to avoid overwriting during load
+      const now = Date.now();
+      if (!window.__lastDataInit) window.__lastDataInit = now;
+      if (now - window.__lastDataInit < 5000 && !options.force) {
+        console.warn('⚠️ LOCKOUT: Bloqueando guardado durante fase de inicialización (5s).');
+        return { success: false, error: 'init_lockout' };
+      }
 
       // Collection-based handling for shared data
       if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
