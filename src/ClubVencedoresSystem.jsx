@@ -1983,6 +1983,27 @@ const ClubVencedoresSystem = () => {
         window.__lastDataInit = Date.now(); // Reset lockout timer
         setDataLoaded(true); // Enable auto-save now that we have loaded data
         console.log('✅ Data loaded successfully!');
+
+        // --- PHANTOM UNIT CLEANUP ---
+        if (allData.members && allData.units && allData.units.length > 0) {
+          const validIds = allData.units.map(u => String(u.id));
+          let phantomsFound = false;
+          const cleanedMembers = allData.members.map(m => {
+            if (m.unitId && !validIds.includes(String(m.unitId))) {
+              phantomsFound = true;
+              return { ...m, unitId: null };
+            }
+            return m;
+          });
+
+          if (phantomsFound) {
+            console.log("🧹 LIMPIEZA INICIAL: Miembros en unidades fantasma detectados y liberados.");
+            setMembers(cleanedMembers);
+            // Force save the cleanup to cloud immediately
+            dataService.writeData('members', cleanedMembers, { force: true });
+          }
+        }
+        // ----------------------------
       } catch (error) {
         console.error('❌ Error loading data:', error);
       }
@@ -1992,23 +2013,7 @@ const ClubVencedoresSystem = () => {
   }, [isAuthenticated, portalMember]);
 
   // UNIT SANITATION: Automatically clear orphaned unitIds (Phantom Units)
-  useEffect(() => {
-    if (dataLoaded && units.length > 0) {
-      const validUnitIds = units.map(u => String(u.id));
-      const orphanedMembers = members.filter(m => m.unitId && !validUnitIds.includes(String(m.unitId)));
-      
-      if (orphanedMembers.length > 0) {
-        console.log(`🧹 LIMPIEZA: Detectados ${orphanedMembers.length} miembros en unidades fantasma. Liberando...`);
-        setMembers(prev => prev.map(m => {
-          if (m.unitId && !validUnitIds.includes(String(m.unitId))) {
-            return { ...m, unitId: null };
-          }
-          return m;
-        }));
-        // Auto-save will pick up this change and sync to cloud
-      }
-    }
-  }, [units, dataLoaded]);
+  // This was moved into fetchData for better reliability.
 
   const syncPortalData = async (isManual = false) => {
     if (isManual) setIsSyncingPortal(true);
