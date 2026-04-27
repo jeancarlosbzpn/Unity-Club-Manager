@@ -1451,9 +1451,29 @@ const ClubVencedoresSystem = () => {
         data = await window.electronAPI.readData();
       }
 
-      // Fallback to LocalStorage if everything is empty...
-      if (!data.members || data.members.length === 0) {
-        // ... (keep original localStorage fallback logic if needed)
+      // Fallback to LocalStorage if critical data is empty in Cloud
+      if (!data.members || data.members.length === 0 || !data.activities || data.activities.length === 0) {
+        console.log('⚠️ critical data is empty or failed, trying localStorage fallback...');
+        const STORAGE_KEYS = {
+          members: 'clubvencedores_members',
+          transactions: 'clubvencedores_transactions',
+          activities: 'clubvencedores_activities',
+          points: 'clubvencedores_points',
+          units: 'clubvencedores_units',
+          users: 'clubvencedores_users',
+          inventory: 'clubvencedores_inventory',
+          masterGuideData: 'clubvencedores_masterGuideData'
+        };
+        Object.keys(STORAGE_KEYS).forEach(k => {
+          const local = localStorage.getItem(STORAGE_KEYS[k]);
+          if (local && (!data[k] || data[k].length === 0)) {
+            try {
+              data[k] = JSON.parse(local);
+            } catch (e) {
+              console.error(`Error parsing local ${k}:`, e);
+            }
+          }
+        });
       }
 
       return data;
@@ -10086,6 +10106,8 @@ const ClubVencedoresSystem = () => {
         if (allData.uniformInspections) setUniformInspections(allData.uniformInspections);
         if (allData.homeworks) setHomeworks(allData.homeworks);
         if (allData.memberHomeworkStatus) setMemberHomeworkStatus(allData.memberHomeworkStatus);
+        if (allData.activities) setActivities(allData.activities);
+        if (allData.masterGuideData) setMasterGuideData(allData.masterGuideData);
         if (allData.memberProgress) setMemberProgress(allData.memberProgress);
         
         setSyncStatus('idle');
