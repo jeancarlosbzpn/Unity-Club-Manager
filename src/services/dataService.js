@@ -104,7 +104,7 @@ export const dataService = {
 
         // LAYER 1: Collections
         console.log(`🔍 Intentando cargar '${key}' desde colecciones Cloud...`);
-        const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+        const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
         
         for (const colName of uniqueCandidates) {
           try {
@@ -174,7 +174,7 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     } else {
       const STORAGE_PREFIX = 'clubvencedores_';
-      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
 
       // Collection-based handling for shared data
       if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
@@ -255,7 +255,7 @@ export const dataService = {
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {}; // Browser only
     
-    const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+    const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
     
     if (COLLECTION_KEYS.includes(key)) {
       const STORAGE_PREFIX = 'clubvencedores_';
