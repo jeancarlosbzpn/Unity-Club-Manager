@@ -15908,7 +15908,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           onClick={() => {
                             setShowUnitForm(true);
                             setEditingUnit(null);
-                            setUnitFormData({ name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
+                            setUnitFormData({ id: '', name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
                           }}
                           className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2"
                         >
@@ -16069,7 +16069,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 const memberUnitId = m.unitId ? String(m.unitId) : null;
                                 const currentUnitId = unitFormData.id ? String(unitFormData.id) : null;
                                 
-                                if (memberUnitId !== currentUnitId) return false;
+                                if (!currentUnitId || memberUnitId !== currentUnitId) return false;
                                 
                                 // Gender filter (optional but good for consistency)
                                 if (unitFormData.gender === 'Male' && m.gender !== 'Male') return false;
@@ -16164,7 +16164,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 }
 
                                 setShowUnitForm(false);
-                                setUnitFormData({ name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
+                                setUnitFormData({ id: '', name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
                               }}
                               className="flex-1 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
                             >
@@ -16251,6 +16251,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   onClick={() => {
                                     setEditingUnit(unit);
                                     setUnitFormData({
+                                      id: unit.id,
                                       name: unit.name,
                                       logo: unit.logo,
                                       clubType: Array.isArray(unit.clubType) ? unit.clubType : [unit.clubType || 'conquistadores'],
