@@ -1416,6 +1416,8 @@ const ClubVencedoresSystem = () => {
     name: 'TriClub Manager',
     logo: '' // empty string = default logo
   });
+  const [isUploading, setIsUploading] = useState(false);
+
 
 
 
@@ -1689,16 +1691,15 @@ const ClubVencedoresSystem = () => {
   const handleLogoUpload = async (e, field = 'logo') => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5000000) { // 5MB limit (increased for Storage uploads)
+      if (file.size > 5000000) { // 5MB limit
         alert('La imagen es muy grande. Máximo 5MB.');
         return;
       }
+      setIsUploading(true);
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64 = reader.result;
-        // Show preview immediately in local state
         setClubSettings(prev => ({ ...prev, [field]: base64 }));
-        // Upload to Firebase Storage - permanent URL, not subject to Firestore 1MB limit
         try {
           const path = `logos/${field}_${Date.now()}.png`;
           const url = await uploadImageToStorage(base64, path);
@@ -1706,6 +1707,8 @@ const ClubVencedoresSystem = () => {
           console.log(`✅ Logo '${field}' subido a Storage:`, url);
         } catch (err) {
           console.warn(`⚠️ No se pudo subir '${field}' a Storage, usando base64 local:`, err);
+        } finally {
+          setIsUploading(false);
         }
       };
       reader.readAsDataURL(file);
@@ -2201,6 +2204,13 @@ const ClubVencedoresSystem = () => {
     const saveData = async () => {
       // SAFETY CHECK: Only save if data has been successfully loaded from disk.
       if (!dataLoaded) return;
+      
+      // PAUSE auto-save if an image/file upload is in progress to avoid 
+      // saving temporary base64 data that would be stripped.
+      if (isUploading) {
+        console.log("⏸️ Auto-save pausado: Subida en curso...");
+        return;
+      }
 
       // Secondary check: ensure we at least have users (admin always exists)
       if (users.length === 0) return;
@@ -2284,10 +2294,10 @@ const ClubVencedoresSystem = () => {
     if (dataLoaded) {
       setHasUnsavedChanges(true);
     }
-    const debounceSave = setTimeout(saveData, 500); // Debounce saves (faster for draft feel)
+    const debounceSave = setTimeout(saveData, 1000); // Debounce saves
     return () => clearTimeout(debounceSave);
 
-  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus, dataLoaded, retryTrigger]);
+  }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus, dataLoaded, retryTrigger, isUploading]);
 
   // ========================================
 
@@ -2894,6 +2904,7 @@ const ClubVencedoresSystem = () => {
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64 = reader.result;
@@ -2908,6 +2919,8 @@ const ClubVencedoresSystem = () => {
           console.log('✅ Foto subida a Storage:', url);
         } catch (err) {
           console.warn('⚠️ No se pudo subir la foto a Storage, usando base64 local:', err);
+        } finally {
+          setIsUploading(false);
         }
       };
       reader.readAsDataURL(file);
@@ -2917,6 +2930,7 @@ const ClubVencedoresSystem = () => {
   const handleSignatureChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64 = reader.result;
@@ -2933,6 +2947,8 @@ const ClubVencedoresSystem = () => {
         } catch (err) {
           console.warn('⚠️ No se pudo subir la firma a Storage, usando base64 local:', err);
           // Keep base64 as fallback if Storage upload fails
+        } finally {
+          setIsUploading(false);
         }
       };
       reader.readAsDataURL(file);
@@ -2984,7 +3000,12 @@ const ClubVencedoresSystem = () => {
 
   // Add or update member
   const handleSubmit = () => {
+    if (isUploading) {
+      alert('Espera a que la imagen termine de subirse...');
+      return;
+    }
     if (!validateForm()) return;
+
 
     // Sync legacy fields for sorting/compatibility
     let updatedFormData = { ...formData };
@@ -15124,10 +15145,24 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     {accessLevels.members === 'write' && (
                       <button
                         onClick={handleSubmit}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                        disabled={isUploading}
+                        className={`flex-1 px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                          isUploading 
+                            ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                        }`}
                       >
-                        <Save className="w-5 h-5" />
-                        {editingMember ? 'Actualizar' : 'Guardar'}
+                        {isUploading ? (
+                          <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Subiendo...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-5 h-5" />
+                            {editingMember ? 'Actualizar' : 'Guardar'}
+                          </>
+                        )}
                       </button>
                     )}
                     <button
