@@ -24106,209 +24106,173 @@ const MemberPortal = ({
           </div>
         )}
 
-        {/* 1. Announcements Feed */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900">
-              <Bell className="w-4 h-4 text-red-600" />
-              Comunicados
-            </h3>
-            {filteredAnnouncements.length > 0 && (
-              <span className="text-[10px] font-bold text-gray-400">{filteredAnnouncements.length} anuncios</span>
-            )}
-          </div>
-          
-          <div className="space-y-4">
-            {filteredAnnouncements.length === 0 ? (
-              <div className="bg-gray-50 rounded-3xl p-8 text-center border border-dashed border-gray-200">
-                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No hay anuncios para ti</p>
-              </div>
-            ) : (
-              filteredAnnouncements.map(announcement => (
-                <div key={announcement.id} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm group">
-                  <div className={`h-1.5 ${
-                    announcement.type === 'Alert' ? 'bg-red-500' : 
-                    announcement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-300'
-                  }`} />
-                  <div className="p-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                        announcement.type === 'Alert' ? 'bg-red-50 text-red-600' : 
-                        announcement.type === 'Event' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Aviso'}
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-400">
-                        {new Date(announcement.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-600 transition-colors text-gray-900">{announcement.title}</h4>
-                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">{announcement.content}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* 2. Upcoming Activities Section */}
-        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Próximas Actividades</h3>
-            </div>
-            {upcomingActivities.length > 0 && (
-              <span className="text-[10px] font-bold text-gray-400">{upcomingActivities.length} próximas</span>
-            )}
-          </div>
-          
-          <div className="space-y-3">
-            {upcomingActivities.length === 0 ? (
-              <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
-                <Calendar className="w-8 h-8 mx-auto text-gray-300 mb-2 opacity-30" />
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No hay actividades programadas</p>
-              </div>
-            ) : (
-              upcomingActivities.map((activity, idx) => {
-                const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
-                const [ay, am, ad] = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/').reverse();
-                const actDate = new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad), 12, 0, 0);
-                const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
-                const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
-                
-                return (
-                  <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
-                    <div className="flex flex-col items-center justify-center min-w-[50px] h-[60px] bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-blue-600">
-                      <span className="text-xl font-black leading-none">{day}</span>
-                      <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-1">{monthName}</span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                          activity.type === 'Outdoor' ? 'bg-green-50 text-green-600' :
-                          activity.type === 'Spiritual' ? 'bg-purple-50 text-purple-600' :
-                          activity.type === 'Training' ? 'bg-orange-50 text-orange-600' :
-                          'bg-blue-50 text-blue-600'
-                        }`}>
-                          {activity.type || 'Actividad'}
-                        </span>
-                        {activity.time && (
-                          <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {activity.time}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="font-black text-sm text-gray-900 truncate group-hover:text-blue-600 transition-colors">{activity.title}</h4>
-                      <p className="text-[10px] text-gray-500 font-medium truncate flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-gray-400" /> {activity.location || 'Club Local'}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
-
-        {/* 3. Uniformity Section */}
-        {myUniformStats && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
-            <div className="flex items-center gap-2 px-1">
-              <Shirt className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Uniformidad</h3>
+        {/* Main Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 1. Announcements Feed (Priority) */}
+          <section className="space-y-4 col-span-1 md:col-span-2">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900">
+                <Bell className="w-4 h-4 text-red-600" />
+                Comunicados
+              </h3>
+              {filteredAnnouncements.length > 0 && (
+                <span className="text-[10px] font-bold text-gray-400">{filteredAnnouncements.length} anuncios</span>
+              )}
             </div>
             
-            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Última Evaluación</div>
-                  <div className="text-sm font-bold text-gray-900">
-                    {myUniformStats.lastInspection ? new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Nunca evaluado'}
-                  </div>
+            <div className="space-y-4">
+              {filteredAnnouncements.length === 0 ? (
+                <div className="bg-gray-50 rounded-3xl p-8 text-center border border-dashed border-gray-200">
+                  <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No hay anuncios para ti</p>
                 </div>
-                {myUniformStats.lastInspection ? (
-                   myUniformStats.itemsMissing.length === 0 ? (
-                    <div className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Completo</div>
+              ) : (
+                filteredAnnouncements.slice(0, 2).map(announcement => (
+                  <div key={announcement.id} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm group hover:border-red-100 transition-all">
+                    <div className={`h-1.5 ${
+                      announcement.type === 'Alert' ? 'bg-red-500' : 
+                      announcement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-300'
+                    }`} />
+                    <div className="p-6">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                          announcement.type === 'Alert' ? 'bg-red-50 text-red-600' : 
+                          announcement.type === 'Event' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Aviso'}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400">
+                          {new Date(announcement.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-600 transition-colors text-gray-900">{announcement.title}</h4>
+                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{announcement.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* 2. Upcoming Activities (Compact List) */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Actividades</h3>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              {upcomingActivities.length === 0 ? (
+                <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200 h-full flex flex-col justify-center">
+                  <Calendar className="w-8 h-8 mx-auto text-gray-300 mb-2 opacity-30" />
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sin programar</p>
+                </div>
+              ) : (
+                upcomingActivities.slice(0, 3).map((activity, idx) => {
+                  const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
+                  const [ay, am, ad] = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/').reverse();
+                  const actDate = new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad), 12, 0, 0);
+                  const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
+                  const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
+                  
+                  return (
+                    <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all group">
+                      <div className="flex flex-col items-center justify-center min-w-[40px] h-[45px] bg-blue-50 rounded-xl text-blue-600">
+                        <span className="text-base font-black leading-none">{day}</span>
+                        <span className="text-[8px] font-black uppercase leading-none">{monthName}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-black text-[12px] text-gray-900 truncate group-hover:text-blue-600">{activity.title}</h4>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[8px] font-bold text-gray-400 flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" /> {activity.time || 'TBD'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </section>
+
+          {/* 3. Uniformity (Compact Card) */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <Shirt className="w-4 h-4 text-indigo-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Uniforme</h3>
+            </div>
+            
+            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm h-[calc(100%-2.5rem)] flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estado</span>
+                  {myUniformStats?.itemsMissing.length === 0 ? (
+                    <span className="text-[9px] font-black text-green-600 uppercase bg-green-50 px-2 py-0.5 rounded-full">Completo</span>
                   ) : (
-                    <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
-                  )
-                ) : (
-                   <div className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full">Pendiente</div>
-                )}
+                    <span className="text-[9px] font-black text-amber-600 uppercase bg-amber-50 px-2 py-0.5 rounded-full">Incompleto</span>
+                  )}
+                </div>
+                <div className="flex -space-x-2 overflow-hidden">
+                  {myUniformStats?.itemsOwned.slice(0, 4).map((item, idx) => (
+                    <div key={idx} className="w-8 h-8 rounded-full bg-white border-2 border-gray-50 flex items-center justify-center shadow-sm" title={item.label}>
+                       <Check className="w-3 h-3 text-green-500" />
+                    </div>
+                  ))}
+                  {(myUniformStats?.itemsOwned.length || 0) > 4 && (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-gray-50 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                      +{(myUniformStats?.itemsOwned.length || 0) - 4}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-500 font-medium italic">
+                  {(myUniformStats?.itemsMissing.length || 0) === 0 ? '¡Todo listo!' : `Te faltan ${myUniformStats?.itemsMissing.length} piezas`}
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3 text-green-500" /> Tengo ({myUniformStats.itemsOwned.length})
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {myUniformStats.itemsOwned.map(item => (
-                      <span key={item.id} className="px-2 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
-                        {item.label}
-                      </span>
-                    ))}
-                    {myUniformStats.itemsOwned.length === 0 && <span className="text-[10px] text-gray-400 italic">No se registraron piezas</span>}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 text-red-500" /> Me Falta ({myUniformStats.itemsMissing.length})
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {myUniformStats.itemsMissing.map(item => (
-                      <span key={item.id} className="px-2 py-1 bg-red-50 border border-red-100 rounded-lg text-[10px] font-bold text-red-700 shadow-sm">
-                        {item.label}
-                      </span>
-                    ))}
-                    {myUniformStats.itemsMissing.length === 0 && <span className="text-[10px] text-green-600 font-bold">¡Tienes todo lo necesario!</span>}
-                  </div>
-                </div>
-              </div>
-
-              {myUniformStats.totalNeeded > 0 && (
-                <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Presupuesto para completar</div>
-                  <div className="text-xl font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
+              {myUniformStats?.totalNeeded > 0 && (
+                <div className="pt-3 border-t border-dashed border-gray-200 mt-3">
+                   <div className="text-[18px] font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
+                   <div className="text-[8px] font-black uppercase tracking-widest text-gray-400">Para completar</div>
                 </div>
               )}
             </div>
           </section>
-        )}
 
-        {/* 4. My Unit Section */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2 px-1">
-            <Users className="w-4 h-4 text-red-600" />
-            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
-          </div>
-          
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
-            {unitMembers.length === 0 ? (
-              <div className="p-6 text-center text-gray-400 text-xs font-bold">Cargando compañeros...</div>
-            ) : (
-              <div className="divide-y divide-gray-100">
+          {/* 4. My Unit (Bento Box) */}
+          <section className="space-y-4 col-span-1 md:col-span-2">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-red-600" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
+              </div>
+            </div>
+            
+            <div className="bg-white border border-gray-100 rounded-[32px] p-2 shadow-sm">
+              <div className="flex overflow-x-auto pb-4 pt-2 px-2 gap-4 scrollbar-hide">
                 {unitMembers.map(m => (
-                  <div key={m.id} className="p-4 flex items-center justify-between hover:bg-white transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold text-[10px]">
+                  <div key={m.id} className="flex flex-col items-center min-w-[80px] space-y-2 group">
+                    <div className="relative">
+                      <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center font-black text-gray-400 group-hover:bg-red-50 group-hover:text-red-600 transition-all border border-gray-50">
                         {m.firstName ? m.firstName[0] : 'V'}
                       </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">{m.firstName} {m.lastName}</div>
-                        <div className="text-[9px] font-black uppercase tracking-widest text-gray-500">{m.unitRole || 'Miembro'}</div>
-                      </div>
+                      {m.unitRole === 'Captain' && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-lg flex items-center justify-center border-2 border-white">
+                          <ShieldCheck className="w-3 h-3 text-white" />
+                        </div>
+                      )}
                     </div>
-                    {m.unitRole === 'Captain' && <ShieldCheck className="w-4 h-4 text-amber-500" />}
+                    <div className="text-center">
+                      <div className="text-[10px] font-black text-gray-900 truncate w-20">{m.firstName}</div>
+                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{m.unitRole || 'Vencedor'}</div>
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        </div>
 
         {/* Footer Info */}
         <footer className="pt-8 pb-12 text-center">
