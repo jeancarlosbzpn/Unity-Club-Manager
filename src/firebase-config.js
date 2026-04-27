@@ -31,9 +31,11 @@ export { ref, uploadString, getDownloadURL };
 const COLLECTION_NAME = 'club_vencedores_data';
 
 // Generic utilities for the main system
+// CRITICAL FIX: { merge: true } prevents wiping existing fields (e.g. signatures, logos)
+// Without merge:true, saving { name:'x' } would DELETE all other fields in the document.
 export const saveCollectionToFirestore = async (key, data) => {
     try {
-        await setDoc(doc(db, COLLECTION_NAME, key), { data, updatedAt: new Date().toISOString() });
+        await setDoc(doc(db, COLLECTION_NAME, key), { data, updatedAt: new Date().toISOString() }, { merge: true });
         console.log(`✅ Saved ${key} to Firestore`);
     } catch (e) {
         console.error(`❌ Error saving ${key}:`, e);
@@ -52,6 +54,21 @@ export const loadCollectionFromFirestore = async (key) => {
     } catch (e) {
         console.error(`Error loading ${key}:`, e);
         return null;
+    }
+};
+
+// Upload a base64 image/signature to Firebase Storage and return its permanent download URL.
+// Use this for all photos, signatures, and logos - never store large base64 in Firestore.
+export const uploadImageToStorage = async (base64DataUrl, storagePath) => {
+    try {
+        const storageRef = ref(storage, storagePath);
+        await uploadString(storageRef, base64DataUrl, 'data_url');
+        const downloadURL = await getDownloadURL(storageRef);
+        console.log(`✅ Image uploaded to Storage at: ${storagePath}`);
+        return downloadURL;
+    } catch (e) {
+        console.error(`❌ Error uploading image to Storage:`, e);
+        throw e;
     }
 };
 

@@ -7,7 +7,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { Mention, MentionBlot } from 'quill-mention';
 import 'quill-mention/dist/quill.mention.css';
 import ClubLogo from './components/ClubLogo';
-import { saveCollectionToFirestore, loadCollectionFromFirestore, storage, ref, uploadString, getDownloadURL, auth } from './firebase-config';
+import { saveCollectionToFirestore, loadCollectionFromFirestore, uploadImageToStorage, storage, ref, uploadString, getDownloadURL, auth } from './firebase-config';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { dataService } from './services/dataService';
 import Login from './components/Login';
@@ -1683,16 +1683,27 @@ const ClubVencedoresSystem = () => {
     reader.readAsText(file);
   };
 
-  const handleLogoUpload = (e, field = 'logo') => {
+  const handleLogoUpload = async (e, field = 'logo') => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2000000) { // 2MB limit
-        alert('La imagen es muy grande. Máximo 2MB.');
+      if (file.size > 5000000) { // 5MB limit (increased for Storage uploads)
+        alert('La imagen es muy grande. Máximo 5MB.');
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setClubSettings(prev => ({ ...prev, [field]: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        // Show preview immediately in local state
+        setClubSettings(prev => ({ ...prev, [field]: base64 }));
+        // Upload to Firebase Storage - permanent URL, not subject to Firestore 1MB limit
+        try {
+          const path = `logos/${field}_${Date.now()}.png`;
+          const url = await uploadImageToStorage(base64, path);
+          setClubSettings(prev => ({ ...prev, [field]: url }));
+          console.log(`✅ Logo '${field}' subido a Storage:`, url);
+        } catch (err) {
+          console.warn(`⚠️ No se pudo subir '${field}' a Storage, usando base64 local:`, err);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -2879,24 +2890,50 @@ const ClubVencedoresSystem = () => {
     });
   };
 
-  // Handle photo upload
-  const handlePhotoChange = (e) => {
+  // Handle photo upload - uploads to Firebase Storage immediately to avoid Firestore size limits
+  const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, photo: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        // Show preview immediately
+        setFormData(prev => ({ ...prev, photo: base64 }));
+        // Upload to Firebase Storage - permanent, survives every save
+        try {
+          const memberId = editingMember?.id || Date.now().toString();
+          const path = `photos/${memberId}_photo_${Date.now()}.jpg`;
+          const url = await uploadImageToStorage(base64, path);
+          setFormData(prev => ({ ...prev, photo: url }));
+          console.log('✅ Foto subida a Storage:', url);
+        } catch (err) {
+          console.warn('⚠️ No se pudo subir la foto a Storage, usando base64 local:', err);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSignatureChange = (e) => {
+  const handleSignatureChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, signature: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        // Show preview immediately in local state
+        setFormData(prev => ({ ...prev, signature: base64 }));
+        // Upload to Firebase Storage immediately - never rely on Firestore for images
+        try {
+          const memberId = editingMember?.id || Date.now().toString();
+          const path = `signatures/${memberId}_signature_${Date.now()}.png`;
+          const url = await uploadImageToStorage(base64, path);
+          // Replace local base64 with permanent Storage URL
+          setFormData(prev => ({ ...prev, signature: url }));
+          console.log('✅ Firma subida a Storage:', url);
+        } catch (err) {
+          console.warn('⚠️ No se pudo subir la firma a Storage, usando base64 local:', err);
+          // Keep base64 as fallback if Storage upload fails
+        }
       };
       reader.readAsDataURL(file);
     }
