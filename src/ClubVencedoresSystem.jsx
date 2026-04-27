@@ -1440,7 +1440,10 @@ const ClubVencedoresSystem = () => {
           'uniformInspections', 'memberUniforms', 'uniformItems', 'uniformCategories', 
           'clubSettings', 'duesConfig', 'qualifications', 
           'attendanceRecords', 'firstAidItems', 'disciplineRecords', 'announcements',
-          'homeworks', 'memberHomeworkStatus'
+          'homeworks', 'memberHomeworkStatus',
+          // Previously missing — caused these modules to wipe data on every refresh:
+          'campDetails', 'classRequirements', 'evaluationGroups', 'memberProgress',
+          'requirementSections', 'reminders', 'fixedPaymentConcepts', 'fixedPayments'
         ];
         
         // Load all in parallel
