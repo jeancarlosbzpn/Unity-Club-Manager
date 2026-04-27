@@ -3,8 +3,9 @@ import { db, saveCollectionToFirestore, loadCollectionFromFirestore, doc, setDoc
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 
 /**
- * Internal utility to clean data before Firebase
- * Removes 'undefined' and strips large base64 images that clog Firestore
+ * Internal utility to clean data before Firebase.
+ * Removes 'undefined' values. Does NOT strip images because photos/signatures
+ * are now uploaded to Firebase Storage (URLs are tiny strings).
  */
 const sanitizeData = (obj) => {
   if (obj === undefined) return null;
@@ -17,10 +18,10 @@ const sanitizeData = (obj) => {
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const val = obj[key];
-        // Strip very large base64 from Firestore to prevent 1MB limit issues
-        // Increased to 500,000 (~375KB) to accommodate signatures and photos
-        if (typeof val === 'string' && val.length > 500000 && val.startsWith('data:image')) {
-          console.warn(`⚠️ La imagen en el campo '${key}' es demasiado grande (${Math.round(val.length/1024)}KB) y ha sido omitida para evitar errores de Firestore.`);
+        // Safety net: if somehow a raw base64 still ends up here, strip it to avoid 1MB Firestore limit.
+        // Photos/signatures should be Storage URLs (https://...) not data: URIs.
+        if (typeof val === 'string' && val.length > 800000 && val.startsWith('data:image')) {
+          console.warn(`⚠️ Campo '${key}' contiene base64 crudo (${Math.round(val.length/1024)}KB). Usa Firebase Storage en su lugar. Omitiendo para proteger Firestore.`);
           newObj[key] = null;
           continue;
         }
@@ -41,9 +42,35 @@ const toSnakeCase = (str) => {
   return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 };
 
+/**
+ * Canonical list of all keys that use individual Firestore documents (collection mode).
+ * These get wipe protection and per-record isolation.
+ * Anything NOT in this list is stored as a single master document.
+ */
+const ALL_COLLECTION_KEYS = [
+  // Core data
+  'members', 'transactions', 'users', 'points', 'units', 'activities',
+  // Attendance & scheduling
+  'attendanceRecords', 'lockedSaturdays',
+  // Finance
+  'fixedPayments', 'fixedPaymentConcepts', 'financeCategories',
+  // Discipline & announcements
+  'disciplineRecords', 'announcements',
+  // Qualifications & progress tracking
+  'qualifications', 'classRequirements', 'evaluationGroups', 'requirementSections',
+  // Homework
+  'homeworks', 'memberHomeworkStatus',
+  // Inventory & equipment
+  'inventory', 'inventoryCategories', 'firstAidItems', 'tents', 'tentAssignments',
+  // Uniformity
+  'uniformItems', 'uniformCategories', 'uniformInspections', 'memberUniforms',
+  // Reminders
+  'reminders',
+];
+
 export const dataService = {
   /**
-   * Reads a full data key. 
+   * Reads a full data key.
    * If Electron, uses local file.
    * If Web, uses Firestore.
    */
@@ -75,18 +102,14 @@ export const dataService = {
               const docSnap = await getDoc(docRef);
               if (docSnap.exists()) {
                 const content = docSnap.data();
-                // If the master doc says it's shifted to a collection, query the collection!
                 if (content.isCollection) {
-                  console.log(`📂 Metadatos de Maestro para '${docId}' indican colección. Consultando...`);
                   const colName = STORAGE_PREFIX + key;
                   const colRef = collection(db, colName);
                   const querySnapshot = await getDocs(colRef);
                   if (!querySnapshot.empty) {
-                    console.log(`✅ ÉXITO MAESTRO (Colección): '${key}' cargado.`);
                     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                   }
                 }
-                console.log(`✅ ÉXITO MAESTRO: '${key}' cargado desde documento central.`);
                 return content.data;
               }
             } catch (e) {
@@ -102,52 +125,44 @@ export const dataService = {
            key
         ])];
 
-        // LAYER 1: Collections
-        console.log(`🔍 Intentando cargar '${key}' desde colecciones Cloud...`);
-        const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
-        
-        for (const colName of uniqueCandidates) {
-          try {
-            const colRef = collection(db, colName);
-            const querySnapshot = await getDocs(colRef);
-            if (!querySnapshot.empty) {
-              console.log(`✅ ÉXITO: ${querySnapshot.size} elementos de '${key}' cargados desde colección: ${colName}`);
-              return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-            } else if (COLLECTION_KEYS.includes(key)) {
-              // Si la colección está vacía, permitimos el fallback al documento central
-              // para facilitar la migración de datos existentes.
-              console.log(`ℹ️ La colección '${colName}' está vacía. Buscando en documento central...`);
-            }
-          } catch (e) {
-            if (e.code === 'permission-denied') {
-              console.warn(`⚠️ Aviso: Permiso denegado para la colección '${colName}'.`);
+        // LAYER 1: Collections (for array-based keys)
+        if (ALL_COLLECTION_KEYS.includes(key)) {
+          for (const colName of uniqueCandidates) {
+            try {
+              const colRef = collection(db, colName);
+              const querySnapshot = await getDocs(colRef);
+              if (!querySnapshot.empty) {
+                console.log(`✅ ÉXITO: ${querySnapshot.size} elementos de '${key}' cargados desde colección: ${colName}`);
+                return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+              }
+            } catch (e) {
+              if (e.code !== 'permission-denied') {
+                // Silently skip permission errors, they're expected for some roles
+              }
             }
           }
         }
 
-        // LAYER 2: Central Document (Fallback if not forceMaster or collections empty)
+        // LAYER 2: Central Document (fallback for all keys, and primary for non-collection keys)
         if (!forceMaster) {
           for (const docId of docCandidates) {
             try {
-              console.log(`🔍 Buscando '${key}' en documento central: ${docId}...`);
               const docRef = doc(db, 'club_vencedores_data', docId);
               const docSnap = await getDoc(docRef);
   
               if (docSnap.exists()) {
                 const content = docSnap.data();
                 if (content.isCollection) {
-                  console.log(`📂 Metadatos de '${docId}' indican colección. Consultando...`);
-                  const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : (STORAGE_PREFIX + key);
+                  const targetCol = STORAGE_PREFIX + key;
                   const colRef = collection(db, targetCol);
                   const querySnapshot = await getDocs(colRef);
                   if (!querySnapshot.empty) {
                     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                   }
-                  console.log(`⚠️ Colección '${targetCol}' vacía a pesar de metadatos. Intentando carga desde datos internos...`);
                 }
                 
-                if (content.data) {
-                  console.log(`✅ ÉXITO: '${key}' cargado desde datos internos del documento: ${docId}`);
+                if (content.data !== undefined) {
+                  console.log(`✅ ÉXITO (Master Fallback): '${key}' cargado desde documento central.`);
                   return content.data;
                 }
               }
@@ -157,7 +172,7 @@ export const dataService = {
           }
         }
 
-        console.warn(`❌ FIN: No se encontraron datos para '${key}' tras agotar todas las rutas.`);
+        console.warn(`❌ FIN: No se encontraron datos para '${key}'.`);
         return null;
       } catch (err) {
         console.error(`Error crítico leyendo ${key} de Firestore:`, err);
@@ -179,16 +194,9 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     } else {
       const STORAGE_PREFIX = 'clubvencedores_';
-      const COLLECTION_KEYS = [
-        'members', 'transactions', 'users', 'points', 'units', 
-        'disciplineRecords', 'announcements', 'attendanceRecords', 
-        'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus',
-        'inventory', 'inventoryCategories', 'uniformItems', 'uniformCategories',
-        'uniformInspections', 'memberUniforms', 'firstAidItems', 'tents', 
-        'tentAssignments', 'fixedPayments', 'fixedPaymentConcepts'
-      ];
 
-      // LOCKOUT: Prevent any write for the first 5 seconds after script load to avoid overwriting during load
+      // LOCKOUT: Prevent any write for the first 5 seconds after data loads
+      // to avoid overwriting cloud data with empty initial state during page load.
       const now = Date.now();
       if (!window.__lastDataInit) window.__lastDataInit = now;
       if (now - window.__lastDataInit < 5000 && !options.force) {
@@ -196,18 +204,16 @@ export const dataService = {
         return { success: false, error: 'init_lockout' };
       }
 
-      // Collection-based handling for shared data
-      if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
+      // Collection-based handling: per-record isolation + wipe protection
+      if (ALL_COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
         const operations = [];
         const colName = STORAGE_PREFIX + key;
         
-        // Sync deletions: find docs in cloud that are not in incoming array
+        // Read current cloud state for wipe protection
         const colRef = collection(db, colName);
         const currentSnap = await getDocs(colRef);
         
-        // SAFETY: Wipe Protection (Differential)
-        // If the cloud has data, and we are trying to save a list that is significantly smaller
-        // (more than 30% smaller), we block it as a likely partial load or data loss event.
+        // SAFETY: Differential Wipe Protection
         if (!currentSnap.empty) {
           const cloudCount = currentSnap.size;
           const localCount = data.length;
@@ -218,30 +224,34 @@ export const dataService = {
           }
           
           if (localCount < cloudCount * 0.7 && cloudCount > 5) {
-            console.warn(`🛑 PROTECCIÓN ANTIBORRADO: El guardado local tiene solo ${localCount} registros vs ${cloudCount} en la nube (Pérdida > 30%). Abortando para proteger datos.`);
+            console.warn(`🛑 PROTECCIÓN ANTIBORRADO: El guardado local tiene solo ${localCount} registros vs ${cloudCount} en la nube (Pérdida > 30%). Abortando.`);
             return { success: false, error: 'wipe_protection_triggered_differential' };
           }
         }
 
-        // FORCE all IDs to strings for robust comparison
-        const incomingIds = data.map(item => String(item.id || item.username || (item.firstName + '_' + item.lastName)));
+        // Build IDs for sync-deletion detection
+        const incomingIds = data.map(item => String(
+          item.id || item.username || 
+          (item.firstName ? `${item.firstName}_${item.lastName}` : Date.now().toString())
+        ));
         
         currentSnap.docs.forEach(docSnap => {
-          // Type-agnostic comparison: force everything to string
           if (!incomingIds.includes(String(docSnap.id))) {
-            console.log(`🗑️ Cloud Sync: Deleting ghost record '${docSnap.id}' from '${colName}'`);
             operations.push({ type: 'delete', ref: docSnap.ref });
           }
         });
 
         // Upsert items
         for (const item of data) {
-          const itemId = String(item.id || item.username || (item.firstName ? (item.firstName + '_' + item.lastName) : Date.now().toString() + Math.random().toString(36).substring(2, 7)));
+          const itemId = String(
+            item.id || item.username || 
+            (item.firstName ? `${item.firstName}_${item.lastName}` : `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`)
+          );
           const itemRef = doc(db, colName, itemId);
           operations.push({ type: 'set', ref: itemRef, data: sanitizeData(item) });
         }
 
-        // Process in chunks of 450 to stay safely under Firestore's 500 limit
+        // Process in batches of 450 (safely under Firestore's 500 limit)
         const chunkSize = 450;
         for (let i = 0; i < operations.length; i += chunkSize) {
           const chunk = operations.slice(i, i + chunkSize);
@@ -254,56 +264,48 @@ export const dataService = {
         }
 
         if (!skipMaster) {
-          // Mark as collection in central metadata
+          // Mark master doc as collection-backed
           try {
             await setDoc(doc(db, 'club_vencedores_data', key), { 
               isCollection: true, 
               updatedAt: new Date().toISOString() 
             }, { merge: true });
           } catch (e) {
-            console.warn(`Could not set collection metadata for ${key} (Permission Denied for non-admins)`, e.message);
+            // Non-critical; permissions may restrict non-admins
           }
-        }
-
-        // Also save to central doc for redundancy/legacy compatibility (UNLESS skipMaster)
-        if (!skipMaster) {
+          // Redundant master doc backup for legacy compatibility
           try {
             await saveCollectionToFirestore(key, sanitizeData(data));
           } catch (e) {
-            console.warn(`Could not update master document for ${key} (Permission Denied for non-admins)`, e.message);
+            console.warn(`Could not update master document for ${key}:`, e.message);
           }
         }
         return { success: true };
       }
 
-      // Generic handling for non-collection data (Config, settings, etc)
+      // Generic handling for non-array / non-collection data (config objects, settings, etc.)
       if (!skipMaster) {
         try {
-          // PROTECCIÓN ANTIBORRADO PARA MASTER DOCS
+          // PROTECCIÓN ANTIBORRADO para Master Docs que son arrays
           if (Array.isArray(data)) {
             const cloudDoc = await getDoc(doc(db, 'club_vencedores_data', key));
             if (cloudDoc.exists()) {
               const cloudData = cloudDoc.data().data;
               if (Array.isArray(cloudData) && cloudData.length > 5) {
-                const localCount = data.length;
-                const cloudCount = cloudData.length;
-
-                if (localCount === 0) {
-                  console.warn(`🛑 PROTECCIÓN ANTIBORRADO (Master): Se intentó guardar una lista VACÍA en '${key}' que tiene ${cloudCount} registros en la nube. Operación cancelada.`);
+                if (data.length === 0) {
+                  console.warn(`🛑 PROTECCIÓN (Master): Lista VACÍA para '${key}' rechazada. Nube tiene ${cloudData.length} registros.`);
                   return { success: false, error: 'wipe_protection_triggered_empty' };
                 }
-
-                if (localCount < cloudCount * 0.7) {
-                  console.warn(`🛑 PROTECCIÓN ANTIBORRADO (Master): El guardado local para '${key}' tiene solo ${localCount} registros vs ${cloudCount} en la nube (Pérdida > 30%). Abortando.`);
+                if (data.length < cloudData.length * 0.7) {
+                  console.warn(`🛑 PROTECCIÓN (Master): Pérdida >30% para '${key}' (local: ${data.length}, nube: ${cloudData.length}). Abortando.`);
                   return { success: false, error: 'wipe_protection_triggered_differential' };
                 }
               }
             }
           }
-
           await saveCollectionToFirestore(key, sanitizeData(data));
         } catch (e) {
-          console.warn(`Could not update master document for generic key ${key}`, e.message);
+          console.warn(`Could not save master document for '${key}':`, e.message);
         }
       }
       return { success: true };
@@ -311,14 +313,12 @@ export const dataService = {
   },
 
   /**
-   * Real-time subscription to a data key
+   * Real-time subscription to a data key.
    */
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {}; // Browser only
     
-    const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
-    
-    if (COLLECTION_KEYS.includes(key)) {
+    if (ALL_COLLECTION_KEYS.includes(key)) {
       const STORAGE_PREFIX = 'clubvencedores_';
       const colName = STORAGE_PREFIX + key;
       const colRef = collection(db, colName);
@@ -329,7 +329,7 @@ export const dataService = {
       });
     }
 
-    // Default document-based subscription
+    // Default document-based subscription for master docs
     const docRef = doc(db, 'club_vencedores_data', key);
     return onSnapshot(docRef, (snapshot) => {
       if (snapshot.metadata.hasPendingWrites) return;
@@ -340,7 +340,7 @@ export const dataService = {
   },
 
   /**
-   * Batch save for migration or full state updates
+   * Batch save for migration or full state updates.
    */
   saveFullState: async (allData, changedKeys = null) => {
     if (isElectron) {
@@ -358,9 +358,16 @@ export const dataService = {
 };
 
 /**
- * Returns default empty values for known keys
+ * Returns default empty values for known keys (used for initialization).
  */
-function getDefaultValue(key) {
-  const arrays = ['members', 'transactions', 'activities', 'points', 'lockedSaturdays', 'units', 'users', 'inventory', 'tents', 'tentAssignments', 'uniformInspections', 'uniformItems'];
+export function getDefaultValue(key) {
+  const arrays = [
+    'members', 'transactions', 'activities', 'points', 'lockedSaturdays', 'units', 'users',
+    'inventory', 'inventoryCategories', 'tents', 'tentAssignments', 'uniformInspections',
+    'uniformItems', 'uniformCategories', 'memberUniforms', 'firstAidItems',
+    'classRequirements', 'evaluationGroups', 'requirementSections', 'reminders',
+    'fixedPayments', 'fixedPaymentConcepts', 'disciplineRecords', 'announcements',
+    'qualifications', 'homeworks', 'memberHomeworkStatus', 'attendanceRecords'
+  ];
   return arrays.includes(key) ? [] : {};
 }

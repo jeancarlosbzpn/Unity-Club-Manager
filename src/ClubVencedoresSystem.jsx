@@ -1918,10 +1918,7 @@ const ClubVencedoresSystem = () => {
         window.__loadedKeys = Object.keys(allData).filter(k => allData[k] !== null);
         console.log(`📊 Claves cargadas correctamente: ${window.__loadedKeys.length}`);
 
-        if (allData.members) setMembers(allData.members);
-        if (allData.transactions) setTransactions(allData.transactions);
-        if (allData.activities) setActivities(allData.activities);
-        if (allData.points) setPoints(allData.points);
+
         if (allData.lockedSaturdays) setLockedSaturdays(allData.lockedSaturdays);
         if (allData.units) setUnits(Array.isArray(allData.units) ? allData.units : []);
         if (allData.users) setUsers(allData.users);
@@ -1929,7 +1926,7 @@ const ClubVencedoresSystem = () => {
         if (allData.inventoryCategories && Array.isArray(allData.inventoryCategories)) {
           setInventoryCategories(allData.inventoryCategories);
         }
-        if (allData.cuotaAmount) setCuotaAmount(allData.cuotaAmount);
+        if (allData.cuotaAmount !== undefined && allData.cuotaAmount !== null) setCuotaAmount(allData.cuotaAmount);
         if (allData.masterGuideData) setMasterGuideData(allData.masterGuideData);
         if (allData.financeCategories) setFinanceCategories(allData.financeCategories);
         if (allData.tents) setTents(allData.tents);
