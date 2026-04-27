@@ -24096,7 +24096,6 @@ const MemberPortal = ({
         </footer>
       </div>
     </div>
-  </div>
   );
 };
 
