@@ -23885,11 +23885,6 @@ const MemberPortal = ({
                       classValue || 
                       'No asignada';
 
-  const myInstructor = members.find(m => 
-    (m.role === 'maestro' || m.role === 'instructor') && 
-    (m.instructorClass === myClassName || (classValue && String(m.instructorClass) === String(classValue)))
-  );
-  const instructorName = myInstructor ? `${myInstructor.firstName} ${myInstructor.lastName}` : 'No asignado';
 
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
