@@ -23891,9 +23891,14 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
-  // Unit Scores Calculation
-  const unitMemberIds = unitMembers.map(m => String(m.id));
-  const unitPoints = points.filter(p => unitMemberIds.includes(String(p.memberId)));
+  // Unit Scores Calculation (Robust Matching)
+  const unitValidIds = new Set();
+  unitMembers.forEach(m => {
+    unitValidIds.add(String(m.id).trim().toLowerCase());
+    if (m.portalCode) unitValidIds.add(String(m.portalCode).trim().toLowerCase());
+  });
+
+  const unitPoints = points.filter(p => p.memberId && unitValidIds.has(String(p.memberId).trim().toLowerCase()));
   const unitTotalScore = unitPoints.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
   
   const now = new Date();
