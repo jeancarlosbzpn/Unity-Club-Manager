@@ -23891,6 +23891,11 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
+  const currentMonthStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
   // --- REUSABLE SCORE LOGIC (Unified for Individual & Unit) ---
   const calculateTotalForMember = (m) => {
     const mid = String(m.id).trim().toLowerCase();
@@ -23930,14 +23935,11 @@ const MemberPortal = ({
       const srid = String(rid).trim().toLowerCase();
       return srid === mid || srid === mcode;
     };
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     // 1. Points Month
     const mPointsMonth = (safePoints || []).filter(p => {
       if (!match(p.memberId)) return false;
-      const pDate = new Date(p.date + 'T12:00:00');
-      return !isNaN(pDate.getTime()) && pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+      return p.month === currentMonthStr;
     }).reduce((sum, p) => {
       let mSum = Number(p.value) || 0;
       if (p.saturdays && typeof p.saturdays === 'object') {
@@ -23955,14 +23957,17 @@ const MemberPortal = ({
     // 2. Merits Month
     const mMeritsMonth = (meritEntries || []).filter(e => {
       if (!match(e.memberId) && (!e.memberIds || !e.memberIds.some(id => match(id)))) return false;
-      return e.date && e.date.startsWith(currentMonthKey);
+      return e.date && String(e.date).startsWith(currentMonthStr);
     }).reduce((s, e) => s + (Number(e.points) || 0), 0);
 
     return mPointsMonth + mMeritsMonth;
   };
 
-  const unitTotalScore = (unitMembers || []).reduce((sum, m) => sum + calculateTotalForMember(m), 0);
-  const unitMonthScore = (unitMembers || []).reduce((sum, m) => sum + calculateMonthForMember(m), 0);
+  const rawUnitTotalScore = (unitMembers || []).reduce((sum, m) => sum + calculateTotalForMember(m), 0);
+  const rawUnitMonthScore = (unitMembers || []).reduce((sum, m) => sum + calculateMonthForMember(m), 0);
+  
+  const unitTotalScore = unitMembers.length > 0 ? Math.round(rawUnitTotalScore / unitMembers.length) : 0;
+  const unitMonthScore = unitMembers.length > 0 ? Math.round(rawUnitMonthScore / unitMembers.length) : 0;
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-500/20">
