@@ -5883,18 +5883,16 @@ const ClubVencedoresSystem = () => {
 
       // Update state
       const newInspection = { ...existingInspection, id: inspectionId, memberId, date: dateStr, itemsMissing: newItemsMissing, isComplete, isInspected: true };
-      const newInspections = [...otherInspections, newInspection];
-      setUniformInspections(newInspections);
-      dataService.writeData('uniformInspections', newInspections, { force: true });
+      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
+      setUniformInspections([...otherInspections, newInspection]);
     };
 
     // Helper to mark inspection as fully complete
     const markInspectionComplete = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
       const inspectionId = `${memberId}_${dateStr}`;
-      const newInspections = [...otherInspections, { id: inspectionId, memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }];
-      setUniformInspections(newInspections);
-      dataService.writeData('uniformInspections', newInspections, { force: true });
+      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
+      setUniformInspections([...otherInspections, { id: inspectionId, memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }]);
     };
 
     const toggleInspectedManual = (memberId, date) => {
@@ -5904,9 +5902,8 @@ const ClubVencedoresSystem = () => {
       const inspectionId = existingInspection.id || `${memberId}_${dateStr}`;
 
       const newInspection = { ...existingInspection, id: inspectionId, memberId, date: dateStr, isInspected };
-      const newInspections = [...otherInspections, newInspection];
-      setUniformInspections(newInspections);
-      dataService.writeData('uniformInspections', newInspections, { force: true });
+      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
+      setUniformInspections([...otherInspections, newInspection]);
     };
 
     // Helper to update inventory size/possession
