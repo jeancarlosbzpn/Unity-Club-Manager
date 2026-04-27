@@ -23891,8 +23891,8 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
-  // Unit Scores Calculation (Direct Member-by-Member Aggregation)
-  const unitTotalScore = (unitMembers || []).reduce((total, m) => {
+  // --- REUSABLE SCORE LOGIC (Unified for Individual & Unit) ---
+  const calculateTotalForMember = (m) => {
     const mid = String(m.id).trim().toLowerCase();
     const mcode = m.portalCode ? String(m.portalCode).trim().toLowerCase() : null;
     const match = (rid) => {
@@ -23901,15 +23901,28 @@ const MemberPortal = ({
       return srid === mid || srid === mcode;
     };
 
-    const mPoints = (points || []).filter(p => match(p.memberId)).reduce((s, p) => s + (Number(p.value) || 0), 0);
-    const mMerits = (meritEntries || []).filter(e => match(e.memberId) || (e.memberIds && e.memberIds.some(id => match(id)))).reduce((s, e) => s + (Number(e.points) || 0), 0);
-    
-    return total + mPoints + mMerits;
-  }, 0);
+    // 1. Saturday/Legacy Points
+    const mPointsRecords = (safePoints || []).filter(p => match(p.memberId));
+    const mLegacyTotal = mPointsRecords.reduce((sum, p) => {
+      let monthSum = Number(p.value) || 0;
+      if (p.saturdays && typeof p.saturdays === 'object') {
+        Object.values(p.saturdays).forEach(day => {
+          if (day && typeof day === 'object') {
+            monthSum += (Number(day.punctuality) || 0) + (Number(day.bible) || 0) + (Number(day.uniform) || 0) +
+                        (Number(day.discipline) || 0) + (Number(day.homework) || 0) + (Number(day.worshipFriday) || 0) +
+                        (Number(day.worshipSaturday) || 0) + (Number(day.sabbathSchool) || 0) + (Number(day.additional) || 0);
+          }
+        });
+      }
+      return sum + monthSum;
+    }, 0);
 
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const unitMonthScore = (unitMembers || []).reduce((total, m) => {
+    // 2. Merit Entries
+    const mMeritTotal = (meritEntries || []).filter(e => match(e.memberId) || (e.memberIds && e.memberIds.some(id => match(id)))).reduce((s, e) => s + (Number(e.points) || 0), 0);
+    return mLegacyTotal + mMeritTotal;
+  };
+
+  const calculateMonthForMember = (m) => {
     const mid = String(m.id).trim().toLowerCase();
     const mcode = m.portalCode ? String(m.portalCode).trim().toLowerCase() : null;
     const match = (rid) => {
@@ -23917,24 +23930,39 @@ const MemberPortal = ({
       const srid = String(rid).trim().toLowerCase();
       return srid === mid || srid === mcode;
     };
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    const mPointsMonth = (points || [])
-      .filter(p => {
-        if (!match(p.memberId)) return false;
-        const pDate = new Date(p.date + 'T12:00:00');
-        return !isNaN(pDate.getTime()) && pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
-      })
-      .reduce((s, p) => s + (Number(p.value) || 0), 0);
+    // 1. Points Month
+    const mPointsMonth = (safePoints || []).filter(p => {
+      if (!match(p.memberId)) return false;
+      const pDate = new Date(p.date + 'T12:00:00');
+      return !isNaN(pDate.getTime()) && pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+    }).reduce((sum, p) => {
+      let mSum = Number(p.value) || 0;
+      if (p.saturdays && typeof p.saturdays === 'object') {
+        Object.values(p.saturdays).forEach(day => {
+          if (day && typeof day === 'object') {
+            mSum += (Number(day.punctuality) || 0) + (Number(day.bible) || 0) + (Number(day.uniform) || 0) +
+                    (Number(day.discipline) || 0) + (Number(day.homework) || 0) + (Number(day.worshipFriday) || 0) +
+                    (Number(day.worshipSaturday) || 0) + (Number(day.sabbathSchool) || 0) + (Number(day.additional) || 0);
+          }
+        });
+      }
+      return sum + mSum;
+    }, 0);
 
-    const mMeritsMonth = (meritEntries || [])
-      .filter(e => {
-        if (!match(e.memberId) && (!e.memberIds || !e.memberIds.some(id => match(id)))) return false;
-        return e.date && e.date.startsWith(currentMonthKey);
-      })
-      .reduce((s, e) => s + (Number(e.points) || 0), 0);
+    // 2. Merits Month
+    const mMeritsMonth = (meritEntries || []).filter(e => {
+      if (!match(e.memberId) && (!e.memberIds || !e.memberIds.some(id => match(id)))) return false;
+      return e.date && e.date.startsWith(currentMonthKey);
+    }).reduce((s, e) => s + (Number(e.points) || 0), 0);
 
-    return total + mPointsMonth + mMeritsMonth;
-  }, 0);
+    return mPointsMonth + mMeritsMonth;
+  };
+
+  const unitTotalScore = (unitMembers || []).reduce((sum, m) => sum + calculateTotalForMember(m), 0);
+  const unitMonthScore = (unitMembers || []).reduce((sum, m) => sum + calculateMonthForMember(m), 0);
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-500/20">
