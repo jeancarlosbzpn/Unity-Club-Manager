@@ -10155,11 +10155,14 @@ const ClubVencedoresSystem = () => {
         masterGuideData={masterGuideData}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
-          const classLabel = pathfinderClasses.find(c => String(c.value) === String(mClass))?.label || mClass;
+          const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
+          const classLabel = classEntry?.label || mClass;
+          const classValue = classEntry?.value || mClass;
+          
           const inst = members.find(u => 
             u.directiveRoles?.conquistadores?.some(r => 
               (r.position === 'Class Instructor' || r.position === 'Instructor') && 
-              r.instructorClass === classLabel
+              (r.instructorClass === classLabel || r.instructorClass === classValue)
             )
           );
           return inst ? `${inst.firstName} ${inst.lastName}` : null;
@@ -23446,6 +23449,9 @@ const MemberPortal = ({
   masterGuideData = { requirements: [], evaluationDates: {} },
   instructorName = null
 }) => {
+  const [showAwardsModal, setShowAwardsModal] = useState(false);
+  const [showHomeworkModal, setShowHomeworkModal] = useState(false);
+
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
     if (!idInRecord) return false;
@@ -23924,12 +23930,18 @@ const MemberPortal = ({
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           {/* Main Stats */}
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
+          <div 
+            onClick={() => setShowAwardsModal(true)}
+            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-amber-200"
+          >
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
               <Trophy className="w-5 h-5 text-amber-500" />
             </div>
             <div className="text-2xl font-black tracking-tighter text-gray-900">{displayTotalPoints}</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos Totales</div>
+            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              Ver Galardones <ChevronRight className="w-3 h-3" />
+            </div>
           </div>
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
@@ -23954,7 +23966,10 @@ const MemberPortal = ({
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Pagado</div>
           </div>
 
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden col-span-2">
+          <div 
+            onClick={() => setShowHomeworkModal(true)}
+            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden col-span-2 cursor-pointer hover:border-indigo-200"
+          >
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
               <BookOpen className="w-5 h-5 text-indigo-500" />
             </div>
@@ -23967,11 +23982,131 @@ const MemberPortal = ({
                   <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Instructor: {instructorName}</span>
                 </div>
               )}
+              <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                Ver Tareas de Clase <ChevronRight className="w-3 h-3" />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 1. Announcements Feed (REORDERED) */}
+        {/* MODALS (Replacing direct sections) */}
+        {showAwardsModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center">
+                    <Award className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-gray-900">Mis Galardones</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tus méritos y premios</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowAwardsModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {myAwards.length === 0 ? (
+                <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[30px]">
+                  <Trophy className="w-12 h-12 mx-auto text-gray-200 mb-4 opacity-50" />
+                  <p className="text-sm font-black uppercase tracking-widest text-gray-400">Aún no tienes galardones</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {myAwards.map((award, idx) => (
+                    <div key={idx} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-[30px] p-6 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                      <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-amber-100">
+                          <Medal className="w-7 h-7 text-amber-500" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-0.5">{award.title}</div>
+                          <div className="text-xl font-black tracking-tight text-gray-900 capitalize">{award.name}</div>
+                        </div>
+                      </div>
+                      <div className="text-right relative z-10">
+                        <div className="text-3xl font-black tracking-tighter text-amber-700 leading-none">{award.score}</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">Puntos</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                 <button 
+                  onClick={() => setShowAwardsModal(false)}
+                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all active:scale-95"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showHomeworkModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center">
+                    <ClipboardCheck className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-gray-900">Tareas de Clase</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Requisitos para tu clase</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowHomeworkModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {myHomeworks.length === 0 ? (
+                  <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[30px]">
+                    <ClipboardList className="w-12 h-12 mx-auto text-gray-200 mb-4 opacity-50" />
+                    <p className="text-sm font-black uppercase tracking-widest text-gray-400">No hay tareas asignadas</p>
+                  </div>
+                ) : (
+                  myHomeworks.map(hw => (
+                    <div key={hw.id} className={`p-5 rounded-[30px] border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className={`font-black text-base ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
+                            {hw.dueDate && <span className="px-2 py-0.5 bg-red-50 text-red-500 text-[8px] font-black rounded-full uppercase">Vence: {hw.dueDate}</span>}
+                          </div>
+                          <p className="text-sm text-gray-500">{hw.description}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleToggleHomework(hw.id)}
+                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                        >
+                          <Check className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                 <button 
+                  onClick={() => setShowHomeworkModal(false)}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 1. Announcements Feed */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900">
@@ -24016,7 +24151,7 @@ const MemberPortal = ({
           </div>
         </section>
 
-        {/* 2. Upcoming Activities Section (KEEPING IT HERE) */}
+        {/* 2. Upcoming Activities Section */}
         <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
@@ -24077,77 +24212,7 @@ const MemberPortal = ({
           </div>
         </section>
 
-        {/* 3. Homework Section (REORDERED) */}
-        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-500">
-          <div className="flex items-center gap-2 px-1">
-            <ClipboardCheck className="w-4 h-4 text-red-600" />
-            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Tareas de Clase</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-3">
-            {myHomeworks.length === 0 ? (
-              <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
-                <ClipboardList className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">No hay tareas asignadas</p>
-              </div>
-            ) : (
-              myHomeworks.map(hw => (
-                <div key={hw.id} className={`p-4 rounded-3xl border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-black text-sm ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
-                        {hw.dueDate && <span className="text-[9px] font-bold text-red-500 uppercase">Vence: {hw.dueDate}</span>}
-                      </div>
-                      <p className="text-xs text-gray-500 line-clamp-2">{hw.description}</p>
-                    </div>
-                    <button 
-                      onClick={() => handleToggleHomework(hw.id)}
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* 4. Awards Section (REORDERED) */}
-        {myAwards.length > 0 && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-200">
-            <div className="flex items-center gap-2 px-1">
-              <Award className="w-4 h-4 text-amber-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Galardones</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3">
-              {myAwards.map((award, idx) => (
-                <div key={idx} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                    <Trophy className="w-24 h-24 text-amber-600" />
-                  </div>
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-amber-100">
-                      <Medal className="w-6 h-6 text-amber-500" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-widest text-amber-600 mb-0.5">{award.title}</div>
-                      <div className="text-lg font-black tracking-tight text-gray-900 capitalize leading-none">{award.name}</div>
-                    </div>
-                  </div>
-                  <div className="text-right relative z-10">
-                    <div className="text-2xl font-black tracking-tighter text-amber-700 leading-none">{award.score}</div>
-                    <div className="text-[9px] font-black uppercase tracking-widest text-amber-600/70">Puntos</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 5. Uniformity Section (REORDERED) */}
+        {/* 3. Uniformity Section */}
         {myUniformStats && (
           <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
             <div className="flex items-center gap-2 px-1">
@@ -24214,7 +24279,7 @@ const MemberPortal = ({
           </section>
         )}
 
-        {/* 6. My Unit Section (REORDERED) */}
+        {/* 4. My Unit Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 px-1">
             <Users className="w-4 h-4 text-red-600" />
