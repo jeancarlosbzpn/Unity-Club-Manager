@@ -23996,7 +23996,7 @@ const MemberPortal = ({
                   <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Instructor: {instructorName}</span>
                 </div>
               )}
-              <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1 transition-colors group-active:text-indigo-800">
                 Ver Tareas de Clase <ChevronRight className="w-3 h-3" />
               </div>
             </div>
@@ -24255,7 +24255,7 @@ const MemberPortal = ({
               <p className="text-sm font-black text-gray-900 text-center leading-tight">
                 {upcomingActivities.length === 0 ? 'Sin programar' : `${upcomingActivities.length} Próximas Actividades`}
               </p>
-              <div className="mt-3 text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="mt-3 text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1 transition-colors group-active:text-blue-800">
                 Ver Calendario <ChevronRight className="w-3 h-3" />
               </div>
             </div>
