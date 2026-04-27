@@ -264,6 +264,28 @@ export const dataService = {
       // Generic handling for non-collection data (Config, settings, etc)
       if (!skipMaster) {
         try {
+          // PROTECCIÓN ANTIBORRADO PARA MASTER DOCS
+          if (Array.isArray(data)) {
+            const cloudDoc = await getDoc(doc(db, 'club_vencedores_data', key));
+            if (cloudDoc.exists()) {
+              const cloudData = cloudDoc.data().data;
+              if (Array.isArray(cloudData) && cloudData.length > 5) {
+                const localCount = data.length;
+                const cloudCount = cloudData.length;
+
+                if (localCount === 0) {
+                  console.warn(`🛑 PROTECCIÓN ANTIBORRADO (Master): Se intentó guardar una lista VACÍA en '${key}' que tiene ${cloudCount} registros en la nube. Operación cancelada.`);
+                  return { success: false, error: 'wipe_protection_triggered_empty' };
+                }
+
+                if (localCount < cloudCount * 0.7) {
+                  console.warn(`🛑 PROTECCIÓN ANTIBORRADO (Master): El guardado local para '${key}' tiene solo ${localCount} registros vs ${cloudCount} en la nube (Pérdida > 30%). Abortando.`);
+                  return { success: false, error: 'wipe_protection_triggered_differential' };
+                }
+              }
+            }
+          }
+
           await saveCollectionToFirestore(key, sanitizeData(data));
         } catch (e) {
           console.warn(`Could not update master document for generic key ${key}`, e.message);
