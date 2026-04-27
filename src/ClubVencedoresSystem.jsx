@@ -2235,10 +2235,17 @@ const ClubVencedoresSystem = () => {
         if (!dataLoaded) return;
 
         // CRITICAL DATA INTEGRITY CHECK:
-        // If we previously had members/activities but now they are empty, 
-        // something might have failed in load. Protect cloud from wipe!
+        // Protect cloud from accidental wipe if loading failed
         if (members.length === 0 && activities.length === 0 && users.length > 0) {
-           console.warn("🛑 Safety trigger: Data state is unexpectedly empty. Aborting save to protect cloud.");
+           console.warn("🛑 Safety trigger: Data state is unexpectedly empty. Aborting save.");
+           return;
+        }
+        
+        // If we have members but 0 activities, and we had activities before...
+        // This is harder to check without previous state, but we can at least 
+        // prevent a save if we are in a 'syncing' error state.
+        if (syncStatus === 'error') {
+           console.error("🛑 Aborting save due to previous sync error.");
            return;
         }
 
@@ -23726,12 +23733,12 @@ const MemberPortal = ({
   const upcomingActivities = (() => {
     // 1. Regular Activities
     const regularActs = (Array.isArray(activities) ? activities : [])
-      .filter(a => a.status !== 'Completado' && a.status !== 'Cancelada')
+      .filter(a => a && a.date && a.status !== 'Completado' && a.status !== 'Cancelada')
       .map(a => ({ ...a, source: 'regular' }));
 
     // 2. Master Guide Requirements
     const gmReqs = (masterGuideData?.requirements || [])
-      .filter(req => req.activityDate)
+      .filter(req => req && req.activityDate)
       .map(req => ({
         id: req.id,
         title: req.text,
@@ -23745,25 +23752,31 @@ const MemberPortal = ({
     const gmEvals = [];
     if (masterGuideData?.evaluationDates) {
       const { first, second, third } = masterGuideData.evaluationDates;
-      if (first) gmEvals.push({ id: 'gm-eval-1', title: 'GM: 1ra Evaluación', date: first, type: 'MasterGuide', time: 'Todo el día' });
-      if (second) gmEvals.push({ id: 'gm-eval-2', title: 'GM: 2da Evaluación', date: second, type: 'MasterGuide', time: 'Todo el día' });
-      if (third) gmEvals.push({ id: 'gm-eval-3', title: 'GM: 3ra Evaluación (Investidura)', date: third, type: 'MasterGuide', time: 'Todo el día' });
+      if (first) gmEvals.push({ id: 'gm-eval-1', title: 'GM: 1ra Evaluación', date: first, type: 'MasterGuide', time: 'Todo el día', source: 'eval' });
+      if (second) gmEvals.push({ id: 'gm-eval-2', title: 'GM: 2da Evaluación', date: second, type: 'MasterGuide', time: 'Todo el día', source: 'eval' });
+      if (third) gmEvals.push({ id: 'gm-eval-3', title: 'GM: 3ra Evaluación (Investidura)', date: third, type: 'MasterGuide', time: 'Todo el día', source: 'eval' });
     }
 
     // Merge and Filter by Date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     return [...regularActs, ...gmReqs, ...gmEvals]
       .filter(a => {
         if (!a.date) return false;
-        // Standardize date parsing
-        const dateStr = String(a.date).includes('T') ? a.date.split('T')[0] : a.date;
-        const actDate = new Date(`${dateStr}T12:00:00 `);
-        return !isNaN(actDate.getTime()) && actDate >= today;
+        try {
+          // Standardize date parsing: handle YYYY-MM-DD or DD/MM/YYYY or ISO
+          const dateStr = String(a.date).includes('T') ? a.date.split('T')[0] : a.date;
+          const [y, m, d] = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/').reverse();
+          const actDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d), 12, 0, 0);
+          
+          return !isNaN(actDate.getTime()) && actDate >= today;
+        } catch (e) {
+          return false;
+        }
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date))
-      .slice(0, 10); // Show more since we merged sources
+      .slice(0, 10);
   })();
 
   // --- UNIFORMITY ---
