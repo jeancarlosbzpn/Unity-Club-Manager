@@ -10123,6 +10123,7 @@ const ClubVencedoresSystem = () => {
         memberHomeworkStatus={memberHomeworkStatus}
         setMemberHomeworkStatus={setMemberHomeworkStatus}
         activities={activities}
+        masterGuideData={masterGuideData}
       />
     );
   }
@@ -23401,7 +23402,8 @@ const MemberPortal = ({
   homeworks = [],
   memberHomeworkStatus = [],
   setMemberHomeworkStatus,
-  activities = []
+  activities = [],
+  masterGuideData = { requirements: [], evaluationDates: {} }
 }) => {
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -23699,16 +23701,48 @@ const MemberPortal = ({
   })();
 
   // --- ACTIVITIES ---
-  const upcomingActivities = activities
-    .filter(a => {
-      if (!a.date) return false;
-      const actDate = new Date(`${a.date}T12:00:00 `);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return actDate >= today;
-    })
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .slice(0, 5); // Show next 5
+  const upcomingActivities = (() => {
+    // 1. Regular Activities
+    const regularActs = (Array.isArray(activities) ? activities : [])
+      .filter(a => a.status !== 'Completado' && a.status !== 'Cancelada')
+      .map(a => ({ ...a, source: 'regular' }));
+
+    // 2. Master Guide Requirements
+    const gmReqs = (masterGuideData?.requirements || [])
+      .filter(req => req.activityDate)
+      .map(req => ({
+        id: req.id,
+        title: req.text,
+        date: req.activityDate,
+        type: 'MasterGuide',
+        time: 'Todo el día',
+        source: 'gm'
+      }));
+
+    // 3. Master Guide Evaluations
+    const gmEvals = [];
+    if (masterGuideData?.evaluationDates) {
+      const { first, second, third } = masterGuideData.evaluationDates;
+      if (first) gmEvals.push({ id: 'gm-eval-1', title: 'GM: 1ra Evaluación', date: first, type: 'MasterGuide', time: 'Todo el día' });
+      if (second) gmEvals.push({ id: 'gm-eval-2', title: 'GM: 2da Evaluación', date: second, type: 'MasterGuide', time: 'Todo el día' });
+      if (third) gmEvals.push({ id: 'gm-eval-3', title: 'GM: 3ra Evaluación (Investidura)', date: third, type: 'MasterGuide', time: 'Todo el día' });
+    }
+
+    // Merge and Filter by Date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return [...regularActs, ...gmReqs, ...gmEvals]
+      .filter(a => {
+        if (!a.date) return false;
+        // Standardize date parsing
+        const dateStr = String(a.date).includes('T') ? a.date.split('T')[0] : a.date;
+        const actDate = new Date(`${dateStr}T12:00:00 `);
+        return !isNaN(actDate.getTime()) && actDate >= today;
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 10); // Show more since we merged sources
+  })();
 
   // --- UNIFORMITY ---
   const myUniformStats = (() => {
@@ -23935,9 +23969,10 @@ const MemberPortal = ({
               </div>
             ) : (
               upcomingActivities.map((activity, idx) => {
-                const actDate = new Date(`${activity.date}T12:00:00 `);
-                const day = actDate.getDate();
-                const month = actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '');
+                const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
+                const actDate = new Date(`${dateStr}T12:00:00 `);
+                const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
+                const month = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
                 
                 return (
                   <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
