@@ -23891,52 +23891,50 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
-  // Unit Scores Calculation (Unified: Legacy Points + Merit Entries)
-  const unitValidIds = new Set();
-  unitMembers.forEach(m => {
-    unitValidIds.add(String(m.id).trim().toLowerCase());
-    if (m.portalCode) unitValidIds.add(String(m.portalCode).trim().toLowerCase());
-  });
+  // Unit Scores Calculation (Direct Member-by-Member Aggregation)
+  const unitTotalScore = (unitMembers || []).reduce((total, m) => {
+    const mid = String(m.id).trim().toLowerCase();
+    const mcode = m.portalCode ? String(m.portalCode).trim().toLowerCase() : null;
+    const match = (rid) => {
+      if (!rid) return false;
+      const srid = String(rid).trim().toLowerCase();
+      return srid === mid || srid === mcode;
+    };
 
-  const isMemberOfThisUnit = (recordMemberId) => {
-    if (!recordMemberId) return false;
-    return unitValidIds.has(String(recordMemberId).trim().toLowerCase());
-  };
+    const mPoints = (points || []).filter(p => match(p.memberId)).reduce((s, p) => s + (Number(p.value) || 0), 0);
+    const mMerits = (meritEntries || []).filter(e => match(e.memberId) || (e.memberIds && e.memberIds.some(id => match(id)))).reduce((s, e) => s + (Number(e.points) || 0), 0);
+    
+    return total + mPoints + mMerits;
+  }, 0);
 
-  // 1. Legacy Points
-  const unitLegacyPoints = points.filter(p => isMemberOfThisUnit(p.memberId));
-  
-  // 2. Merit Entries (disciplineRecords)
-  const unitMeritEntries = meritEntries.filter(e => {
-    if (isMemberOfThisUnit(e.memberId)) return true;
-    if (e.memberIds && e.memberIds.some(id => isMemberOfThisUnit(id))) return true;
-    return false;
-  });
-
-  // Calculate Totals
-  const legacyTotal = unitLegacyPoints.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
-  const meritTotal = unitMeritEntries.reduce((sum, e) => sum + (Number(e.points) || 0), 0);
-  const unitTotalScore = legacyTotal + meritTotal;
-  
-  // Calculate Monthly
   const now = new Date();
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  
-  const legacyMonth = unitLegacyPoints
-    .filter(p => {
-      const pDate = new Date(p.date + 'T12:00:00');
-      return !isNaN(pDate.getTime()) && pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
-    })
-    .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+  const unitMonthScore = (unitMembers || []).reduce((total, m) => {
+    const mid = String(m.id).trim().toLowerCase();
+    const mcode = m.portalCode ? String(m.portalCode).trim().toLowerCase() : null;
+    const match = (rid) => {
+      if (!rid) return false;
+      const srid = String(rid).trim().toLowerCase();
+      return srid === mid || srid === mcode;
+    };
 
-  const meritMonth = unitMeritEntries
-    .filter(e => {
-      if (!e.date) return false;
-      return e.date.startsWith(currentMonthKey);
-    })
-    .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
+    const mPointsMonth = (points || [])
+      .filter(p => {
+        if (!match(p.memberId)) return false;
+        const pDate = new Date(p.date + 'T12:00:00');
+        return !isNaN(pDate.getTime()) && pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+      })
+      .reduce((s, p) => s + (Number(p.value) || 0), 0);
 
-  const unitMonthScore = legacyMonth + meritMonth;
+    const mMeritsMonth = (meritEntries || [])
+      .filter(e => {
+        if (!match(e.memberId) && (!e.memberIds || !e.memberIds.some(id => match(id)))) return false;
+        return e.date && e.date.startsWith(currentMonthKey);
+      })
+      .reduce((s, e) => s + (Number(e.points) || 0), 0);
+
+    return total + mPointsMonth + mMeritsMonth;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-500/20">
