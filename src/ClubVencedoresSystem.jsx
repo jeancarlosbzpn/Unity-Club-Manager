@@ -2204,16 +2204,10 @@ const ClubVencedoresSystem = () => {
     const saveData = async () => {
       // SAFETY CHECK: Only save if data has been successfully loaded from disk.
       if (!dataLoaded) return;
-      
-      // PAUSE auto-save if an image/file upload is in progress to avoid 
-      // saving temporary base64 data that would be stripped.
-      if (isUploading) {
-        console.log("⏸️ Auto-save pausado: Subida en curso...");
-        return;
-      }
 
       // Secondary check: ensure we at least have users (admin always exists)
       if (users.length === 0) return;
+
 
       const dataToSave = {
         members,
@@ -2228,7 +2222,6 @@ const ClubVencedoresSystem = () => {
         masterGuideData,
         announcements,
         financeCategories,
-        // paymentConcepts, concepts, achievements removed as they are undefined
         reminders,
         inventoryCategories,
         tents,
@@ -2261,6 +2254,16 @@ const ClubVencedoresSystem = () => {
         // SAFETY: Only save if we have dataLoaded flag TRUE
         if (!dataLoaded) return;
 
+        // If an upload is in progress, we only save non-image-heavy keys to avoid stripping
+        let finalDataToSave = { ...dataToSave };
+        if (isUploading) {
+          console.log("⏸️ Auto-save parcial: Omitiendo miembros/ajustes por subida en curso...");
+          // We omit members and clubSettings because they might have base64 in progress
+          delete finalDataToSave.members;
+          delete finalDataToSave.clubSettings;
+        }
+
+
         // CRITICAL DATA INTEGRITY CHECK:
         // Protect cloud from accidental wipe if loading failed
         if (members.length === 0 && activities.length === 0 && users.length > 0) {
@@ -2277,9 +2280,9 @@ const ClubVencedoresSystem = () => {
         }
 
         setSyncStatus('saving');
-        // SANITIZATION STEP:
-        const cleanData = JSON.parse(JSON.stringify(dataToSave));
+        const cleanData = JSON.parse(JSON.stringify(finalDataToSave));
         await saveToElectron(cleanData);
+
         setSyncStatus('saved');
         setHasUnsavedChanges(false);
         
@@ -5880,16 +5883,18 @@ const ClubVencedoresSystem = () => {
 
       // Update state
       const newInspection = { ...existingInspection, id: inspectionId, memberId, date: dateStr, itemsMissing: newItemsMissing, isComplete, isInspected: true };
-      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
-      setUniformInspections([...otherInspections, newInspection]);
+      const newInspections = [...otherInspections, newInspection];
+      setUniformInspections(newInspections);
+      dataService.writeData('uniformInspections', newInspections, { force: true });
     };
 
     // Helper to mark inspection as fully complete
     const markInspectionComplete = (memberId, date) => {
       const dateStr = date instanceof Date ? dateToLocalISO(date) : date;
       const inspectionId = `${memberId}_${dateStr}`;
-      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
-      setUniformInspections([...otherInspections, { id: inspectionId, memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }]);
+      const newInspections = [...otherInspections, { id: inspectionId, memberId, date: dateStr, itemsMissing: [], isComplete: true, isInspected: true }];
+      setUniformInspections(newInspections);
+      dataService.writeData('uniformInspections', newInspections, { force: true });
     };
 
     const toggleInspectedManual = (memberId, date) => {
@@ -5899,8 +5904,9 @@ const ClubVencedoresSystem = () => {
       const inspectionId = existingInspection.id || `${memberId}_${dateStr}`;
 
       const newInspection = { ...existingInspection, id: inspectionId, memberId, date: dateStr, isInspected };
-      const otherInspections = uniformInspections.filter(i => !(i.memberId === memberId && i.date === dateStr));
-      setUniformInspections([...otherInspections, newInspection]);
+      const newInspections = [...otherInspections, newInspection];
+      setUniformInspections(newInspections);
+      dataService.writeData('uniformInspections', newInspections, { force: true });
     };
 
     // Helper to update inventory size/possession
