@@ -1417,6 +1417,8 @@ const ClubVencedoresSystem = () => {
     logo: '' // empty string = default logo
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [isSavingInspections, setIsSavingInspections] = useState(false);
+
 
 
 
@@ -5858,6 +5860,25 @@ const ClubVencedoresSystem = () => {
     return null;
   };
 
+  const handleSaveInspections = async () => {
+    setIsSavingInspections(true);
+    try {
+      console.log("🚀 Guardado manual de inspecciones iniciado...");
+      const result = await dataService.writeData('uniformInspections', uniformInspections, { force: true });
+      if (result.success) {
+        alert('✅ ¡Inspección guardada exitosamente en la nube!');
+        setHasUnsavedChanges(false);
+      } else {
+        alert('❌ Error al guardar: ' + (result.error || 'Desconocido'));
+      }
+    } catch (err) {
+      console.error('Error en guardado manual:', err);
+      alert('❌ Error crítico al conectar con la nube.');
+    } finally {
+      setIsSavingInspections(false);
+    }
+  };
+
   const renderUniformityModule = () => {
     const isReadOnly = getModuleAccessLevel('uniformity') === 'read';
     // Helper to get inspection for a member on a specific date
@@ -6323,8 +6344,31 @@ const ClubVencedoresSystem = () => {
                 <button onClick={() => setInspectionViewMode('selection')} className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline flex items-center gap-1">
                   &larr; Volver a Selección
                 </button>
-                <div className="bg-white dark:bg-gray-800 px-3 py-1 rounded shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Fecha: {new Date(bgDate).toLocaleDateString()}
+                <div className="flex items-center gap-4">
+                  <div className="bg-white dark:bg-gray-800 px-3 py-1 rounded shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300">
+                    Fecha: {new Date(bgDate).toLocaleDateString()}
+                  </div>
+                  <button
+                    onClick={handleSaveInspections}
+                    disabled={isSavingInspections}
+                    className={`px-4 py-2 rounded-lg font-bold shadow-md flex items-center gap-2 transition-all ${
+                      isSavingInspections 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-green-600 hover:bg-green-700 text-white hover:scale-105 active:scale-95'
+                    }`}
+                  >
+                    {isSavingInspections ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        FINALIZAR Y GUARDAR EN NUBE
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
               <div>
