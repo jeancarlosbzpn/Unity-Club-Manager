@@ -1991,6 +1991,25 @@ const ClubVencedoresSystem = () => {
     fetchData();
   }, [isAuthenticated, portalMember]);
 
+  // UNIT SANITATION: Automatically clear orphaned unitIds (Phantom Units)
+  useEffect(() => {
+    if (dataLoaded && units.length > 0) {
+      const validUnitIds = units.map(u => String(u.id));
+      const orphanedMembers = members.filter(m => m.unitId && !validUnitIds.includes(String(m.unitId)));
+      
+      if (orphanedMembers.length > 0) {
+        console.log(`🧹 LIMPIEZA: Detectados ${orphanedMembers.length} miembros en unidades fantasma. Liberando...`);
+        setMembers(prev => prev.map(m => {
+          if (m.unitId && !validUnitIds.includes(String(m.unitId))) {
+            return { ...m, unitId: null };
+          }
+          return m;
+        }));
+        // Auto-save will pick up this change and sync to cloud
+      }
+    }
+  }, [units, dataLoaded]);
+
   const syncPortalData = async (isManual = false) => {
     if (isManual) setIsSyncingPortal(true);
     try {
