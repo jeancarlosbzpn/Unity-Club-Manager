@@ -23451,6 +23451,7 @@ const MemberPortal = ({
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
+  const [showActivitiesModal, setShowActivitiesModal] = useState(false);
 
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -23885,8 +23886,21 @@ const MemberPortal = ({
 
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
-    .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))) && String(m.id) !== String(member.id))
+    .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
+
+  // Unit Scores Calculation
+  const unitMemberIds = unitMembers.map(m => String(m.id));
+  const unitPoints = points.filter(p => unitMemberIds.includes(String(p.memberId)));
+  const unitTotalScore = unitPoints.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
+  
+  const now = new Date();
+  const unitMonthScore = unitPoints
+    .filter(p => {
+      const pDate = new Date(p.date + 'T12:00:00');
+      return !isNaN(pDate.getTime()) && pDate.getMonth() === now.getMonth() && pDate.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, p) => sum + (Number(p.value) || 0), 0);
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-500/20">
@@ -23990,6 +24004,75 @@ const MemberPortal = ({
         </div>
 
         {/* MODALS (Replacing direct sections) */}
+        {showActivitiesModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-gray-900">Calendario</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Próximos eventos del club</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowActivitiesModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {upcomingActivities.length === 0 ? (
+                  <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[30px]">
+                    <Calendar className="w-12 h-12 mx-auto text-gray-200 mb-4 opacity-50" />
+                    <p className="text-sm font-black uppercase tracking-widest text-gray-400">No hay actividades pronto</p>
+                  </div>
+                ) : (
+                  upcomingActivities.map((activity, idx) => {
+                    const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
+                    const [ay, am, ad] = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/').reverse();
+                    const actDate = new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad), 12, 0, 0);
+                    const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
+                    const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
+                    
+                    return (
+                      <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-[30px] p-5 flex items-center gap-4 shadow-sm group">
+                        <div className="flex flex-col items-center justify-center min-w-[55px] h-[65px] bg-blue-50 rounded-2xl text-blue-600 border border-blue-100">
+                          <span className="text-2xl font-black leading-none">{day}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest leading-none mt-1">{monthName}</span>
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-blue-50 text-blue-600">
+                              {activity.type || 'Actividad'}
+                            </span>
+                            {activity.time && <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {activity.time}</span>}
+                          </div>
+                          <h4 className="font-black text-base text-gray-900 truncate">{activity.title}</h4>
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3" /> {activity.location || 'Club Local'}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                 <button 
+                  onClick={() => setShowActivitiesModal(false)}
+                  className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showAwardsModal && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
@@ -24153,7 +24236,7 @@ const MemberPortal = ({
             </div>
           </section>
 
-          {/* 2. Upcoming Activities (Compact List) */}
+          {/* 2. Upcoming Activities (Trigger Modal) */}
           <section className="space-y-4">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
@@ -24162,42 +24245,23 @@ const MemberPortal = ({
               </div>
             </div>
             
-            <div className="space-y-3">
-              {upcomingActivities.length === 0 ? (
-                <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200 h-full flex flex-col justify-center">
-                  <Calendar className="w-8 h-8 mx-auto text-gray-300 mb-2 opacity-30" />
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Sin programar</p>
-                </div>
-              ) : (
-                upcomingActivities.slice(0, 3).map((activity, idx) => {
-                  const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
-                  const [ay, am, ad] = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/').reverse();
-                  const actDate = new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad), 12, 0, 0);
-                  const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
-                  const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
-                  
-                  return (
-                    <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all group">
-                      <div className="flex flex-col items-center justify-center min-w-[40px] h-[45px] bg-blue-50 rounded-xl text-blue-600">
-                        <span className="text-base font-black leading-none">{day}</span>
-                        <span className="text-[8px] font-black uppercase leading-none">{monthName}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-[12px] text-gray-900 truncate group-hover:text-blue-600">{activity.title}</h4>
-                        <div className="flex items-center gap-2">
-                           <span className="text-[8px] font-bold text-gray-400 flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5" /> {activity.time || 'TBD'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+            <div 
+              onClick={() => setShowActivitiesModal(true)}
+              className="bg-gray-50 border border-gray-100 rounded-3xl p-6 shadow-sm h-[calc(100%-2.5rem)] flex flex-col items-center justify-center cursor-pointer hover:border-blue-200 group transition-all"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Calendar className="w-6 h-6 text-blue-600" />
+              </div>
+              <p className="text-sm font-black text-gray-900 text-center leading-tight">
+                {upcomingActivities.length === 0 ? 'Sin programar' : `${upcomingActivities.length} Próximas Actividades`}
+              </p>
+              <div className="mt-3 text-[9px] font-black uppercase tracking-widest text-blue-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                Ver Calendario <ChevronRight className="w-3 h-3" />
+              </div>
             </div>
           </section>
 
-          {/* 3. Uniformity (Compact Card) */}
+          {/* 3. Uniformity (Show Missing) */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <Shirt className="w-4 h-4 text-indigo-600" />
@@ -24214,7 +24278,27 @@ const MemberPortal = ({
                     <span className="text-[9px] font-black text-amber-600 uppercase bg-amber-50 px-2 py-0.5 rounded-full">Incompleto</span>
                   )}
                 </div>
-                <div className="flex -space-x-2 overflow-hidden">
+                
+                {/* Show Missing Items Snippet */}
+                {myUniformStats?.itemsMissing.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Piezas faltantes:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {myUniformStats.itemsMissing.slice(0, 3).map((item, idx) => (
+                        <span key={idx} className="text-[8px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                          {item.label}
+                        </span>
+                      ))}
+                      {myUniformStats.itemsMissing.length > 3 && (
+                        <span className="text-[8px] font-bold text-gray-400 px-1.5 py-0.5 rounded bg-gray-100">
+                          +{myUniformStats.itemsMissing.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex -space-x-2 overflow-hidden pt-1">
                   {myUniformStats?.itemsOwned.slice(0, 4).map((item, idx) => (
                     <div key={idx} className="w-8 h-8 rounded-full bg-white border-2 border-gray-50 flex items-center justify-center shadow-sm" title={item.label}>
                        <Check className="w-3 h-3 text-green-500" />
@@ -24226,52 +24310,67 @@ const MemberPortal = ({
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] text-gray-500 font-medium italic">
-                  {(myUniformStats?.itemsMissing.length || 0) === 0 ? '¡Todo listo!' : `Te faltan ${myUniformStats?.itemsMissing.length} piezas`}
-                </p>
               </div>
 
               {myUniformStats?.totalNeeded > 0 && (
-                <div className="pt-3 border-t border-dashed border-gray-200 mt-3">
-                   <div className="text-[18px] font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
-                   <div className="text-[8px] font-black uppercase tracking-widest text-gray-400">Para completar</div>
+                <div className="pt-3 border-t border-dashed border-gray-200 mt-3 flex items-center justify-between">
+                   <div>
+                    <div className="text-[18px] font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
+                    <div className="text-[8px] font-black uppercase tracking-widest text-gray-400">Para completar</div>
+                   </div>
+                   <Shirt className="w-8 h-8 text-indigo-100" />
                 </div>
               )}
             </div>
           </section>
 
-          {/* 4. My Unit (Bento Box) */}
+          {/* 4. My Unit (With Scores) */}
           <section className="space-y-4 col-span-1 md:col-span-2">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-red-600" />
                 <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
               </div>
+              <div className="flex gap-4">
+                <div className="text-right">
+                  <div className="text-[14px] font-black text-gray-900 leading-none">{unitMonthScore}</div>
+                  <div className="text-[7px] font-black uppercase tracking-widest text-gray-400">Puntos Mes</div>
+                </div>
+                <div className="text-right border-l border-gray-100 pl-4">
+                  <div className="text-[14px] font-black text-red-600 leading-none">{unitTotalScore}</div>
+                  <div className="text-[7px] font-black uppercase tracking-widest text-gray-400">Puntos Totales</div>
+                </div>
+              </div>
             </div>
             
             <div className="bg-white border border-gray-100 rounded-[32px] p-2 shadow-sm">
-              <div className="flex overflow-x-auto pb-4 pt-2 px-2 gap-4 scrollbar-hide">
+              <div className="flex overflow-x-auto pb-4 pt-2 px-2 gap-6 scrollbar-hide">
                 {unitMembers.map(m => (
-                  <div key={m.id} className="flex flex-col items-center min-w-[80px] space-y-2 group">
+                  <div key={m.id} className={`flex flex-col items-center min-w-[80px] space-y-2 group ${String(m.id) === String(member.id) ? 'scale-105' : ''}`}>
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center font-black text-gray-400 group-hover:bg-red-50 group-hover:text-red-600 transition-all border border-gray-50">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black transition-all border ${
+                        String(m.id) === String(member.id) ? 'bg-red-600 text-white border-red-500 shadow-lg shadow-red-200' : 'bg-gray-100 text-gray-400 group-hover:bg-red-50 group-hover:text-red-600 border-gray-50'
+                      }`}>
                         {m.firstName ? m.firstName[0] : 'V'}
                       </div>
                       {m.unitRole === 'Captain' && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-lg flex items-center justify-center border-2 border-white">
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-lg flex items-center justify-center border-2 border-white shadow-sm">
                           <ShieldCheck className="w-3 h-3 text-white" />
                         </div>
                       )}
                     </div>
                     <div className="text-center">
-                      <div className="text-[10px] font-black text-gray-900 truncate w-20">{m.firstName}</div>
-                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{m.unitRole || 'Vencedor'}</div>
+                      <div className={`text-[10px] font-black truncate w-20 ${String(m.id) === String(member.id) ? 'text-red-600' : 'text-gray-900'}`}>
+                        {String(m.id) === String(member.id) ? 'Tú' : m.firstName}
+                      </div>
+                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{m.unitRole || 'Miembro'}</div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           </section>
+        </div>
         </div>
 
         {/* Footer Info */}
