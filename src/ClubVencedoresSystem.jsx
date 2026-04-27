@@ -23558,42 +23558,53 @@ const MemberPortal = ({
   let totalAttendables = 0;
   let attendedCount = 0;
 
+  // --- ATTENDANCE SPLIT CALCULATION ---
+  let cultosTotal = 0;
+  let cultosPresent = 0;
+  let clubTotal = 0;
+  let clubPresent = 0;
+
   // 1. ADD Legacy Attendance (from points)
   myPointsRecords.forEach(monthRecord => {
     if (monthRecord.saturdays) {
       Object.values(monthRecord.saturdays).forEach(day => {
-        // Count Friday
+        // CULTOS: Friday + Sat AM
         if (day.attendanceFriday) {
-          totalAttendables++;
-          if (isPresent(day.attendanceFriday)) attendedCount++;
+          cultosTotal++;
+          if (isPresent(day.attendanceFriday)) cultosPresent++;
         }
-        // Count Sat AM
         if (day.attendanceSatAM) {
-          totalAttendables++;
-          if (isPresent(day.attendanceSatAM)) attendedCount++;
+          cultosTotal++;
+          if (isPresent(day.attendanceSatAM)) cultosPresent++;
         }
-        // Count Sat PM (or fallback to .attendance)
+
+        // CLUB: Sat PM
         const statusPM = day.attendanceSatPM || day.attendance;
         if (statusPM) {
-          totalAttendables++;
-          if (isPresent(statusPM)) attendedCount++;
+          clubTotal++;
+          if (isPresent(statusPM)) clubPresent++;
         }
       });
     }
   });
 
   // 2. ADD New Attendance (from attendanceRecords)
+  // Note: We assume attendanceRecords are for 'Club' unless specified otherwise
   const myDirectAttendance = attendanceRecords.filter(r => isThisMember(r.memberId));
   myDirectAttendance.forEach(record => {
     if (record.status) {
-      totalAttendables++;
-      if (isPresent(record.status)) attendedCount++;
+      if (record.type === 'culto') {
+        cultosTotal++;
+        if (isPresent(record.status)) cultosPresent++;
+      } else {
+        clubTotal++;
+        if (isPresent(record.status)) clubPresent++;
+      }
     }
   });
 
-  const attendanceRate = totalAttendables > 0 
-    ? Math.round((attendedCount / totalAttendables) * 100) 
-    : 0;
+  const attendanceRateCultos = cultosTotal > 0 ? Math.round((cultosPresent / cultosTotal) * 100) : 0;
+  const attendanceRateClub = clubTotal > 0 ? Math.round((clubPresent / clubTotal) * 100) : 0;
     
   const myScore = meritEntries
     .filter(e => {
@@ -24034,11 +24045,19 @@ const MemberPortal = ({
           </div>
 
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:bg-blue-500/20 transition-colors">
-              <CalendarCheck className="w-5 h-5 text-blue-500" />
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
+              <Compass className="w-5 h-5 text-indigo-500" />
             </div>
-            <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRate}%</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia</div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRateCultos}%</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia Cultos</div>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
+              <CalendarCheck className="w-5 h-5 text-orange-500" />
+            </div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia Club</div>
           </div>
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
