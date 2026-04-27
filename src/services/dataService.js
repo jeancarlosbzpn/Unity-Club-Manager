@@ -140,10 +140,16 @@ export const dataService = {
                   const targetCol = (key === 'members' || key === 'transactions') ? (STORAGE_PREFIX + key) : (STORAGE_PREFIX + key);
                   const colRef = collection(db, targetCol);
                   const querySnapshot = await getDocs(colRef);
-                  return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                  if (!querySnapshot.empty) {
+                    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                  }
+                  console.log(`⚠️ Colección '${targetCol}' vacía a pesar de metadatos. Intentando carga desde datos internos...`);
                 }
-                console.log(`✅ ÉXITO: '${key}' cargado desde documento central: ${docId}`);
-                return content.data;
+                
+                if (content.data) {
+                  console.log(`✅ ÉXITO: '${key}' cargado desde datos internos del documento: ${docId}`);
+                  return content.data;
+                }
               }
             } catch (e) {
               console.warn(`⚠️ Error leyendo central '${docId}':`, e.message);
