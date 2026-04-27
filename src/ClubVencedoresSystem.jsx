@@ -23452,6 +23452,7 @@ const MemberPortal = ({
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
+  const [showUniformModal, setShowUniformModal] = useState(false);
 
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -24010,6 +24011,98 @@ const MemberPortal = ({
         </div>
 
         {/* MODALS (Replacing direct sections) */}
+        {showUniformModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center">
+                    <Shirt className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-gray-900">Reporte Uniforme</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Detalle de tu vestimenta</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowUniformModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Last Inspection Date */}
+                <div className="bg-gray-50 rounded-3xl p-5 border border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CalendarCheck className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Última Revisión</div>
+                      <div className="text-sm font-bold text-gray-900">
+                        {myUniformStats?.lastInspection ? new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Pendiente de revisar'}
+                      </div>
+                    </div>
+                  </div>
+                  {myUniformStats?.itemsMissing.length === 0 ? (
+                    <div className="px-3 py-1 bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-widest rounded-full">Completo</div>
+                  ) : (
+                    <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
+                  )}
+                </div>
+
+                {/* Grid of items */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3 text-green-500" /> Lo que tengo ({myUniformStats?.itemsOwned.length || 0})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {myUniformStats?.itemsOwned.map((item, idx) => (
+                        <div key={idx} className="px-3 py-1.5 bg-white border border-gray-100 rounded-xl text-[10px] font-bold text-gray-700 shadow-sm">
+                          {item.label}
+                        </div>
+                      ))}
+                      {(myUniformStats?.itemsOwned.length || 0) === 0 && <p className="text-[10px] text-gray-400 italic">No hay piezas registradas.</p>}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t border-gray-50">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                      <AlertCircle className="w-3 h-3 text-red-500" /> Lo que falta ({myUniformStats?.itemsMissing.length || 0})
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {myUniformStats?.itemsMissing.map((item, idx) => (
+                        <div key={idx} className="px-3 py-1.5 bg-red-50 border border-red-100 rounded-xl text-[10px] font-bold text-red-600 shadow-sm">
+                          {item.label}
+                        </div>
+                      ))}
+                      {(myUniformStats?.itemsMissing.length || 0) === 0 && <p className="text-[10px] text-green-600 font-bold">¡Uniforme de gala completo!</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cost to complete */}
+                {myUniformStats?.totalNeeded > 0 && (
+                  <div className="mt-4 p-5 bg-indigo-50 border border-indigo-100 rounded-[30px] flex items-center justify-between">
+                    <div>
+                      <div className="text-[9px] font-black uppercase tracking-widest text-indigo-400">Presupuesto Estimado</div>
+                      <div className="text-2xl font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
+                    </div>
+                    <DollarSign className="w-8 h-8 text-indigo-200" />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <button 
+                  onClick={() => setShowUniformModal(false)}
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showActivitiesModal && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
@@ -24267,14 +24360,17 @@ const MemberPortal = ({
             </div>
           </section>
 
-          {/* 3. Uniformity (Show Missing) */}
+          {/* 3. Uniformity (Trigger Modal) */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <Shirt className="w-4 h-4 text-indigo-600" />
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Uniforme</h3>
             </div>
             
-            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm h-[calc(100%-2.5rem)] flex flex-col justify-between">
+            <div 
+              onClick={() => setShowUniformModal(true)}
+              className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm h-[calc(100%-2.5rem)] flex flex-col justify-between cursor-pointer hover:border-indigo-200 group transition-all"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Estado</span>
@@ -24288,45 +24384,26 @@ const MemberPortal = ({
                 {/* Show Missing Items Snippet */}
                 {myUniformStats?.itemsMissing.length > 0 && (
                   <div className="space-y-1">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Piezas faltantes:</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Faltan {myUniformStats.itemsMissing.length}:</span>
                     <div className="flex flex-wrap gap-1">
-                      {myUniformStats.itemsMissing.slice(0, 3).map((item, idx) => (
+                      {myUniformStats.itemsMissing.slice(0, 2).map((item, idx) => (
                         <span key={idx} className="text-[8px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
                           {item.label}
                         </span>
                       ))}
-                      {myUniformStats.itemsMissing.length > 3 && (
+                      {myUniformStats.itemsMissing.length > 2 && (
                         <span className="text-[8px] font-bold text-gray-400 px-1.5 py-0.5 rounded bg-gray-100">
-                          +{myUniformStats.itemsMissing.length - 3}
+                          +{myUniformStats.itemsMissing.length - 2}
                         </span>
                       )}
                     </div>
                   </div>
                 )}
-
-                <div className="flex -space-x-2 overflow-hidden pt-1">
-                  {myUniformStats?.itemsOwned.slice(0, 4).map((item, idx) => (
-                    <div key={idx} className="w-8 h-8 rounded-full bg-white border-2 border-gray-50 flex items-center justify-center shadow-sm" title={item.label}>
-                       <Check className="w-3 h-3 text-green-500" />
-                    </div>
-                  ))}
-                  {(myUniformStats?.itemsOwned.length || 0) > 4 && (
-                    <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-gray-50 flex items-center justify-center text-[10px] font-bold text-gray-600">
-                      +{(myUniformStats?.itemsOwned.length || 0) - 4}
-                    </div>
-                  )}
-                </div>
               </div>
 
-              {myUniformStats?.totalNeeded > 0 && (
-                <div className="pt-3 border-t border-dashed border-gray-200 mt-3 flex items-center justify-between">
-                   <div>
-                    <div className="text-[18px] font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
-                    <div className="text-[8px] font-black uppercase tracking-widest text-gray-400">Para completar</div>
-                   </div>
-                   <Shirt className="w-8 h-8 text-indigo-100" />
-                </div>
-              )}
+              <div className="mt-3 text-[9px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1 transition-colors group-active:text-indigo-800">
+                Ver Reporte <ChevronRight className="w-3 h-3" />
+              </div>
             </div>
           </section>
 
