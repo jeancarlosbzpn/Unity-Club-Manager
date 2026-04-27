@@ -24371,8 +24371,7 @@ const MemberPortal = ({
             </div>
           </section>
         </div>
-        </div>
-
+        
         {/* Footer Info */}
         <footer className="pt-8 pb-12 text-center">
           <div className="inline-block px-4 py-1 rounded-full bg-gray-100 border border-gray-200 text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">
