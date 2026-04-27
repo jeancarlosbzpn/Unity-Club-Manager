@@ -190,10 +190,22 @@ export const dataService = {
         const colRef = collection(db, colName);
         const currentSnap = await getDocs(colRef);
         
-        // SAFETY: Wipe Protection
-        if (data.length === 0 && !currentSnap.empty) {
-          console.warn(`🛑 PROTECCIÓN ANTIBORRADO: Se intentó guardar una lista vacía en '${colName}' que ya tiene datos (${currentSnap.size} registros). Operación cancelada para proteger la nube.`);
-          return { success: false, error: 'wipe_protection_triggered' };
+        // SAFETY: Wipe Protection (Differential)
+        // If the cloud has data, and we are trying to save a list that is significantly smaller
+        // (more than 30% smaller), we block it as a likely partial load or data loss event.
+        if (!currentSnap.empty) {
+          const cloudCount = currentSnap.size;
+          const localCount = data.length;
+          
+          if (localCount === 0) {
+            console.warn(`🛑 PROTECCIÓN ANTIBORRADO: Se intentó guardar una lista VACÍA en '${colName}' que tiene ${cloudCount} registros. Operación cancelada.`);
+            return { success: false, error: 'wipe_protection_triggered_empty' };
+          }
+          
+          if (localCount < cloudCount * 0.7 && cloudCount > 5) {
+            console.warn(`🛑 PROTECCIÓN ANTIBORRADO: El guardado local tiene solo ${localCount} registros vs ${cloudCount} en la nube (Pérdida > 30%). Abortando para proteger datos.`);
+            return { success: false, error: 'wipe_protection_triggered_differential' };
+          }
         }
 
         // FORCE all IDs to strings for robust comparison
