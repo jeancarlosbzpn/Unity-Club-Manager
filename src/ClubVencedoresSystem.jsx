@@ -13393,7 +13393,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       ))
                     )}
                   </div>
-                </div>
+
+
 
                 {showAnnouncementForm && (
                     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
