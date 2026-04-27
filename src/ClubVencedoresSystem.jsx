@@ -6267,7 +6267,7 @@ const ClubVencedoresSystem = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mt-12">
                   <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-gray-500" />
-                    Reportes Disponibles ({new Date(bgDate).toLocaleDateString()})
+                    Reportes Disponibles ({bgDate.split('-').reverse().join('/')})
                   </h3>
                   <div className="space-y-3">
                     {[
@@ -6346,9 +6346,10 @@ const ClubVencedoresSystem = () => {
                 </button>
                 <div className="flex items-center gap-4">
                   <div className="bg-white dark:bg-gray-800 px-3 py-1 rounded shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300">
-                    Fecha: {new Date(bgDate).toLocaleDateString()}
+                    Fecha: {bgDate.split('-').reverse().join('/')}
                   </div>
                   <button
+
                     onClick={handleSaveInspections}
                     disabled={isSavingInspections}
                     className={`px-4 py-2 rounded-lg font-bold shadow-md flex items-center gap-2 transition-all ${
