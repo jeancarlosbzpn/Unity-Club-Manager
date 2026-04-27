@@ -10153,6 +10153,17 @@ const ClubVencedoresSystem = () => {
         setMemberHomeworkStatus={setMemberHomeworkStatus}
         activities={activities}
         masterGuideData={masterGuideData}
+        instructorName={(() => {
+          const mClass = liveMember.pathfinderClass || liveMember.currentClass;
+          const classLabel = pathfinderClasses.find(c => String(c.value) === String(mClass))?.label || mClass;
+          const inst = members.find(u => 
+            u.directiveRoles?.conquistadores?.some(r => 
+              (r.position === 'Class Instructor' || r.position === 'Instructor') && 
+              r.instructorClass === classLabel
+            )
+          );
+          return inst ? `${inst.firstName} ${inst.lastName}` : null;
+        })()}
       />
     );
   }
@@ -23432,7 +23443,8 @@ const MemberPortal = ({
   memberHomeworkStatus = [],
   setMemberHomeworkStatus,
   activities = [],
-  masterGuideData = { requirements: [], evaluationDates: {} }
+  masterGuideData = { requirements: [], evaluationDates: {} },
+  instructorName = null
 }) => {
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -23946,214 +23958,20 @@ const MemberPortal = ({
             <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
               <BookOpen className="w-5 h-5 text-indigo-500" />
             </div>
-            <div className="text-sm font-black tracking-tighter truncate leading-tight h-8 flex items-center text-gray-900">{myClassName}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Clase Actual</div>
+            <div className="flex flex-col">
+              <div className="text-sm font-black tracking-tighter truncate leading-tight flex items-center text-gray-900">{myClassName}</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Clase Actual</div>
+              {instructorName && (
+                <div className="mt-2 pt-2 border-t border-gray-200/50 flex items-center gap-1.5">
+                  <User className="w-3 h-3 text-indigo-400" />
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Instructor: {instructorName}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Awards Section */}
-        {myAwards.length > 0 && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-200">
-            <div className="flex items-center gap-2 px-1">
-              <Award className="w-4 h-4 text-amber-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Galardones</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3">
-              {myAwards.map((award, idx) => (
-                <div key={idx} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
-                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                    <Trophy className="w-24 h-24 text-amber-600" />
-                  </div>
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-amber-100">
-                      <Medal className="w-6 h-6 text-amber-500" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-widest text-amber-600 mb-0.5">{award.title}</div>
-                      <div className="text-lg font-black tracking-tight text-gray-900 capitalize leading-none">{award.name}</div>
-                    </div>
-                  </div>
-                  <div className="text-right relative z-10">
-                    <div className="text-2xl font-black tracking-tighter text-amber-700 leading-none">{award.score}</div>
-                    <div className="text-[9px] font-black uppercase tracking-widest text-amber-600/70">Puntos</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Upcoming Activities Section */}
-        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Próximas Actividades</h3>
-            </div>
-            {upcomingActivities.length > 0 && (
-              <span className="text-[10px] font-bold text-gray-400">{upcomingActivities.length} próximas</span>
-            )}
-          </div>
-          
-          <div className="space-y-3">
-            {upcomingActivities.length === 0 ? (
-              <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
-                <Calendar className="w-8 h-8 mx-auto text-gray-300 mb-2 opacity-30" />
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No hay actividades programadas</p>
-              </div>
-            ) : (
-              upcomingActivities.map((activity, idx) => {
-                const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
-                const actDate = new Date(`${dateStr}T12:00:00 `);
-                const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
-                const month = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
-                
-                return (
-                  <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
-                    {/* Date Card */}
-                    <div className="flex flex-col items-center justify-center min-w-[50px] h-[60px] bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-blue-600">
-                      <span className="text-xl font-black leading-none">{day}</span>
-                      <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-1">{month}</span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                          activity.type === 'Outdoor' ? 'bg-green-50 text-green-600' :
-                          activity.type === 'Spiritual' ? 'bg-purple-50 text-purple-600' :
-                          activity.type === 'Training' ? 'bg-orange-50 text-orange-600' :
-                          'bg-blue-50 text-blue-600'
-                        }`}>
-                          {activity.type || 'Actividad'}
-                        </span>
-                        {activity.time && (
-                          <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {activity.time}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="font-black text-sm text-gray-900 truncate group-hover:text-blue-600 transition-colors">{activity.title}</h4>
-                      <p className="text-[10px] text-gray-500 font-medium truncate flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-gray-400" /> {activity.location || 'Club Local'}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
-
-        {/* Uniformity Section */}
-        {myUniformStats && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
-            <div className="flex items-center gap-2 px-1">
-              <Shirt className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Uniformidad</h3>
-            </div>
-            
-            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Última Evaluación</div>
-                  <div className="text-sm font-bold text-gray-900">
-                    {myUniformStats.lastInspection ? new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Nunca evaluado'}
-                  </div>
-                </div>
-                {myUniformStats.lastInspection ? (
-                   myUniformStats.itemsMissing.length === 0 ? (
-                    <div className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Completo</div>
-                  ) : (
-                    <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
-                  )
-                ) : (
-                   <div className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full">Pendiente</div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                {/* Owned */}
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3 text-green-500" /> Tengo ({myUniformStats.itemsOwned.length})
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {myUniformStats.itemsOwned.map(item => (
-                      <span key={item.id} className="px-2 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
-                        {item.label}
-                      </span>
-                    ))}
-                    {myUniformStats.itemsOwned.length === 0 && <span className="text-[10px] text-gray-400 italic">No se registraron piezas</span>}
-                  </div>
-                </div>
-
-                {/* Missing */}
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 text-red-500" /> Me Falta ({myUniformStats.itemsMissing.length})
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {myUniformStats.itemsMissing.map(item => (
-                      <span key={item.id} className="px-2 py-1 bg-red-50 border border-red-100 rounded-lg text-[10px] font-bold text-red-700 shadow-sm">
-                        {item.label}
-                      </span>
-                    ))}
-                    {myUniformStats.itemsMissing.length === 0 && <span className="text-[10px] text-green-600 font-bold">¡Tienes todo lo necesario!</span>}
-                  </div>
-                </div>
-              </div>
-
-              {myUniformStats.totalNeeded > 0 && (
-                <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Presupuesto para completar</div>
-                  <div className="text-xl font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Homework Section */}
-        {true && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-500">
-            <div className="flex items-center gap-2 px-1">
-              <ClipboardCheck className="w-4 h-4 text-red-600" />
-              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Tareas de Clase</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3">
-              {myHomeworks.length === 0 ? (
-                <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
-                  <ClipboardList className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">No hay tareas asignadas</p>
-                </div>
-              ) : (
-                myHomeworks.map(hw => (
-                  <div key={hw.id} className={`p-4 rounded-3xl border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className={`font-black text-sm ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
-                          {hw.dueDate && <span className="text-[9px] font-bold text-red-500 uppercase">Vence: {hw.dueDate}</span>}
-                        </div>
-                        <p className="text-xs text-gray-500 line-clamp-2">{hw.description}</p>
-                      </div>
-                      <button 
-                        onClick={() => handleToggleHomework(hw.id)}
-                        className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Announcements Feed */}
+        {/* 1. Announcements Feed (REORDERED) */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900">
@@ -24198,7 +24016,205 @@ const MemberPortal = ({
           </div>
         </section>
 
-        {/* My Unit Section */}
+        {/* 2. Upcoming Activities Section (KEEPING IT HERE) */}
+        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Próximas Actividades</h3>
+            </div>
+            {upcomingActivities.length > 0 && (
+              <span className="text-[10px] font-bold text-gray-400">{upcomingActivities.length} próximas</span>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            {upcomingActivities.length === 0 ? (
+              <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
+                <Calendar className="w-8 h-8 mx-auto text-gray-300 mb-2 opacity-30" />
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No hay actividades programadas</p>
+              </div>
+            ) : (
+              upcomingActivities.map((activity, idx) => {
+                const dateStr = String(activity.date).includes('T') ? activity.date.split('T')[0] : activity.date;
+                const [ay, am, ad] = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/').reverse();
+                const actDate = new Date(parseInt(ay), parseInt(am) - 1, parseInt(ad), 12, 0, 0);
+                const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
+                const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
+                
+                return (
+                  <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-3xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex flex-col items-center justify-center min-w-[50px] h-[60px] bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 text-blue-600">
+                      <span className="text-xl font-black leading-none">{day}</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest leading-none mt-1">{monthName}</span>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                          activity.type === 'Outdoor' ? 'bg-green-50 text-green-600' :
+                          activity.type === 'Spiritual' ? 'bg-purple-50 text-purple-600' :
+                          activity.type === 'Training' ? 'bg-orange-50 text-orange-600' :
+                          'bg-blue-50 text-blue-600'
+                        }`}>
+                          {activity.type || 'Actividad'}
+                        </span>
+                        {activity.time && (
+                          <span className="text-[9px] font-bold text-gray-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {activity.time}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-black text-sm text-gray-900 truncate group-hover:text-blue-600 transition-colors">{activity.title}</h4>
+                      <p className="text-[10px] text-gray-500 font-medium truncate flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-gray-400" /> {activity.location || 'Club Local'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        {/* 3. Homework Section (REORDERED) */}
+        <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-500">
+          <div className="flex items-center gap-2 px-1">
+            <ClipboardCheck className="w-4 h-4 text-red-600" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Tareas de Clase</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-3">
+            {myHomeworks.length === 0 ? (
+              <div className="bg-gray-50 rounded-3xl p-6 text-center border border-dashed border-gray-200">
+                <ClipboardList className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">No hay tareas asignadas</p>
+              </div>
+            ) : (
+              myHomeworks.map(hw => (
+                <div key={hw.id} className={`p-4 rounded-3xl border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className={`font-black text-sm ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
+                        {hw.dueDate && <span className="text-[9px] font-bold text-red-500 uppercase">Vence: {hw.dueDate}</span>}
+                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2">{hw.description}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleToggleHomework(hw.id)}
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* 4. Awards Section (REORDERED) */}
+        {myAwards.length > 0 && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-200">
+            <div className="flex items-center gap-2 px-1">
+              <Award className="w-4 h-4 text-amber-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mis Galardones</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-3">
+              {myAwards.map((award, idx) => (
+                <div key={idx} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-3xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group">
+                  <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                    <Trophy className="w-24 h-24 text-amber-600" />
+                  </div>
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-amber-100">
+                      <Medal className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black uppercase tracking-widest text-amber-600 mb-0.5">{award.title}</div>
+                      <div className="text-lg font-black tracking-tight text-gray-900 capitalize leading-none">{award.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-right relative z-10">
+                    <div className="text-2xl font-black tracking-tighter text-amber-700 leading-none">{award.score}</div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-amber-600/70">Puntos</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 5. Uniformity Section (REORDERED) */}
+        {myUniformStats && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700 delay-300">
+            <div className="flex items-center gap-2 px-1">
+              <Shirt className="w-4 h-4 text-indigo-600" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Uniformidad</h3>
+            </div>
+            
+            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Última Evaluación</div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {myUniformStats.lastInspection ? new Date(myUniformStats.lastInspection.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Nunca evaluado'}
+                  </div>
+                </div>
+                {myUniformStats.lastInspection ? (
+                   myUniformStats.itemsMissing.length === 0 ? (
+                    <div className="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Completo</div>
+                  ) : (
+                    <div className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full">Incompleto</div>
+                  )
+                ) : (
+                   <div className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full">Pendiente</div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 text-green-500" /> Tengo ({myUniformStats.itemsOwned.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {myUniformStats.itemsOwned.map(item => (
+                      <span key={item.id} className="px-2 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-700 shadow-sm">
+                        {item.label}
+                      </span>
+                    ))}
+                    {myUniformStats.itemsOwned.length === 0 && <span className="text-[10px] text-gray-400 italic">No se registraron piezas</span>}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-red-500" /> Me Falta ({myUniformStats.itemsMissing.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {myUniformStats.itemsMissing.map(item => (
+                      <span key={item.id} className="px-2 py-1 bg-red-50 border border-red-100 rounded-lg text-[10px] font-bold text-red-700 shadow-sm">
+                        {item.label}
+                      </span>
+                    ))}
+                    {myUniformStats.itemsMissing.length === 0 && <span className="text-[10px] text-green-600 font-bold">¡Tienes todo lo necesario!</span>}
+                  </div>
+                </div>
+              </div>
+
+              {myUniformStats.totalNeeded > 0 && (
+                <div className="pt-4 border-t border-dashed border-gray-200 flex items-center justify-between">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Presupuesto para completar</div>
+                  <div className="text-xl font-black tracking-tighter text-indigo-600">${myUniformStats.totalNeeded}</div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* 6. My Unit Section (REORDERED) */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 px-1">
             <Users className="w-4 h-4 text-red-600" />
@@ -24232,7 +24248,7 @@ const MemberPortal = ({
         {/* Footer Info */}
         <footer className="pt-8 pb-12 text-center">
           <div className="inline-block px-4 py-1 rounded-full bg-gray-100 border border-gray-200 text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">
-            Vencedores Portal v1.0
+            Vencedores Portal v1.2
           </div>
           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
             Club {clubSettings?.name || 'Vencedores'}

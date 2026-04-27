@@ -104,7 +104,7 @@ export const dataService = {
 
         // LAYER 1: Collections
         console.log(`🔍 Intentando cargar '${key}' desde colecciones Cloud...`);
-        const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+        const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
         
         for (const colName of uniqueCandidates) {
           try {
@@ -179,7 +179,7 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     } else {
       const STORAGE_PREFIX = 'clubvencedores_';
-      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+      const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
 
       // Collection-based handling for shared data
       if (COLLECTION_KEYS.includes(key) && Array.isArray(data)) {
@@ -189,6 +189,13 @@ export const dataService = {
         // Sync deletions: find docs in cloud that are not in incoming array
         const colRef = collection(db, colName);
         const currentSnap = await getDocs(colRef);
+        
+        // SAFETY: Wipe Protection
+        if (data.length === 0 && !currentSnap.empty) {
+          console.warn(`🛑 PROTECCIÓN ANTIBORRADO: Se intentó guardar una lista vacía en '${colName}' que ya tiene datos (${currentSnap.size} registros). Operación cancelada para proteger la nube.`);
+          return { success: false, error: 'wipe_protection_triggered' };
+        }
+
         // FORCE all IDs to strings for robust comparison
         const incomingIds = data.map(item => String(item.id || item.username || (item.firstName + '_' + item.lastName)));
         
@@ -260,7 +267,7 @@ export const dataService = {
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {}; // Browser only
     
-    const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications'];
+    const COLLECTION_KEYS = ['members', 'transactions', 'users', 'points', 'units', 'disciplineRecords', 'announcements', 'attendanceRecords', 'qualifications', 'activities', 'homeworks', 'memberHomeworkStatus'];
     
     if (COLLECTION_KEYS.includes(key)) {
       const STORAGE_PREFIX = 'clubvencedores_';
