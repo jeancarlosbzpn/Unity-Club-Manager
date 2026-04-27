@@ -114,10 +114,9 @@ export const dataService = {
               console.log(`✅ ÉXITO: ${querySnapshot.size} elementos de '${key}' cargados desde colección: ${colName}`);
               return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
             } else if (COLLECTION_KEYS.includes(key)) {
-              // IMPORTANT: If it's a collection-tracked key and the collection is EMPTY,
-              // it means there are actually 0 items. DO NOT fall back to Master Doc ghosts.
-              console.log(`ℹ️ La colección '${colName}' está vacía. Retornando lista vacía.`);
-              return [];
+              // Si la colección está vacía, permitimos el fallback al documento central
+              // para facilitar la migración de datos existentes.
+              console.log(`ℹ️ La colección '${colName}' está vacía. Buscando en documento central...`);
             }
           } catch (e) {
             if (e.code === 'permission-denied') {
