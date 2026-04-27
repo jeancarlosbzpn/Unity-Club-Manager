@@ -16066,9 +16066,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <option value="">Seleccionar Capitán</option>
                               {members.filter(m => {
                                 // Only show members already in this unit
-                                if (m.unitId !== unitFormData.id) return false;
-                                // Filter by position (none)
-                                if (m.position && m.position !== '') return false;
+                                const memberUnitId = m.unitId ? String(m.unitId) : null;
+                                const currentUnitId = unitFormData.id ? String(unitFormData.id) : null;
+                                
+                                if (memberUnitId !== currentUnitId) return false;
+                                
+                                // Gender filter (optional but good for consistency)
+                                if (unitFormData.gender === 'Male' && m.gender !== 'Male') return false;
+                                if (unitFormData.gender === 'Female' && m.gender !== 'Female') return false;
+                                
                                 return true;
                               }).sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)).map((member) => (
                                 <option key={member.id} value={member.id}>
@@ -16090,9 +16096,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <option value="">Seleccionar Secretario</option>
                               {members.filter(m => {
                                 // Only show members already in this unit
-                                if (m.unitId !== unitFormData.id) return false;
-                                // Filter by position (none)
-                                if (m.position && m.position !== '') return false;
+                                const memberUnitId = m.unitId ? String(m.unitId) : null;
+                                const currentUnitId = unitFormData.id ? String(unitFormData.id) : null;
+                                
+                                if (memberUnitId !== currentUnitId) return false;
+                                
+                                // Gender filter
+                                if (unitFormData.gender === 'Male' && m.gender !== 'Male') return false;
+                                if (unitFormData.gender === 'Female' && m.gender !== 'Female') return false;
+
                                 return true;
                               }).sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)).map((member) => (
                                 <option key={member.id} value={member.id}>
