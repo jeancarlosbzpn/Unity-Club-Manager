@@ -24418,6 +24418,19 @@ const MemberPortal = ({
   // Clean up 'E: ' or other prefixes if they exist in some data sources
   const cleanBaseName = baseClassName.replace(/^E:\s*/, '');
   const myClassName = (modality === 'advanced' || modality === 'advanced-only') ? `${cleanBaseName} Avanzado` : cleanBaseName;
+  
+  const displayPosition = (() => {
+    if (member.position && member.position.trim() !== '') return member.position;
+    if (member.directiveRoles) {
+      for (const club of ['conquistadores', 'aventureros', 'guiasMayores']) {
+        const roles = member.directiveRoles[club];
+        if (roles && Array.isArray(roles) && roles.length > 0 && roles[0].position) {
+          return roles[0].position;
+        }
+      }
+    }
+    return '';
+  })();
 
 
   // Filter unit members (Privacy: same unit only)
@@ -24690,7 +24703,7 @@ const MemberPortal = ({
         </div>
 
         {/* Signature Card — Only for Directivos */}
-        {member.position && member.position.trim() !== '' && (
+        {displayPosition !== '' && (
           <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="bg-gray-50 border border-gray-100 rounded-3xl p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
@@ -24718,7 +24731,7 @@ const MemberPortal = ({
                     {member.firstName} {member.lastName}
                   </p>
                   <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">
-                    {translatePosition ? translatePosition(member.position, member.gender) : member.position}
+                    {translatePosition ? translatePosition(displayPosition, member.gender) : displayPosition}
                   </p>
                 </div>
               ) : (
