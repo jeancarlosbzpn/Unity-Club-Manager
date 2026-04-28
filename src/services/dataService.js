@@ -180,7 +180,7 @@ export const dataService = {
     if (ALL_COLLECTION_KEYS.includes(key)) {
       const colRef = collection(db, 'clubvencedores_' + key);
       return onSnapshot(colRef, (snapshot) => {
-        if (snapshot.metadata.hasPendingWrites) return;
+        // Optimistic updates: include pending writes for instant feedback
         // This is tricky for Maps vs Arrays... 
         // For now, most real-time stuff are arrays.
         const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -189,7 +189,7 @@ export const dataService = {
     }
     const docRef = doc(db, 'club_vencedores_data', key);
     return onSnapshot(docRef, (snapshot) => {
-      if (snapshot.metadata.hasPendingWrites) return;
+      // Optimistic updates: include pending writes for instant feedback
       if (snapshot.exists()) callback(snapshot.data().data);
     });
   },
