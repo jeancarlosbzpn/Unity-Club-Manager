@@ -24475,16 +24475,23 @@ const MemberPortal = ({
         'director_aventureros': 1,
         'director_guias': 1,
         'subdirector': 2,
+        'subdirectora': 2,
         'deputy_director': 2,
+        'assistant director': 2,
         'secretario': 3,
+        'secretaria': 3,
         'secretary': 3,
         'tesorero': 4,
+        'tesorera': 4,
         'treasurer': 4,
         'capellán': 5,
+        'capellana': 5,
         'chaplain': 5,
         'consejero': 6,
+        'consejera': 6,
         'counselor': 6,
         'instructor': 7,
+        'instructora': 7,
         'class instructor': 7
       };
       
@@ -25318,8 +25325,8 @@ const MemberPortal = ({
                   // Calculate class for this specific member
                   const dClassObj = (() => {
                     const myQual = qualifications.find(q => String(q.memberId) === String(d.id));
-                    const baseClass = d.currentClass || d.pathfinderClass || myQual?.classId || myQual?.className || 'friend';
-                    return pathfinderClasses.find(c => String(c.value) === String(baseClass)) || { label: baseClass, color: 'bg-gray-100 text-gray-600 border-gray-200' };
+                    const baseClass = String(d.currentClass || d.pathfinderClass || myQual?.classId || myQual?.className || 'friend').toLowerCase();
+                    return pathfinderClasses.find(c => String(c.value).toLowerCase() === baseClass || String(c.label).toLowerCase() === baseClass) || { label: baseClass, color: 'bg-gray-100 text-gray-600 border-gray-200' };
                   })();
 
                   return (
