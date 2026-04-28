@@ -23951,10 +23951,12 @@ const UnitChat = ({ isOpen, onClose, unitId, currentMember }) => {
       timestamp: Date.now()
     };
     
-    // Fetch current to append (simple persistence pattern for this app)
-    const currentAll = await dataService.readData('unit_messages') || [];
-    await dataService.writeData('unit_messages', [...currentAll, msg]);
     setNewMessage('');
+    const res = await dataService.saveSingle('unit_messages', msg);
+    if (!res.success) {
+      console.error("Error al enviar mensaje:", res.error);
+      setNewMessage(msg.text); // Restore text on failure
+    }
   };
 
   if (!isOpen) return null;

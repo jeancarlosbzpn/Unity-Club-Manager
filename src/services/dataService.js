@@ -194,16 +194,24 @@ export const dataService = {
     });
   },
 
-  saveFullState: async (allData, changedKeys = null) => {
-    const keysToSync = changedKeys || Object.keys(allData);
-    for (const key of keysToSync) {
-      if (allData[key] !== undefined) await dataService.writeData(key, allData[key]);
-    }
     return { success: true };
+  },
+
+  saveSingle: async (key, item) => {
+    if (isElectron) return { success: false };
+    try {
+      const colName = 'clubvencedores_' + key;
+      const id = String(item.id || Date.now() + Math.random());
+      await setDoc(doc(db, colName, id), sanitizeData(item));
+      return { success: true };
+    } catch (err) {
+      console.error(`Error saving single ${key}:`, err);
+      return { success: false, error: err.message };
+    }
   }
 };
 
 export function getDefaultValue(key) {
-  const arrays = ['members', 'transactions', 'activities', 'points', 'lockedSaturdays', 'units', 'users', 'inventory', 'inventoryCategories', 'tents', 'tentAssignments', 'uniformInspections', 'uniformItems', 'uniformCategories', 'firstAidItems', 'classRequirements', 'evaluationGroups', 'requirementSections', 'reminders', 'fixedPayments', 'fixedPaymentConcepts', 'disciplineRecords', 'announcements', 'qualifications', 'homeworks', 'memberHomeworkStatus', 'attendanceRecords'];
+  const arrays = ['members', 'transactions', 'activities', 'points', 'lockedSaturdays', 'units', 'users', 'inventory', 'inventoryCategories', 'tents', 'tentAssignments', 'uniformInspections', 'uniformItems', 'uniformCategories', 'firstAidItems', 'classRequirements', 'evaluationGroups', 'requirementSections', 'reminders', 'fixedPayments', 'fixedPaymentConcepts', 'disciplineRecords', 'announcements', 'qualifications', 'homeworks', 'memberHomeworkStatus', 'attendanceRecords', 'unit_messages'];
   return arrays.includes(key) ? [] : {};
 }
