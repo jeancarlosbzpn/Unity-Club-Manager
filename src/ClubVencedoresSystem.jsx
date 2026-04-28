@@ -24469,7 +24469,17 @@ const MemberPortal = ({
   // Filter unit members (Privacy: same unit only)
   const unitMembers = members
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
-    .sort((a, b) => a.firstName.localeCompare(b.firstName));
+    .sort((a, b) => {
+      const getRoleRank = (role) => {
+        if (role === 'Captain') return 1;
+        if (role === 'Secretary') return 2;
+        return 3;
+      };
+      const rankA = getRoleRank(a.unitRole);
+      const rankB = getRoleRank(b.unitRole);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.firstName.localeCompare(b.firstName);
+    });
 
   // Filter club directivos with strict hierarchy sorting
   const clubDirectivos = members.filter(m => {
@@ -25365,12 +25375,19 @@ const MemberPortal = ({
                           <ShieldCheck className="w-3 h-3 text-white" />
                         </div>
                       )}
+                      {m.unitRole === 'Secretary' && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-400 rounded-lg flex items-center justify-center border-2 border-white shadow-sm">
+                          <FileText className="w-3 h-3 text-white" />
+                        </div>
+                      )}
                     </div>
                     <div className="text-center">
                       <div className={`text-[10px] font-black truncate w-20 ${String(m.id) === String(member.id) ? 'text-red-600' : 'text-gray-900'}`}>
                         {String(m.id) === String(member.id) ? 'Tú' : m.firstName}
                       </div>
-                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{m.unitRole || 'Miembro'}</div>
+                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">
+                        {m.unitRole === 'Captain' ? 'Capitán' : m.unitRole === 'Secretary' ? 'Secretario' : 'Miembro'}
+                      </div>
                     </div>
                   </div>
                 ))}
