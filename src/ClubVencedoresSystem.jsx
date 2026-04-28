@@ -3342,16 +3342,29 @@ const ClubVencedoresSystem = () => {
     if (financeErrors[name]) setFinanceErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleFinanceFileChange = (e) => {
+  const handleFinanceFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
         alert('El archivo es demasiado grande (Máx 5MB)');
         return;
       }
+      setIsUploading(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFinanceFormData(prev => ({ ...prev, receipt: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        setFinanceFormData(prev => ({ ...prev, receipt: base64 }));
+        
+        try {
+          const path = `receipts/finance_${Date.now()}_${file.name}`;
+          const url = await uploadImageToStorage(base64, path);
+          setFinanceFormData(prev => ({ ...prev, receipt: url }));
+          console.log('✅ Comprobante subido a Storage:', url);
+        } catch (err) {
+          console.warn('⚠️ No se pudo subir el comprobante a Storage, usando base64 local:', err);
+        } finally {
+          setIsUploading(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -3649,16 +3662,29 @@ const ClubVencedoresSystem = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5000000) { // 5MB limit
         alert('La imagen es demasiado grande. El máximo es 5MB.');
         return;
       }
+      setIsUploading(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setActivityFormData(prev => ({ ...prev, image: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        setActivityFormData(prev => ({ ...prev, image: base64 }));
+        
+        try {
+          const path = `activities/activity_${Date.now()}.jpg`;
+          const url = await uploadImageToStorage(base64, path);
+          setActivityFormData(prev => ({ ...prev, image: url }));
+          console.log('✅ Imagen de actividad subida a Storage:', url);
+        } catch (err) {
+          console.warn('⚠️ No se pudo subir la imagen a Storage, usando base64 local:', err);
+        } finally {
+          setIsUploading(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -10057,12 +10083,25 @@ const ClubVencedoresSystem = () => {
     resetTentForm();
   };
 
-  const handleTentPhotoChange = (e) => {
+  const handleTentPhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setTentFormData(prev => ({ ...prev, photo: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        setTentFormData(prev => ({ ...prev, photo: base64 }));
+        
+        try {
+          const path = `tents/tent_${Date.now()}.jpg`;
+          const url = await uploadImageToStorage(base64, path);
+          setTentFormData(prev => ({ ...prev, photo: url }));
+          console.log('✅ Foto de carpa subida a Storage:', url);
+        } catch (err) {
+          console.warn('⚠️ No se pudo subir la foto de carpa a Storage, usando base64 local:', err);
+        } finally {
+          setIsUploading(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -10155,12 +10194,25 @@ const ClubVencedoresSystem = () => {
 
 
 
-  const handleInventoryPhotoChange = (e) => {
+  const handleInventoryPhotoChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setInventoryFormData(prev => ({ ...prev, photo: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        setInventoryFormData(prev => ({ ...prev, photo: base64 }));
+        
+        try {
+          const path = `inventory/item_${Date.now()}.jpg`;
+          const url = await uploadImageToStorage(base64, path);
+          setInventoryFormData(prev => ({ ...prev, photo: url }));
+          console.log('✅ Foto de inventario subida a Storage:', url);
+        } catch (err) {
+          console.warn('⚠️ No se pudo subir la foto de inventario a Storage, usando base64 local:', err);
+        } finally {
+          setIsUploading(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -15978,12 +16030,24 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 <input
                                   type="file"
                                   accept="image/*"
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const file = e.target.files[0];
                                     if (file) {
+                                      setIsUploading(true);
                                       const reader = new FileReader();
-                                      reader.onloadend = () => {
-                                        setUnitFormData({ ...unitFormData, logo: reader.result });
+                                      reader.onloadend = async () => {
+                                        const base64 = reader.result;
+                                        setUnitFormData({ ...unitFormData, logo: base64 });
+                                        try {
+                                          const path = `unit_logos/unit_${Date.now()}.png`;
+                                          const url = await uploadImageToStorage(base64, path);
+                                          setUnitFormData(prev => ({ ...prev, logo: url }));
+                                          console.log('✅ Logo de unidad subido a Storage:', url);
+                                        } catch (err) {
+                                          console.warn('⚠️ No se pudo subir el logo de unidad a Storage, usando base64 local:', err);
+                                        } finally {
+                                          setIsUploading(false);
+                                        }
                                       };
                                       reader.readAsDataURL(file);
                                     }
