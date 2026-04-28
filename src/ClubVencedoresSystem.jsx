@@ -1034,6 +1034,8 @@ const ClubVencedoresSystem = () => {
   // Profile View State
   const [viewingMember, setViewingMember] = useState(null);
   const [lastActiveModule, setLastActiveModule] = useState('dashboard');
+  const [financeSearch, setFinanceSearch] = useState('');
+  const [financeUnitFilter, setFinanceUnitFilter] = useState('');
 
   const mainContentRef = useRef(null);
   const [memberListScrollPos, setMemberListScrollPos] = useState(0);
@@ -20202,6 +20204,30 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </button>
                       </div>
 
+                      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center">
+                        <div className="relative flex-1 w-full">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input 
+                            type="text"
+                            placeholder="Buscar miembro por nombre o apellido..."
+                            value={financeSearch}
+                            onChange={(e) => setFinanceSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-indigo-500 outline-none transition-all dark:text-white font-medium"
+                          />
+                        </div>
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 whitespace-nowrap">Unidad:</span>
+                           <select 
+                             className="flex-1 sm:flex-none bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl px-4 py-3 text-xs font-bold outline-none dark:text-white cursor-pointer hover:border-indigo-500 transition-colors"
+                             onChange={(e) => setFinanceUnitFilter(e.target.value)}
+                             value={financeUnitFilter}
+                           >
+                             <option value="">Todas las Unidades</option>
+                             {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                           </select>
+                        </div>
+                      </div>
+
                       {fixedPaymentConcepts.length === 0 ? (
                         <div className="text-center py-12 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
                           <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -20209,17 +20235,17 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <p className="text-sm text-gray-400">Crea uno nuevo para comenzar a marcar pagos.</p>
                         </div>
                       ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
                           <table className="w-full text-sm">
                             <thead>
-                              <tr className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-b dark:border-gray-600">
-                                <th className="px-4 py-3 text-left w-64 sticky left-0 bg-gray-100 dark:bg-gray-700 z-10">Miembro</th>
+                              <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 border-b dark:border-gray-600">
+                                <th className="px-4 py-4 text-left w-64 sticky left-0 bg-gray-50 dark:bg-gray-700 z-10 font-black uppercase tracking-widest text-[10px]">Miembro</th>
                                 {fixedPaymentConcepts.map(c => (
-                                  <th key={c.id} className="px-4 py-3 text-center min-w-[140px] group relative hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                  <th key={c.id} className="px-4 py-4 text-center min-w-[140px] group relative hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                                     <div className="flex flex-col items-center">
-                                      <span className="font-bold text-gray-800 dark:text-gray-200">{c.name}</span>
-                                      {c.amount > 0 && <span className="text-xs text-green-600 dark:text-green-400">{formatCurrency(c.amount)}</span>}
-                                      <div className="absolute top-1 right-1 flex gap-1 transform translate-x-1 -translate-y-1">
+                                      <span className="font-black uppercase tracking-tight text-gray-900 dark:text-white">{c.name}</span>
+                                      {c.amount > 0 && <span className="text-[10px] font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded mt-1">{formatCurrency(c.amount)}</span>}
+                                      <div className="absolute top-1 right-1 flex gap-1 transform translate-x-1 -translate-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                           onClick={() => {
                                             setEditingConcept(c);
@@ -20255,7 +20281,20 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                               {members
-                                .sort((a, b) => a.firstName.localeCompare(b.firstName))
+                                .filter(m => {
+                                  // Always hide explicitly inactive if search is empty? No, better show everyone by default but allow searching
+                                  // But usually inactive members shouldn't be in the checklist.
+                                  // Let's stick to showing all active ones and respect the search.
+                                  if (m.membershipStatus === 'Inactive' && !financeSearch) return false;
+
+                                  const search = financeSearch.toLowerCase();
+                                  const fullName = `${m.firstName || ''} ${m.lastName || ''}`.toLowerCase();
+                                  const nameMatch = fullName.includes(search);
+                                  const unitMatch = !financeUnitFilter || String(m.unitId) === String(financeUnitFilter);
+                                  
+                                  return nameMatch && unitMatch;
+                                })
+                                .sort((a, b) => (a.firstName || '').localeCompare(b.firstName || ''))
                                 .map(member => {
                                   // Calculate total for this member
                                   const memberTotal = fixedPaymentConcepts.reduce((acc, c) => {
