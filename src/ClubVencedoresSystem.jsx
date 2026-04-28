@@ -614,6 +614,7 @@ const ClubVencedoresSystem = () => {
     selectedMemberIds: [] // New: For mass selection
   });
   const [transactions, setTransactions] = useState([]);
+  const [lastRawReceipt, setLastRawReceipt] = useState(null); // Keep raw for Gemini AI verification
   const [isVerifyingReceipt, setIsVerifyingReceipt] = useState(false);
   const [isSyncingPortal, setIsSyncingPortal] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({}); // { menuId: boolean }
@@ -2281,20 +2282,8 @@ const ClubVencedoresSystem = () => {
         // SAFETY: Only save if we have dataLoaded flag TRUE
         if (!dataLoaded) return;
 
-        // If an upload is in progress, we omit image-heavy keys to avoid stripping large base64
-        let finalDataToSave = { ...dataToSave };
-        if (isUploading) {
-          console.log("⏸️ Auto-save parcial: Omitiendo módulos con posibles imágenes grandes...");
-          delete finalDataToSave.members;
-          delete finalDataToSave.clubSettings;
-          delete finalDataToSave.units;
-          delete finalDataToSave.activities;
-          delete finalDataToSave.inventory;
-          delete finalDataToSave.tents;
-        }
-
         setSyncStatus('saving');
-        const cleanData = JSON.parse(JSON.stringify(finalDataToSave));
+        const cleanData = JSON.parse(JSON.stringify(dataToSave));
         await saveToElectron(cleanData);
 
         setSyncStatus('saved');
@@ -2935,7 +2924,12 @@ const ClubVencedoresSystem = () => {
           setFormData(prev => ({ ...prev, photo: url }));
           console.log('✅ Foto subida a Storage:', url);
         } catch (err) {
-          console.warn('⚠️ No se pudo subir la foto a Storage, usando base64 local:', err);
+          console.error('❌ Error al subir foto:', err);
+          alert(`⚠️ No se pudo guardar la foto en la nube: ${err.message || 'Error de conexión'}. Si la foto es muy pesada, el sistema no la guardará.`);
+          // Revert if too large to save as base64 anyway
+          if (base64.length > 800000) {
+            setFormData(prev => ({ ...prev, photo: editingMember?.photo || '' }));
+          }
         } finally {
           setIsUploading(false);
         }
@@ -2962,8 +2956,12 @@ const ClubVencedoresSystem = () => {
           setFormData(prev => ({ ...prev, signature: url }));
           console.log('✅ Firma subida a Storage:', url);
         } catch (err) {
-          console.warn('⚠️ No se pudo subir la firma a Storage, usando base64 local:', err);
-          // Keep base64 as fallback if Storage upload fails
+          console.error('❌ Error al subir firma:', err);
+          alert(`⚠️ No se pudo guardar la firma en la nube: ${err.message || 'Error de conexión'}.`);
+          // Signature is small usually, but if it fails we might want to know
+          if (base64.length > 800000) {
+            setFormData(prev => ({ ...prev, signature: editingMember?.signature || '' }));
+          }
         } finally {
           setIsUploading(false);
         }
@@ -3016,7 +3014,7 @@ const ClubVencedoresSystem = () => {
   };
 
   // Add or update member
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (isUploading) {
       alert('Espera a que la imagen termine de subirse...');
       return;
@@ -3055,8 +3053,9 @@ const ClubVencedoresSystem = () => {
       }
     }
 
+    let updatedMembersList = [];
     if (editingMember) {
-      setMembers(prev => prev.map(member =>
+      updatedMembersList = members.map(member =>
         member.id === editingMember.id
           ? { 
               ...updatedFormData, 
@@ -3072,11 +3071,27 @@ const ClubVencedoresSystem = () => {
         id,
         portalAccessCode: id.slice(-6).toUpperCase()
       };
-      setMembers(prev => [...prev, newMember]);
+      updatedMembersList = [...members, newMember];
     }
 
-    resetForm();
-    setShowForm(false);
+    try {
+      setSyncStatus('saving');
+      setMembers(updatedMembersList);
+      
+      // Push to cloud immediately
+      await dataService.writeData('members', updatedMembersList, { force: true });
+      
+      setSyncStatus('saved');
+      resetForm();
+      setShowForm(false);
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (error) {
+      console.error('❌ Error guardando miembro:', error);
+      setSyncStatus('error');
+      alert('⚠️ Error al guardar en la nube: ' + (error.message || 'Error de conexión'));
+      // We don't revert local state to avoid losing what the user typed, 
+      // but the sync status will show error.
+    }
   };
 
   // Edit member
@@ -3342,6 +3357,7 @@ const ClubVencedoresSystem = () => {
       reader.onloadend = async () => {
         const base64 = reader.result;
         setFinanceFormData(prev => ({ ...prev, receipt: base64 }));
+        setLastRawReceipt(base64); // Store for AI verification
         
         try {
           const path = `receipts/finance_${Date.now()}_${file.name}`;
@@ -3376,6 +3392,10 @@ const ClubVencedoresSystem = () => {
   };
 
   const handleFinanceSubmit = async () => {
+    if (isUploading) {
+      alert('⚠️ Por favor, espere a que el comprobante termine de subir antes de guardar.');
+      return;
+    }
     if (!validateFinanceForm()) return;
 
     let status = 'official';
@@ -3405,15 +3425,22 @@ const ClubVencedoresSystem = () => {
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            const base64Data = financeFormData.receipt.split(',')[1];
-            const mimeMatch = financeFormData.receipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/);
-            const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+            // Use raw receipt for AI if available, fallback to current (which might be URL)
+            const sourceReceipt = lastRawReceipt || financeFormData.receipt;
+            if (!sourceReceipt || !sourceReceipt.startsWith('data:')) {
+                console.warn('AI verification skipped: Receipt is already a URL or missing data');
+                setIsVerifyingReceipt(false);
+                // Continue without AI since it's already in storage
+            } else {
+                const base64Data = sourceReceipt.split(',')[1];
+                const mimeMatch = sourceReceipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/);
+                const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
 
-            const promptStr = "Analiza este documento/imagen. ¿Es una factura, recibo o comprobante de pago comercial válido? Responde únicamente con 'SI' o 'NO'. Si tienes duda, prefiere decir 'SI'.";
-            const imageParts = [{ inlineData: { data: base64Data, mimeType } }];
+                const promptStr = "Analiza este documento/imagen. ¿Es una factura, recibo o comprobante de pago comercial válido? Responde únicamente con 'SI' o 'NO'. Si tienes duda, prefiere decir 'SI'.";
+                const imageParts = [{ inlineData: { data: base64Data, mimeType } }];
 
-            const result = await model.generateContent([promptStr, ...imageParts]);
-            const responseText = result.response.text().trim().toUpperCase();
+                const result = await model.generateContent([promptStr, ...imageParts]);
+                const responseText = result.response.text().trim().toUpperCase();
 
             if (!responseText.includes('SI')) {
               alert('🤖 La Inteligencia Artificial ha detectado que la imagen o documento subido NO parece ser una factura o recibo válido. Por favor, sube un archivo correcto.');
@@ -3433,21 +3460,14 @@ const ClubVencedoresSystem = () => {
     }
 
     let finalReceipt = financeFormData.receipt;
+    // Fallback: If still base64, upload now
     if (finalReceipt && finalReceipt.startsWith('data:')) {
-      setIsVerifyingReceipt(true); // Reutilizar el estado de carga
+      setIsVerifyingReceipt(true);
       try {
-        const base64Data = finalReceipt.split(',')[1];
-        const mimeMatch = finalReceipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,/);
-        const contentType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-        const extension = contentType.split('/')[1] || 'jpeg';
-        const transactionId = Date.now().toString();
-        const fileName = `receipts/${transactionId}_${Date.now()}.${extension}`;
-        const storageRef = ref(storage, fileName);
-
-        await uploadString(storageRef, base64Data, 'base64', { contentType });
-        finalReceipt = await getDownloadURL(storageRef);
+        const path = `receipts/finance_${Date.now()}.jpg`;
+        finalReceipt = await uploadImageToStorage(finalReceipt, path);
       } catch (e) {
-        console.error("Error subiendo factura a Firebase Storage:", e);
+        console.error("Error final subiendo factura:", e);
       }
       setIsVerifyingReceipt(false);
     }
@@ -3460,9 +3480,25 @@ const ClubVencedoresSystem = () => {
       status: status
     };
 
-    setTransactions(prev => [...prev, newTransaction]);
-    resetFinanceForm();
-    setShowFinanceForm(false);
+    const updatedTransactionsList = [...transactions, newTransaction];
+
+    try {
+      setSyncStatus('saving');
+      setTransactions(updatedTransactionsList);
+      
+      // Push to cloud immediately with force
+      await dataService.writeData('transactions', updatedTransactionsList, { force: true });
+      
+      setSyncStatus('saved');
+      resetFinanceForm();
+      setShowFinanceForm(false);
+      setLastRawReceipt(null);
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (error) {
+      console.error('❌ Error guardando transacción:', error);
+      setSyncStatus('error');
+      alert('⚠️ Error al guardar transacción en la nube: ' + (error.message || 'Error de conexión'));
+    }
   };
 
   const getSaturdaysInMonth = (date) => {
@@ -3775,41 +3811,54 @@ const ClubVencedoresSystem = () => {
     });
   };
 
-  const handleActivitySubmit = () => {
+  const handleActivitySubmit = async () => {
+    if (isUploading) {
+      alert('⚠️ Por favor, espere a que la imagen termine de subir antes de guardar.');
+      return;
+    }
     if (!validateActivityForm()) return;
 
+    let updatedActivities = [];
     if (editingActivity) {
-      setActivities(prev => prev.map(activity => {
+      updatedActivities = activities.map(activity => {
         if (activity.id === editingActivity.id) {
-          // Calculate original date logic
           let originalDate = activity.originalDate;
           if (activity.date !== activityFormData.date) {
-            // Date changed
-            if (!originalDate) {
-              originalDate = activity.date; // Use previous date as original
-            }
-            // If it already had an original date, keep it (it was already postponed)
+            if (!originalDate) originalDate = activity.date;
           }
-
           return {
             ...activityFormData,
             id: editingActivity.id,
-            originalDate: originalDate || activityFormData.date // Fallback to current if never set
+            originalDate: originalDate || activityFormData.date
           };
         }
         return activity;
-      }));
+      });
     } else {
       const newActivity = {
         ...activityFormData,
         id: Date.now().toString(),
-        originalDate: activityFormData.date // Set original date on creation
+        originalDate: activityFormData.date
       };
-      setActivities(prev => [...prev, newActivity]);
+      updatedActivities = [...activities, newActivity];
     }
 
-    resetActivityForm();
-    setShowActivityForm(false);
+    try {
+      setSyncStatus('saving');
+      setActivities(updatedActivities);
+      
+      // Immediate push to cloud
+      await dataService.writeData('activities', updatedActivities);
+      
+      setSyncStatus('saved');
+      resetActivityForm();
+      setShowActivityForm(false);
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (error) {
+      console.error('❌ Error guardando actividad:', error);
+      setSyncStatus('error');
+      alert('⚠️ Error al guardar actividad en la nube: ' + (error.message || 'Error de conexión'));
+    }
   };
 
   const handleEditActivity = (activity) => {
@@ -10008,25 +10057,44 @@ const ClubVencedoresSystem = () => {
     setShowInventoryForm(false);
   };
 
-  const handleInventorySubmit = () => {
+  const handleInventorySubmit = async () => {
+    if (isUploading) {
+      alert('⚠️ Por favor, espere a que la foto termine de subir antes de guardar.');
+      return;
+    }
     if (!validateInventoryForm()) return;
 
+    let updatedInventory = [];
     if (editingInventoryItem) {
-      setInventory(prev => prev.map(item =>
+      updatedInventory = inventory.map(item =>
         item.id === editingInventoryItem.id
           ? { ...inventoryFormData, id: editingInventoryItem.id }
           : item
-      ));
+      );
     } else {
       const newItem = {
         ...inventoryFormData,
         id: Date.now().toString(),
         dateAdded: new Date().toISOString()
       };
-      setInventory(prev => [...prev, newItem]);
+      updatedInventory = [...inventory, newItem];
     }
 
-    resetInventoryForm();
+    try {
+      setSyncStatus('saving');
+      setInventory(updatedInventory);
+      
+      // Immediate push to cloud
+      await dataService.writeData('inventory', updatedInventory);
+      
+      setSyncStatus('saved');
+      resetInventoryForm();
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (error) {
+      console.error('❌ Error guardando inventario:', error);
+      setSyncStatus('error');
+      alert('⚠️ Error al guardar inventario en la nube: ' + (error.message || 'Error de conexión'));
+    }
   };
 
   const handleEditInventoryItem = (item) => {
@@ -10059,18 +10127,38 @@ const ClubVencedoresSystem = () => {
     setShowTentForm(false);
   };
 
-  const handleTentSubmit = () => {
+  const handleTentSubmit = async () => {
+    if (isUploading) {
+      alert('⚠️ Por favor, espere a que la foto termine de subir antes de guardar.');
+      return;
+    }
     if (!tentFormData.name.trim()) {
       alert('Nombre es requerido');
       return;
     }
 
+    let updatedTents = [];
     if (editingTent) {
-      setTents(prev => prev.map(t => t.id === editingTent.id ? { ...tentFormData, id: editingTent.id } : t));
+      updatedTents = tents.map(t => t.id === editingTent.id ? { ...tentFormData, id: editingTent.id } : t);
     } else {
-      setTents(prev => [...prev, { ...tentFormData, id: Date.now().toString() }]);
+      updatedTents = [...tents, { ...tentFormData, id: Date.now().toString() }];
     }
-    resetTentForm();
+
+    try {
+      setSyncStatus('saving');
+      setTents(updatedTents);
+      
+      // Immediate push to cloud
+      await dataService.writeData('tents', updatedTents);
+      
+      setSyncStatus('saved');
+      resetTentForm();
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (error) {
+      console.error('❌ Error guardando carpa:', error);
+      setSyncStatus('error');
+      alert('⚠️ Error al guardar carpa en la nube: ' + (error.message || 'Error de conexión'));
+    }
   };
 
   const handleTentPhotoChange = async (e) => {
@@ -16267,51 +16355,69 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   return;
                                 }
 
-                                if (editingUnit) {
-                                  // Ensure clubType is an array when saving
-                                  const finalClubType = Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType];
-                                  setUnits(units.map(u => u.id === editingUnit.id ? { ...editingUnit, ...unitFormData, clubType: finalClubType } : u));
+                                  try {
+                                    setSyncStatus('saving');
+                                    let updatedUnits = [];
+                                    let updatedMembersList = [];
 
-                                  // Update members with new roles
-                                  const updatedMembers = members.map(m => {
-                                    if (m.id === unitFormData.captainId) {
-                                      return { ...m, unitId: editingUnit.id, unitRole: 'Captain' };
-                                    }
-                                    if (m.id === unitFormData.secretaryId) {
-                                      return { ...m, unitId: editingUnit.id, unitRole: 'Secretary' };
-                                    }
-                                    if (m.unitId === editingUnit.id && m.unitRole &&
-                                      m.id !== unitFormData.captainId && m.id !== unitFormData.secretaryId) {
-                                      return { ...m, unitRole: '' };
-                                    }
-                                    return m;
-                                  });
-                                  setMembers(updatedMembers);
-                                } else {
-                                  const newUnit = {
-                                    id: Date.now().toString(),
-                                    ...unitFormData,
-                                    clubType: Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType]
-                                  };
-                                  setUnits([...units, newUnit]);
+                                    if (editingUnit) {
+                                      // Ensure clubType is an array when saving
+                                      const finalClubType = Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType];
+                                      updatedUnits = units.map(u => u.id === editingUnit.id ? { ...editingUnit, ...unitFormData, clubType: finalClubType } : u);
+                                      setUnits(updatedUnits);
 
-                                  // Assign roles to members
-                                  const updatedMembers = members.map(m => {
-                                    if (m.id === unitFormData.captainId) {
-                                      return { ...m, unitId: newUnit.id, unitRole: 'Captain' };
-                                    }
-                                    if (m.id === unitFormData.secretaryId) {
-                                      return { ...m, unitId: newUnit.id, unitRole: 'Secretary' };
-                                    }
-                                    return m;
-                                  });
-                                  setMembers(updatedMembers);
-                                }
+                                      // Update members with new roles
+                                      updatedMembersList = members.map(m => {
+                                        if (m.id === unitFormData.captainId) {
+                                          return { ...m, unitId: editingUnit.id, unitRole: 'Captain' };
+                                        }
+                                        if (m.id === unitFormData.secretaryId) {
+                                          return { ...m, unitId: editingUnit.id, unitRole: 'Secretary' };
+                                        }
+                                        if (m.unitId === editingUnit.id && m.unitRole &&
+                                          m.id !== unitFormData.captainId && m.id !== unitFormData.secretaryId) {
+                                          return { ...m, unitRole: '' };
+                                        }
+                                        return m;
+                                      });
+                                      setMembers(updatedMembersList);
+                                    } else {
+                                      const newUnit = {
+                                        id: Date.now().toString(),
+                                        ...unitFormData,
+                                        clubType: Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType]
+                                      };
+                                      updatedUnits = [...units, newUnit];
+                                      setUnits(updatedUnits);
 
-                                setShowUnitForm(false);
-                                setUnitFormData({ id: '', name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
-                              }}
-                              disabled={isUploading}
+                                      // Assign roles to members
+                                      updatedMembersList = members.map(m => {
+                                        if (m.id === unitFormData.captainId) {
+                                          return { ...m, unitId: newUnit.id, unitRole: 'Captain' };
+                                        }
+                                        if (m.id === unitFormData.secretaryId) {
+                                          return { ...m, unitId: newUnit.id, unitRole: 'Secretary' };
+                                        }
+                                        return m;
+                                      });
+                                      setMembers(updatedMembersList);
+                                    }
+
+                                    // Push to cloud immediately to avoid race conditions
+                                    await dataService.writeData('units', updatedUnits, { force: true });
+                                    await dataService.writeData('members', updatedMembersList, { force: true });
+                                    
+                                    setSyncStatus('saved');
+                                    setShowUnitForm(false);
+                                    setUnitFormData({ id: '', name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
+                                    setTimeout(() => setSyncStatus('idle'), 3000);
+                                  } catch (error) {
+                                    console.error('❌ Error guardando unidad:', error);
+                                    setSyncStatus('error');
+                                    alert('⚠️ No se pudo guardar la unidad en la nube: ' + (error.message || 'Error de conexión'));
+                                  }
+                                }}
+                                disabled={isUploading || syncStatus === 'saving'}
                               className={`flex-1 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
                                 isUploading 
                                   ? 'bg-gray-400 cursor-not-allowed text-gray-200' 

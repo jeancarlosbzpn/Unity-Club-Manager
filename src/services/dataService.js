@@ -17,9 +17,8 @@ const sanitizeData = (obj) => {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const val = obj[key];
         if (typeof val === 'string' && val.length > 800000 && val.startsWith('data:image')) {
-          console.warn(`⚠️ Campo '${key}' contiene base64 crudo. Omitiendo.`);
-          newObj[key] = null;
-          continue;
+          console.error(`❌ ERROR CRÍTICO: El campo '${key}' contiene una imagen base64 demasiado grande (${Math.round(val.length/1024)}KB).`);
+          throw new Error(`La imagen en '${key}' es muy grande para guardarse directamente. Asegúrese de que la subida a la nube (Storage) se haya completado correctamente antes de guardar.`);
         }
         if (val !== undefined) {
           newObj[key] = sanitizeData(val);
