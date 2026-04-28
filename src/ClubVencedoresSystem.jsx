@@ -16338,7 +16338,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                           <div className="p-6 flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 if (isUploading) return;
                                 if (!unitFormData.name.trim()) {
                                   alert('Por favor ingrese un nombre para la unidad');
