@@ -77,6 +77,13 @@ import RibbonMaxUnidad from './assets/mas-alto-unidad.svg';
 import RibbonMaxClub from './assets/mas-alto-club.svg';
 
 import SignatureDumc from './assets/firma-dumc.png';
+import IconAmigo from './assets/Amigo.svg';
+import IconCompanero from './assets/Compañero.svg';
+import IconExplorador from './assets/Explorador.svg';
+import IconOrientador from './assets/Orientador.svg';
+import IconViajero from './assets/Viajero.svg';
+import IconGuia from './assets/Guía.svg';
+import IconGuias from './assets/guias.svg';
 
 // Register mention module
 if (Quill) {
@@ -23978,8 +23985,24 @@ const MemberPortal = ({
       'instructor': isFemale ? 'Instructora' : 'Instructor',
       'chaplain': isFemale ? 'Capellana' : 'Capellán',
       'deputy_director': isFemale ? 'Subdirectora' : 'Subdirector',
+      'counselor': isFemale ? 'Consejera' : 'Consejero',
+      'class instructor': isFemale ? 'Instructora de Clase' : 'Instructor de Clase',
     };
-    return map[position] || position;
+    return map[position.toLowerCase()] || position;
+  };
+
+  const formatPhone = (value) => {
+    if (!value) return '';
+    const numbers = value.replace(/\D/g, '');
+    // Standard DR format: 809 123-4567
+    if (numbers.length === 10) {
+      return `${numbers.slice(0, 3)} ${numbers.slice(3, 6)}-${numbers.slice(6)}`;
+    }
+    if (numbers.length === 11 && numbers.startsWith('1')) {
+      const n = numbers.slice(1);
+      return `${n.slice(0, 3)} ${n.slice(3, 6)}-${n.slice(6)}`;
+    }
+    return value;
   };
 
   const formatPhone = (value) => {
@@ -24447,7 +24470,7 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
-  // Filter club directivos with hierarchy sorting
+  // Filter club directivos with strict hierarchy sorting
   const clubDirectivos = members.filter(m => {
     const hasPosition = m.position && m.position.trim() !== '';
     const hasDirectiveRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
@@ -24466,31 +24489,50 @@ const MemberPortal = ({
         'secretary': 3,
         'tesorero': 4,
         'treasurer': 4,
-        'instructor': 5,
-        'class instructor': 5,
+        'capellán': 5,
+        'chaplain': 5,
         'consejero': 6,
-        'counselor': 6
+        'counselor': 6,
+        'instructor': 7,
+        'class instructor': 7
       };
       
-      // Check legacy position field
-      if (roleMap[pos]) return roleMap[pos];
-      
-      // Check new directiveRoles structure
-      if (m.directiveRoles) {
+      let rank = 99;
+      if (roleMap[pos]) rank = roleMap[pos];
+      else if (m.directiveRoles) {
         for (const club of ['conquistadores', 'aventureros', 'guiasMayores']) {
           const roles = m.directiveRoles[club];
           if (roles && roles.length > 0) {
             const clubPos = roles[0].position.toLowerCase();
-            if (roleMap[clubPos]) return roleMap[clubPos];
+            if (roleMap[clubPos]) {
+              rank = roleMap[clubPos];
+              break;
+            }
           }
         }
       }
-      return 99; // Default for other roles
+      return rank;
+    };
+
+    const getClassRank = (m) => {
+      const myQual = qualifications.find(q => String(q.memberId) === String(m.id));
+      const baseClass = m.currentClass || m.pathfinderClass || myQual?.classId || myQual?.className || 'friend';
+      const hierarchy = ['friend', 'companion', 'explorer', 'ranger', 'voyager', 'guide', 'master_guide_candidate', 'master_guide_invested'];
+      const r = hierarchy.indexOf(baseClass);
+      return r === -1 ? 0 : r;
     };
     
     const rankA = getRoleRank(a);
     const rankB = getRoleRank(b);
     if (rankA !== rankB) return rankA - rankB;
+
+    // Secondary sort for Instructors: by class rank (descending)
+    if (rankA === 7) {
+      const classA = getClassRank(a);
+      const classB = getClassRank(b);
+      if (classA !== classB) return classB - classA;
+    }
+
     return a.firstName.localeCompare(b.firstName);
   });
 
@@ -25289,21 +25331,21 @@ const MemberPortal = ({
                     return pathfinderClasses.find(c => String(c.value) === String(baseClass)) || { label: baseClass, color: 'bg-gray-100 text-gray-600 border-gray-200' };
                   })();
 
-                  // Map class to icon
-                  const ClassIcon = (() => {
+                  // Map class to SVG Icon
+                  const dClassIcon = (() => {
                     const val = dClassObj.value || '';
-                    if (val === 'friend') return Star;
-                    if (val === 'companion') return Shield;
-                    if (val === 'explorer') return Compass;
-                    if (val === 'ranger') return MapPin;
-                    if (val === 'voyager') return Trophy;
-                    if (val === 'guide') return Flag;
-                    if (val.includes('master_guide')) return Crown;
-                    return BookOpen;
+                    if (val === 'friend') return IconAmigo;
+                    if (val === 'companion') return IconCompanero;
+                    if (val === 'explorer') return IconExplorador;
+                    if (val === 'ranger') return IconOrientador;
+                    if (val === 'voyager') return IconViajero;
+                    if (val === 'guide') return IconGuia;
+                    if (val.includes('master_guide')) return IconGuias;
+                    return null;
                   })();
 
                   return (
-                    <div key={d.id} className="flex flex-col items-center min-w-[190px] p-6 bg-gray-50 rounded-[40px] border border-gray-100 group hover:border-amber-200 hover:bg-white hover:shadow-xl hover:shadow-amber-100/20 transition-all duration-500">
+                    <div key={d.id} className="flex flex-col items-center min-w-[210px] p-6 bg-gray-50 rounded-[40px] border border-gray-100 group hover:border-amber-200 hover:bg-white hover:shadow-xl hover:shadow-amber-100/20 transition-all duration-500">
                       <div className="relative mb-4">
                         <div className="w-20 h-20 rounded-[24px] flex items-center justify-center font-black bg-white border border-gray-100 shadow-sm overflow-hidden text-gray-400 group-hover:scale-110 transition-all duration-500">
                           {d.photo ? (
@@ -25315,19 +25357,23 @@ const MemberPortal = ({
                       </div>
                       
                       <div className="text-center w-full">
-                        <div className="text-[13px] font-black text-gray-900 mb-1 whitespace-nowrap">{d.firstName} {d.lastName}</div>
+                        <div className="text-[14px] font-black text-gray-900 mb-1 whitespace-nowrap">{d.firstName} {d.lastName}</div>
                         <div className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3">
                           {translatePosition ? translatePosition(dPosition, d.gender) : dPosition}
                         </div>
                         
                         <div className="flex flex-col gap-2 mt-4">
                           <div className={`text-[9px] font-black uppercase tracking-widest py-2 px-3 rounded-2xl border flex items-center justify-center gap-2 shadow-sm ${dClassObj.color || 'bg-white border-gray-100 text-gray-400'}`}>
-                            <ClassIcon className="w-3 h-3" />
+                            {dClassIcon ? (
+                              <img src={dClassIcon} alt={dClassObj.label} className="w-4 h-4 object-contain" />
+                            ) : (
+                              <Star className="w-3 h-3" />
+                            )}
                             {dClassObj.label}
                           </div>
                           
                           {d.primaryContact && (
-                            <a href={`tel:${d.primaryContact}`} className="text-[9px] font-black text-indigo-600 uppercase tracking-widest bg-white border border-indigo-100 py-2 px-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-300 shadow-sm">
+                            <a href={`tel:${d.primaryContact}`} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-white border border-indigo-100 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-300 shadow-sm whitespace-nowrap">
                               <Phone className="w-3 h-3" /> {formatPhone(d.primaryContact)}
                             </a>
                           )}
