@@ -15985,7 +15985,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   {/* Unit Form Modal */}
                   {showUnitForm && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                           <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
                             {editingUnit ? 'Editar Unidad' : 'Agregar Nueva Unidad'}
@@ -15998,7 +15998,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </button>
                         </div>
 
-                        <div className="p-6 space-y-6">
+                        <div className="p-6 space-y-6 overflow-y-auto flex-1">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                               Unit Name <span className="text-red-500">*</span>
@@ -16018,8 +16018,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </label>
                             <div className="flex items-start gap-4">
                               <div className="flex-shrink-0">
-                                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900 dark:to-cyan-900 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600">
-                                  {unitFormData.logo ? (
+                                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900 dark:to-cyan-900 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 relative">
+                                  {isUploading ? (
+                                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white text-[10px] font-bold">
+                                      <RefreshCw className="w-6 h-6 animate-spin mb-1" />
+                                      Subiendo...
+                                    </div>
+                                  ) : unitFormData.logo ? (
                                     <img src={unitFormData.logo} alt="Unit logo" className="w-full h-full object-cover" />
                                   ) : (
                                     <Grid className="w-12 h-12 text-teal-400" />
@@ -16189,9 +16194,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </select>
                           </div>
 
-                          <div className="flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                          <div className="p-6 flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
                             <button
                               onClick={() => {
+                                if (isUploading) return;
                                 if (!unitFormData.name.trim()) {
                                   alert('Por favor ingrese un nombre para la unidad');
                                   return;
@@ -16241,15 +16247,30 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 setShowUnitForm(false);
                                 setUnitFormData({ id: '', name: '', logo: '', clubType: ['conquistadores'], gender: 'Mixed', captainId: '', secretaryId: '' });
                               }}
-                              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                              disabled={isUploading}
+                              className={`flex-1 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                                isUploading 
+                                  ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                                  : 'bg-teal-600 hover:bg-teal-700 text-white'
+                              }`}
                             >
-                              <Save className="w-5 h-5" />
-                              {editingUnit ? 'Actualizar Unidad' : 'Crear Unidad'}
+                              {isUploading ? (
+                                <>
+                                  <RefreshCw className="w-5 h-5 animate-spin" />
+                                  Procesando...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-5 h-5" />
+                                  {editingUnit ? 'Actualizar Unidad' : 'Guardar Unidad'}
+                                </>
+                              )}
                             </button>
                             <button
                               onClick={() => setShowUnitForm(false)}
-                              className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                              className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                             >
+                              <X className="w-5 h-5" />
                               Cancelar
                             </button>
                           </div>
