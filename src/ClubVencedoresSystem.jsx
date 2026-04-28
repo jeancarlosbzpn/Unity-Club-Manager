@@ -24767,12 +24767,18 @@ const MemberPortal = ({
         {/* ── Detailed Stats Grid ── */}
         <div className="grid grid-cols-2 gap-4">
           {/* Points this month */}
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
+          <div 
+            onClick={() => setShowAwardsModal(true)}
+            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-orange-200"
+          >
             <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
               <Star className="w-5 h-5 text-orange-500" />
             </div>
             <div className="text-2xl font-black tracking-tighter text-gray-900">{displayMonthPoints}</div>
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos de {currentMonthName}</div>
+            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-1 transition-colors group-active:text-orange-800">
+              Ver Galardones <ChevronRight className="w-3 h-3" />
+            </div>
           </div>
 
           {/* Total Paid */}
@@ -24784,8 +24790,9 @@ const MemberPortal = ({
               <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
             <div className="text-2xl font-black tracking-tighter text-gray-900">${totalPaid}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1">
-              Total Pagado <ChevronRight className="w-3 h-3 text-emerald-500 opacity-0 group-hover:opacity-100 transition-all" />
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Pagado</div>
+            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-emerald-600 flex items-center gap-1 transition-colors group-active:text-emerald-800">
+              Ver Desglose de Pagos <ChevronRight className="w-3 h-3" />
             </div>
           </div>
 
