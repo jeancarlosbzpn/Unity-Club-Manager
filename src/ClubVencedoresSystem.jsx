@@ -24005,15 +24005,6 @@ const MemberPortal = ({
     return value;
   };
 
-  const formatPhone = (value) => {
-    if (!value) return '';
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 1) return `+${numbers}`;
-    if (numbers.length <= 4) return `+${numbers.slice(0, 1)} (${numbers.slice(1)}`;
-    if (numbers.length <= 7) return `+${numbers.slice(0, 1)} (${numbers.slice(1, 4)}) ${numbers.slice(4)}`;
-    return `+${numbers.slice(0, 1)} (${numbers.slice(1, 4)}) ${numbers.slice(4, 7)}-${numbers.slice(7, 11)}`;
-  };
-
   const isPresent = (status) => {
     if (!status) return false;
     const s = String(status).toUpperCase();
