@@ -25330,13 +25330,6 @@ const MemberPortal = ({
               </div>
             </div>
           </div>
-        {showChatModal && (
-          <UnitChat 
-            isOpen={showChatModal} 
-            onClose={() => setShowChatModal(false)}
-            unitId={member.unitId}
-            currentMember={member}
-          />
         )}
 
         {/* Main Bento Grid */}
@@ -25614,6 +25607,15 @@ const MemberPortal = ({
             Club {clubSettings?.name || 'Vencedores'}
           </p>
         </footer>
+
+        {showChatModal && (
+          <UnitChat 
+            isOpen={showChatModal} 
+            onClose={() => setShowChatModal(false)}
+            unitId={member.unitId}
+            currentMember={member}
+          />
+        )}
       </div>
     </div>
   );
