@@ -24197,54 +24197,73 @@ const MemberPortal = ({
         </div>
       </div>
 
-      <div className="p-6 space-y-8 pb-32 max-w-4xl mx-auto">
-        {/* Welcome Header — Profile Card */}
+      <div className="p-6 space-y-6 pb-32 max-w-4xl mx-auto">
+
+        {/* ── Social Profile Card ── */}
         <section className="animate-in fade-in slide-in-from-top-4 duration-700">
-          <div className="flex items-center gap-5">
-            {/* Profile Photo */}
-            <div className="w-20 h-20 rounded-3xl overflow-hidden bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-100 border-2 border-white">
-              {member.photo ? (
-                <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl font-black text-red-600">{member.firstName ? member.firstName[0] : 'V'}</span>
-              )}
+          <div className="flex flex-col items-center text-center pt-4 pb-6">
+
+            {/* Large Profile Photo */}
+            <div className="relative mb-4">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center ring-4 ring-white shadow-xl shadow-red-100">
+                {member.photo ? (
+                  <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-5xl font-black text-red-600">{member.firstName ? member.firstName[0] : 'V'}</span>
+                )}
+              </div>
+              {/* Online / Active dot */}
+              <span className="absolute bottom-1 right-1 w-5 h-5 bg-green-400 border-2 border-white rounded-full shadow-sm" />
             </div>
-            {/* Name & Role */}
-            <div className="flex-1 min-w-0">
-              <h2 className="text-3xl font-black tracking-tighter leading-none mb-1 text-gray-900">
-                ¡Hola, <span className="text-red-600">{member.firstName}</span>!
-              </h2>
-              <p className="text-gray-500 text-sm font-medium truncate">{member.firstName} {member.lastName}</p>
-              {member.position && (
-                <span className="mt-1.5 inline-block px-3 py-1 bg-red-50 border border-red-100 text-red-700 text-[10px] font-black uppercase tracking-widest rounded-full">
-                  {translatePosition ? translatePosition(member.position, member.gender) : member.position}
+
+            {/* Name */}
+            <h2 className="text-2xl font-black tracking-tight text-gray-900 leading-none">
+              {member.firstName} <span className="text-red-600">{member.lastName}</span>
+            </h2>
+
+            {/* Role / Unit badges */}
+            <div className="flex flex-wrap justify-center gap-2 mt-3">
+              {member.position ? (
+                <span className="px-3 py-1 bg-red-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm shadow-red-200">
+                  {translatePosition(member.position, member.gender)}
                 </span>
-              )}
-              {!member.position && myUnit && (
-                <span className="mt-1.5 inline-block px-3 py-1 bg-gray-50 border border-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full">
+              ) : null}
+              {myUnit && (
+                <span className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-gray-200">
                   {myUnit.name}
                 </span>
               )}
+              {member.pathfinderClass && (
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-100">
+                  {myClassName}
+                </span>
+              )}
+            </div>
+
+            {/* Quick-stats row — social-style */}
+            <div className="w-full mt-6 grid grid-cols-3 divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm">
+              <button
+                onClick={() => setShowAwardsModal(true)}
+                className="flex flex-col items-center py-4 px-2 hover:bg-amber-50 transition-colors active:scale-95 group"
+              >
+                <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-amber-600 transition-colors">{displayTotalPoints}</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Puntos</span>
+              </button>
+              <div className="flex flex-col items-center py-4 px-2">
+                <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateCultos}%</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Cultos</span>
+              </div>
+              <div className="flex flex-col items-center py-4 px-2">
+                <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Club</span>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Stats Grid */}
+        {/* ── Detailed Stats Grid ── */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Main Stats */}
-          <div 
-            onClick={() => setShowAwardsModal(true)}
-            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-amber-200"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
-              <Trophy className="w-5 h-5 text-amber-500" />
-            </div>
-            <div className="text-2xl font-black tracking-tighter text-gray-900">{displayTotalPoints}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos Totales</div>
-            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1 transition-colors group-active:text-amber-800">
-              Ver Galardones <ChevronRight className="w-3 h-3" />
-            </div>
-          </div>
+          {/* Points this month */}
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
               <Star className="w-5 h-5 text-orange-500" />
@@ -24253,21 +24272,7 @@ const MemberPortal = ({
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos de {currentMonthName}</div>
           </div>
 
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors">
-              <Compass className="w-5 h-5 text-indigo-500" />
-            </div>
-            <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRateCultos}%</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia Cultos</div>
-          </div>
-
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
-              <CalendarCheck className="w-5 h-5 text-orange-500" />
-            </div>
-            <div className="text-2xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asistencia Club</div>
-          </div>
+          {/* Total Paid */}
           <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
               <DollarSign className="w-5 h-5 text-emerald-500" />
@@ -24276,7 +24281,8 @@ const MemberPortal = ({
             <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Pagado</div>
           </div>
 
-          <div 
+          {/* Class — full width */}
+          <div
             onClick={() => setShowHomeworkModal(true)}
             className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden col-span-2 cursor-pointer hover:border-indigo-200"
           >
