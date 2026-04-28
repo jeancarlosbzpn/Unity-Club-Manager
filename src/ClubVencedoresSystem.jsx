@@ -24438,6 +24438,13 @@ const MemberPortal = ({
     .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
     .sort((a, b) => a.firstName.localeCompare(b.firstName));
 
+  // Filter club directivos
+  const clubDirectivos = members.filter(m => {
+    const hasPosition = m.position && m.position.trim() !== '';
+    const hasDirectiveRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+    return hasPosition || hasDirectiveRoles;
+  }).sort((a, b) => a.firstName.localeCompare(b.firstName));
+
   // --- REUSABLE SCORE LOGIC (Unified for Individual & Unit) ---
   const calculateTotalForMember = (m) => {
     const mid = String(m.id).trim().toLowerCase();
@@ -25198,6 +25205,73 @@ const MemberPortal = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 5. Club Leadership (Directiva) */}
+          <section className="space-y-4 col-span-1 md:col-span-2">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center border border-amber-100">
+                <Award className="w-4 h-4 text-amber-600" />
+              </div>
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Directiva del Club</h3>
+            </div>
+            
+            <div className="bg-white border border-gray-100 rounded-[32px] p-2 shadow-sm">
+              <div className="flex overflow-x-auto pb-4 pt-2 px-2 gap-4 scrollbar-hide">
+                {clubDirectivos.map(d => {
+                  // Calculate position for this specific member
+                  const dPosition = (() => {
+                    if (d.position && d.position.trim() !== '') return d.position;
+                    if (d.directiveRoles) {
+                      for (const club of ['conquistadores', 'aventureros', 'guiasMayores']) {
+                        const roles = d.directiveRoles[club];
+                        if (roles && Array.isArray(roles) && roles.length > 0 && roles[0].position) return roles[0].position;
+                      }
+                    }
+                    return 'Directivo';
+                  })();
+
+                  // Calculate class for this specific member
+                  const dClass = (() => {
+                    const myQual = qualifications.find(q => String(q.memberId) === String(d.id));
+                    const baseClass = d.currentClass || d.pathfinderClass || myQual?.classId || myQual?.className || 'Sin clase';
+                    const classObj = pathfinderClasses.find(c => String(c.value) === String(baseClass));
+                    return classObj?.label || baseClass;
+                  })();
+
+                  return (
+                    <div key={d.id} className="flex flex-col items-center min-w-[140px] p-4 bg-gray-50 rounded-[24px] border border-gray-100 group hover:border-amber-200 transition-all">
+                      <div className="relative mb-3">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black bg-white border border-gray-100 shadow-sm overflow-hidden text-gray-400 group-hover:shadow-md transition-all">
+                          {d.photo ? (
+                            <img src={d.photo} alt={d.firstName} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-lg">{d.firstName ? d.firstName[0] : 'D'}</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-center w-full">
+                        <div className="text-[11px] font-black text-gray-900 truncate mb-0.5">{d.firstName} {d.lastName}</div>
+                        <div className="text-[9px] font-bold text-amber-600 uppercase tracking-widest mb-1 truncate">
+                          {translatePosition ? translatePosition(dPosition, d.gender) : dPosition}
+                        </div>
+                        <div className="flex flex-col gap-1 mt-2">
+                          <div className="text-[8px] font-black text-gray-400 uppercase tracking-widest bg-white border border-gray-100 py-1.5 px-2 rounded-lg truncate">
+                            {dClass}
+                          </div>
+                          {d.primaryContact && (
+                            <a href={`tel:${d.primaryContact}`} className="text-[8px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 hover:bg-indigo-100 transition-colors">
+                              <Phone className="w-2 h-2" /> {formatPhone(d.primaryContact)}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
