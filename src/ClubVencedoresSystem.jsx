@@ -10306,6 +10306,7 @@ const ClubVencedoresSystem = () => {
           );
           return inst ? `${inst.firstName} ${inst.lastName}` : null;
         })()}
+        isAdminPreview={isAuthenticated}
       />
     );
   }
@@ -23626,7 +23627,8 @@ const MemberPortal = ({
   setMemberHomeworkStatus,
   activities = [],
   masterGuideData = { requirements: [], evaluationDates: {} },
-  instructorName = null
+  instructorName = null,
+  isAdminPreview = false
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -24176,8 +24178,19 @@ const MemberPortal = ({
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-red-500/20">
       {/* Mobile Top Bar */}
-      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* Back to Admin button — only in preview mode */}
+          {isAdminPreview && (
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-700 transition-all active:scale-95 shadow-sm"
+              title="Volver al Panel Administrativo"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Panel
+            </button>
+          )}
           <div className="w-10 h-10 rounded-full overflow-hidden bg-red-600 flex items-center justify-center font-black shadow-lg shadow-red-500/20 text-white flex-shrink-0">
             {member.photo ? (
               <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" />
@@ -24198,12 +24211,15 @@ const MemberPortal = ({
           >
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button 
-            onClick={onLogout}
-            className="p-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-xl transition-all border border-gray-200"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          {/* Logout only for real member sessions, not admin previews */}
+          {!isAdminPreview && (
+            <button 
+              onClick={onLogout}
+              className="p-2 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600 rounded-xl transition-all border border-gray-200"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -24249,6 +24265,16 @@ const MemberPortal = ({
                 </span>
               )}
             </div>
+
+            {/* Portal Access Code */}
+            {member.portalAccessCode && (
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Código de acceso:</span>
+                <span className="font-mono text-xs font-black tracking-widest text-gray-700 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-xl select-all">
+                  {member.portalAccessCode}
+                </span>
+              </div>
+            )}
 
             {/* Quick-stats row — social-style */}
             <div className="w-full mt-6 grid grid-cols-3 divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm">
