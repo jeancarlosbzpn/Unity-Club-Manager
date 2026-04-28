@@ -1708,7 +1708,8 @@ const ClubVencedoresSystem = () => {
           setClubSettings(prev => ({ ...prev, [field]: url }));
           console.log(`✅ Logo '${field}' subido a Storage:`, url);
         } catch (err) {
-          console.warn(`⚠️ No se pudo subir '${field}' a Storage, usando base64 local:`, err);
+          console.error(`❌ Error al subir '${field}':`, err);
+          alert(`⚠️ No se pudo subir el archivo a la nube: ${err.message || 'Error de conexión'}. Verifique su internet.`);
         } finally {
           setIsUploading(false);
         }
@@ -1764,11 +1765,11 @@ const ClubVencedoresSystem = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Portal member anonymous elevating session to bypass Firestore restrictive central doc rules
-        if (portalMember && !auth.currentUser) {
+        // Auto-elevate session to bypass Storage/Firestore restrictive rules if logged in locally
+        if ((portalMember || currentUser) && !auth.currentUser) {
           try {
             await signInAnonymously(auth);
-            console.log('🛡️ Auto-elevated portal session');
+            console.log('🛡️ Auto-elevated session for storage/cloud access');
           } catch (e) {
             console.warn('Could not auto-elevate session:', e);
           }
@@ -3361,7 +3362,8 @@ const ClubVencedoresSystem = () => {
           setFinanceFormData(prev => ({ ...prev, receipt: url }));
           console.log('✅ Comprobante subido a Storage:', url);
         } catch (err) {
-          console.warn('⚠️ No se pudo subir el comprobante a Storage, usando base64 local:', err);
+          console.error('❌ Error al subir comprobante:', err);
+          alert(`⚠️ Error al subir comprobante a la nube: ${err.message || 'Error de conexión'}. Se usará una copia local temporal.`);
         } finally {
           setIsUploading(false);
         }
@@ -3681,7 +3683,8 @@ const ClubVencedoresSystem = () => {
           setActivityFormData(prev => ({ ...prev, image: url }));
           console.log('✅ Imagen de actividad subida a Storage:', url);
         } catch (err) {
-          console.warn('⚠️ No se pudo subir la imagen a Storage, usando base64 local:', err);
+          console.error('❌ Error al subir imagen de actividad:', err);
+          alert(`⚠️ Error al subir imagen a la nube: ${err.message || 'Error de conexión'}.`);
         } finally {
           setIsUploading(false);
         }
@@ -10098,7 +10101,8 @@ const ClubVencedoresSystem = () => {
           setTentFormData(prev => ({ ...prev, photo: url }));
           console.log('✅ Foto de carpa subida a Storage:', url);
         } catch (err) {
-          console.warn('⚠️ No se pudo subir la foto de carpa a Storage, usando base64 local:', err);
+          console.error('❌ Error al subir foto de carpa:', err);
+          alert(`⚠️ Error al subir foto de carpa a la nube: ${err.message || 'Error de conexión'}.`);
         } finally {
           setIsUploading(false);
         }
@@ -10209,7 +10213,8 @@ const ClubVencedoresSystem = () => {
           setInventoryFormData(prev => ({ ...prev, photo: url }));
           console.log('✅ Foto de inventario subida a Storage:', url);
         } catch (err) {
-          console.warn('⚠️ No se pudo subir la foto de inventario a Storage, usando base64 local:', err);
+          console.error('❌ Error al subir foto de inventario:', err);
+          alert(`⚠️ Error al subir foto de inventario a la nube: ${err.message || 'Error de conexión'}.`);
         } finally {
           setIsUploading(false);
         }
@@ -16086,18 +16091,29 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   onChange={async (e) => {
                                     const file = e.target.files[0];
                                     if (file) {
+                                      if (file.size > 5000000) {
+                                        alert('La imagen es muy grande (máximo 5MB).');
+                                        return;
+                                      }
                                       setIsUploading(true);
                                       const reader = new FileReader();
                                       reader.onloadend = async () => {
                                         const base64 = reader.result;
-                                        setUnitFormData({ ...unitFormData, logo: base64 });
+                                        setUnitFormData(prev => ({ ...prev, logo: base64 }));
                                         try {
-                                          const path = `unit_logos/unit_${Date.now()}.png`;
+                                          const extension = file.name.split('.').pop() || 'png';
+                                          const path = `unit_logos/unit_${Date.now()}.${extension}`;
                                           const url = await uploadImageToStorage(base64, path);
                                           setUnitFormData(prev => ({ ...prev, logo: url }));
                                           console.log('✅ Logo de unidad subido a Storage:', url);
                                         } catch (err) {
-                                          console.warn('⚠️ No se pudo subir el logo de unidad a Storage, usando base64 local:', err);
+                                          console.error('❌ Error al subir logo de unidad:', err);
+                                          let msg = err.message || 'Error de conexión';
+                                          if (err.code === 'storage/unauthorized') msg = 'No tienes permiso para subir archivos. Verifica tu conexión o vuelve a iniciar sesión.';
+                                          alert(`⚠️ Error al subir logo de unidad a la nube: ${msg}\n\nSi la foto es muy grande, no se guardará permanentemente.`);
+                                          if (base64.length > 800000) {
+                                            setUnitFormData(prev => ({ ...prev, logo: editingUnit?.logo || '' }));
+                                          }
                                         } finally {
                                           setIsUploading(false);
                                         }

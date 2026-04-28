@@ -60,6 +60,17 @@ const Login = ({ onLoginSuccess, users = [], members = [] }) => {
 
       if (localUser && localUser.password === password) {
         console.log('✅ Local user detected, bypassing Firebase Auth');
+        
+        // Elevate session with anonymous login to allow Storage uploads
+        try {
+          if (!auth.currentUser) {
+            await signInAnonymously(auth);
+            console.log('🛡️ Sesión de Firebase elevada para administrador local');
+          }
+        } catch (authErr) {
+          console.warn('⚠️ No se pudo elevar la sesión de Firebase:', authErr);
+        }
+
         localStorage.setItem('clubvencedores_current_user', JSON.stringify(localUser));
         onLoginSuccess(localUser);
         return;
