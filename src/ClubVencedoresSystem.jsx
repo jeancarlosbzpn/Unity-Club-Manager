@@ -2611,7 +2611,8 @@ const ClubVencedoresSystem = () => {
       date: getLocalISODate(),
       type: 'Information',
       target: 'Global',
-      unitId: ''
+      unitId: '',
+      targetMemberIds: []
     });
     setShowAnnouncementForm(true);
   };
@@ -2624,7 +2625,8 @@ const ClubVencedoresSystem = () => {
       date: announcement.date,
       type: announcement.type || 'Information',
       target: announcement.target || 'Global',
-      unitId: announcement.unitId || ''
+      unitId: announcement.unitId || '',
+      targetMemberIds: announcement.targetMemberIds || []
     });
     setShowAnnouncementForm(true);
   };
@@ -2664,6 +2666,26 @@ const ClubVencedoresSystem = () => {
       };
       setAnnouncements(prev => [newAnnouncement, ...prev]);
     }
+    
+    // Explicitly save to cloud
+    try {
+      const currentAnnouncements = [...announcements];
+      if (editingAnnouncement) {
+        const idx = currentAnnouncements.findIndex(a => a.id === editingAnnouncement.id);
+        if (idx !== -1) currentAnnouncements[idx] = { ...currentAnnouncements[idx], ...announcementFormData };
+      } else {
+        const newAnnouncement = {
+          ...announcementFormData,
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString()
+        };
+        currentAnnouncements.unshift(newAnnouncement);
+      }
+      dataService.writeData('announcements', currentAnnouncements);
+    } catch (e) {
+      console.error("Error saving announcement:", e);
+    }
+
     setShowAnnouncementForm(false);
   };
 
@@ -13814,9 +13836,52 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 <option value="Conquistadores">⚔️ Conquistadores</option>
                                 <option value="Guias Mayores">🧭 Guías Mayores</option>
                                 <option value="Unit">🛡️ Unidad Específica</option>
+                                <option value="Private">👤 Miembros Específicos</option>
                               </select>
                             </div>
                           </div>
+                          
+                          {announcementFormData.target === 'Private' && (
+                            <div className="animate-in slide-in-from-top-4 duration-300">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Seleccionar Miembros (Destinatarios Privados)</label>
+                              <div className="bg-white dark:bg-gray-700 border-2 border-red-100 dark:border-red-900/30 rounded-2xl p-4 shadow-sm">
+                                <div className="max-h-48 overflow-y-auto space-y-2 custom-scrollbar pr-2">
+                                  {members.sort((a,b) => (a.firstName||'').localeCompare(b.firstName||'')).map(m => (
+                                    <label key={m.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-xl cursor-pointer transition-colors">
+                                      <input 
+                                        type="checkbox"
+                                        checked={(announcementFormData.targetMemberIds || []).includes(m.id)}
+                                        onChange={(e) => {
+                                          const current = announcementFormData.targetMemberIds || [];
+                                          if (e.target.checked) {
+                                            setAnnouncementFormData({...announcementFormData, targetMemberIds: [...current, m.id]});
+                                          } else {
+                                            setAnnouncementFormData({...announcementFormData, targetMemberIds: current.filter(id => id !== m.id)});
+                                          }
+                                        }}
+                                        className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-gray-800 dark:text-white leading-none">{m.firstName} {m.lastName}</span>
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">{m.pathfinderClass || '-'}</span>
+                                      </div>
+                                    </label>
+                                  ))}
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-600 flex justify-between items-center">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-red-500">
+                                    {announcementFormData.targetMemberIds?.length || 0} seleccionados
+                                  </span>
+                                  <button 
+                                    onClick={() => setAnnouncementFormData({...announcementFormData, targetMemberIds: []})}
+                                    className="text-[9px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500"
+                                  >
+                                    Limpiar Selección
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           
                           {announcementFormData.target === 'Unit' && (
                             <div className="animate-in slide-in-from-top-4 duration-300">
@@ -24205,6 +24270,11 @@ const MemberPortal = ({
   
   // Filter announcements for this member
   const filteredAnnouncements = announcements.filter(a => {
+    // 1. Private Announcements
+    if (a.target === 'Private') {
+      return (a.targetMemberIds || []).includes(member.id);
+    }
+
     if (a.target === 'Global') return true;
     if (a.target === 'Unit' && (String(a.unitId) === String(member.unitId) || (myUnit && String(a.unitId) === String(myUnit.id)))) return true;
     
