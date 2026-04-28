@@ -25470,15 +25470,13 @@ const MemberPortal = ({
                   <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
                 </div>
 
-                {member.unitId && (
-                  <button 
-                    onClick={() => setShowChatModal(true)}
-                    className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all group flex items-center gap-2"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Chat de Unidad</span>
-                  </button>
-                )}
+                <button 
+                  onClick={() => setShowChatModal(true)}
+                  className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all group flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Chat de Unidad</span>
+                </button>
               </div>
               <div className="flex gap-4">
                 <div className="text-right">
