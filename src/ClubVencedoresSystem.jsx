@@ -25133,8 +25133,16 @@ const MemberPortal = ({
           {/* 4. My Unit (With Scores) */}
           <section className="space-y-4 col-span-1 md:col-span-2">
             <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-red-600" />
+              <div className="flex items-center gap-3">
+                {myUnit?.logo ? (
+                  <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
+                    <img src={myUnit.logo} alt="Logo" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 border border-red-100">
+                    <Users className="w-4 h-4 text-red-600" />
+                  </div>
+                )}
                 <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
               </div>
               <div className="flex gap-4">
@@ -25154,10 +25162,14 @@ const MemberPortal = ({
                 {unitMembers.map(m => (
                   <div key={m.id} className={`flex flex-col items-center min-w-[80px] space-y-2 group ${String(m.id) === String(member.id) ? 'scale-105' : ''}`}>
                     <div className="relative">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black transition-all border ${
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black transition-all border overflow-hidden ${
                         String(m.id) === String(member.id) ? 'bg-red-600 text-white border-red-500 shadow-lg shadow-red-200' : 'bg-gray-100 text-gray-400 group-hover:bg-red-50 group-hover:text-red-600 border-gray-50'
                       }`}>
-                        {m.firstName ? m.firstName[0] : 'V'}
+                        {m.photo ? (
+                          <img src={m.photo} alt={m.firstName} className="w-full h-full object-cover" />
+                        ) : (
+                          m.firstName ? m.firstName[0] : 'V'
+                        )}
                       </div>
                       {m.unitRole === 'Captain' && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-lg flex items-center justify-center border-2 border-white shadow-sm">
