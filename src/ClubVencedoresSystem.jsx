@@ -2281,29 +2281,16 @@ const ClubVencedoresSystem = () => {
         // SAFETY: Only save if we have dataLoaded flag TRUE
         if (!dataLoaded) return;
 
-        // If an upload is in progress, we only save non-image-heavy keys to avoid stripping
+        // If an upload is in progress, we omit image-heavy keys to avoid stripping large base64
         let finalDataToSave = { ...dataToSave };
         if (isUploading) {
-          console.log("⏸️ Auto-save parcial: Omitiendo miembros/ajustes por subida en curso...");
-          // We omit members and clubSettings because they might have base64 in progress
+          console.log("⏸️ Auto-save parcial: Omitiendo módulos con posibles imágenes grandes...");
           delete finalDataToSave.members;
           delete finalDataToSave.clubSettings;
-        }
-
-
-        // CRITICAL DATA INTEGRITY CHECK:
-        // Protect cloud from accidental wipe if loading failed
-        if (members.length === 0 && activities.length === 0 && users.length > 0) {
-           console.warn("🛑 Safety trigger: Data state is unexpectedly empty. Aborting save.");
-           return;
-        }
-        
-        // If we have members but 0 activities, and we had activities before...
-        // This is harder to check without previous state, but we can at least 
-        // prevent a save if we are in a 'syncing' error state.
-        if (syncStatus === 'error') {
-           console.error("🛑 Aborting save due to previous sync error.");
-           return;
+          delete finalDataToSave.units;
+          delete finalDataToSave.activities;
+          delete finalDataToSave.inventory;
+          delete finalDataToSave.tents;
         }
 
         setSyncStatus('saving');
@@ -16071,26 +16058,39 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </label>
                             <div className="flex items-start gap-4">
                               <div className="flex-shrink-0">
-                                <div className="w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900 dark:to-cyan-900 flex items-center justify-center border-2 border-gray-300 dark:border-gray-600 relative">
+                                <div 
+                                  onClick={() => document.getElementById('unit-logo-input').click()}
+                                  className="w-24 h-24 rounded-lg overflow-hidden bg-gradient-to-br from-teal-100 to-cyan-100 dark:from-teal-900 dark:to-cyan-900 flex items-center justify-center border-2 border-dashed border-teal-300 dark:border-teal-700 relative cursor-pointer hover:border-teal-500 transition-all group"
+                                >
                                   {isUploading ? (
                                     <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white text-[10px] font-bold">
                                       <RefreshCw className="w-6 h-6 animate-spin mb-1" />
                                       Subiendo...
                                     </div>
                                   ) : unitFormData.logo ? (
-                                    <img src={unitFormData.logo} alt="Unit logo" className="w-full h-full object-cover" />
+                                    <>
+                                      <img src={unitFormData.logo} alt="Unit logo" className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                        <ImageIcon className="text-white w-6 h-6" />
+                                      </div>
+                                    </>
                                   ) : (
-                                    <Grid className="w-12 h-12 text-teal-400" />
+                                    <div className="text-center p-2">
+                                      <Grid className="w-8 h-8 text-teal-400 mx-auto mb-1" />
+                                      <span className="text-[8px] text-teal-600 font-bold uppercase">Subir Foto</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
                               <div className="flex-1">
                                 <input
+                                  id="unit-logo-input"
                                   type="file"
                                   accept="image/*"
                                   onChange={async (e) => {
                                     const file = e.target.files[0];
                                     if (file) {
+                                      console.log('📸 Iniciando subida de logo para unidad:', file.name);
                                       if (file.size > 5000000) {
                                         alert('La imagen es muy grande (máximo 5MB).');
                                         return;
