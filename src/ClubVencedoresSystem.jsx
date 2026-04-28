@@ -3063,7 +3063,7 @@ const ClubVencedoresSystem = () => {
               portalAccessCode: editingMember.id.slice(-6).toUpperCase()
             }
           : member
-      ));
+      );
     } else {
       const id = Date.now().toString();
       const newMember = {
