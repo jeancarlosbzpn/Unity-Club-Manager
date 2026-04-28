@@ -213,6 +213,18 @@ export const dataService = {
       console.error(`Error saving single ${key}:`, err);
       return { success: false, error: err.message };
     }
+  },
+
+  deleteItem: async (key, id) => {
+    if (isElectron) return { success: false };
+    try {
+      const colName = 'clubvencedores_' + key;
+      await deleteDoc(doc(db, colName, String(id)));
+      return { success: true };
+    } catch (err) {
+      console.error(`Error deleting ${key}:`, err);
+      return { success: false, error: err.message };
+    }
   }
 };
 

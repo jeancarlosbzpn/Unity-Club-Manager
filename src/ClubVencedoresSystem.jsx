@@ -23959,6 +23959,15 @@ const UnitChat = ({ isOpen, onClose, unitId, currentMember }) => {
     }
   };
 
+  const handleDelete = async (msgId) => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar este mensaje?")) return;
+    
+    const res = await dataService.deleteItem('unit_messages', msgId);
+    if (!res.success) {
+      alert("Error al eliminar el mensaje");
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -23998,8 +24007,17 @@ const UnitChat = ({ isOpen, onClose, unitId, currentMember }) => {
                     {!isMine && <div className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">{msg.senderName}</div>}
                     {msg.text}
                   </div>
-                  <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1 px-1">
+                  <div className="flex items-center gap-2 text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1 px-1">
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {isMine && (
+                      <button 
+                        onClick={() => handleDelete(msg.id)}
+                        className="p-1 hover:text-red-500 transition-colors"
+                        title="Eliminar mensaje"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
