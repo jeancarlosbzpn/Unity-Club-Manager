@@ -23649,6 +23649,25 @@ const MemberPortal = ({
     return false;
   };
 
+  // Local helper to translate position labels with gender agreement
+  const translatePosition = (position, gender = 'Male') => {
+    if (!position) return '';
+    const isFemale = gender === 'Female' || gender === 'F';
+    const map = {
+      'director': isFemale ? 'Directora' : 'Director',
+      'director_conquistadores': isFemale ? 'Directora de Conquistadores' : 'Director de Conquistadores',
+      'director_aventureros': isFemale ? 'Directora de Aventureros' : 'Director de Aventureros',
+      'director_guias': isFemale ? 'Directora de Guías Mayores' : 'Director de Guías Mayores',
+      'coordinator': isFemale ? 'Coordinadora' : 'Coordinador',
+      'secretary': isFemale ? 'Secretaria' : 'Secretario',
+      'treasurer': isFemale ? 'Tesorera' : 'Tesorero',
+      'instructor': isFemale ? 'Instructora' : 'Instructor',
+      'chaplain': isFemale ? 'Capellana' : 'Capellán',
+      'deputy_director': isFemale ? 'Subdirectora' : 'Subdirector',
+    };
+    return map[position] || position;
+  };
+
   const isPresent = (status) => {
     if (!status) return false;
     const s = String(status).toUpperCase();
@@ -24149,8 +24168,12 @@ const MemberPortal = ({
       {/* Mobile Top Bar */}
       <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center font-black shadow-lg shadow-red-500/20 text-white">
-            {member.firstName ? member.firstName[0] : 'V'}
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-red-600 flex items-center justify-center font-black shadow-lg shadow-red-500/20 text-white flex-shrink-0">
+            {member.photo ? (
+              <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" />
+            ) : (
+              <span>{member.firstName ? member.firstName[0] : 'V'}</span>
+            )}
           </div>
           <div>
             <h1 className="text-sm font-black uppercase tracking-tighter text-gray-900">Mi Portal</h1>
@@ -24175,12 +24198,35 @@ const MemberPortal = ({
       </div>
 
       <div className="p-6 space-y-8 pb-32 max-w-4xl mx-auto">
-        {/* Welcome Header */}
+        {/* Welcome Header — Profile Card */}
         <section className="animate-in fade-in slide-in-from-top-4 duration-700">
-          <h2 className="text-3xl font-black tracking-tighter leading-none mb-1 text-gray-900">
-            ¡Hola, <span className="text-red-600">{member.firstName}</span>!
-          </h2>
-          <p className="text-gray-500 text-sm font-medium">Aquí tienes tu resumen actualizado.</p>
+          <div className="flex items-center gap-5">
+            {/* Profile Photo */}
+            <div className="w-20 h-20 rounded-3xl overflow-hidden bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center flex-shrink-0 shadow-lg shadow-red-100 border-2 border-white">
+              {member.photo ? (
+                <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-black text-red-600">{member.firstName ? member.firstName[0] : 'V'}</span>
+              )}
+            </div>
+            {/* Name & Role */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-3xl font-black tracking-tighter leading-none mb-1 text-gray-900">
+                ¡Hola, <span className="text-red-600">{member.firstName}</span>!
+              </h2>
+              <p className="text-gray-500 text-sm font-medium truncate">{member.firstName} {member.lastName}</p>
+              {member.position && (
+                <span className="mt-1.5 inline-block px-3 py-1 bg-red-50 border border-red-100 text-red-700 text-[10px] font-black uppercase tracking-widest rounded-full">
+                  {translatePosition ? translatePosition(member.position, member.gender) : member.position}
+                </span>
+              )}
+              {!member.position && myUnit && (
+                <span className="mt-1.5 inline-block px-3 py-1 bg-gray-50 border border-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full">
+                  {myUnit.name}
+                </span>
+              )}
+            </div>
+          </div>
         </section>
 
         {/* Stats Grid */}
@@ -24253,7 +24299,51 @@ const MemberPortal = ({
           </div>
         </div>
 
-        {/* MODALS (Replacing direct sections) */}
+        {/* Signature Card — Only for Directivos */}
+        {member.position && member.position.trim() !== '' && (
+          <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="bg-gray-50 border border-gray-100 rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Directivo</div>
+                  <div className="text-sm font-black text-gray-900">Mi Firma</div>
+                </div>
+              </div>
+              {member.signature ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-full max-w-xs bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                    <img
+                      src={member.signature}
+                      alt="Firma"
+                      className="w-full object-contain max-h-32"
+                      style={{ filter: 'contrast(1.1)' }}
+                    />
+                  </div>
+                  <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    {member.firstName} {member.lastName}
+                  </p>
+                  <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">
+                    {translatePosition ? translatePosition(member.position, member.gender) : member.position}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-8 border-2 border-dashed border-gray-200 rounded-2xl">
+                  <svg className="w-10 h-10 text-gray-200 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  <p className="text-[11px] font-black uppercase tracking-widest text-gray-300">Sin firma registrada</p>
+                  <p className="text-[9px] text-gray-300 mt-1">Un administrador puede agregarla desde tu perfil</p>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {showUniformModal && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
