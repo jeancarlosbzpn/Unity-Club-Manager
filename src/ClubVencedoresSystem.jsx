@@ -24089,12 +24089,33 @@ const MemberPortal = ({
     .filter(t => ['income', 'Ingreso', 'Ingresos'].includes(t.type) || !t.type)
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
-  // Class Info (Smart Detection)
-  const myQual = qualifications.find(q => isThisMember(q.memberId));
-  const classValue = member.currentClass || member.pathfinderClass || myQual?.classId || myQual?.className;
-  const myClassName = (pathfinderClasses.find(c => String(c.value) === String(classValue))?.label) || 
-                      classValue || 
-                      'No asignada';
+  // --- Enhanced Class Info ---
+  const memberClass = (() => {
+    if (member.membershipClass) return member.membershipClass;
+    if (member.clubAssignments) {
+      // Try to find active club assignment
+      for (const club of ['aventureros', 'conquistadores', 'guiasMayores']) {
+        const assignment = member.clubAssignments[club];
+        if (assignment && assignment.active && assignment.class) {
+          return assignment.class;
+        }
+      }
+    }
+    const myQual = qualifications.find(q => isThisMember(q.memberId));
+    return member.currentClass || member.pathfinderClass || myQual?.classId || myQual?.className || '';
+  })();
+
+  const modality = member.membershipClassModality ||
+    (member.clubAssignments ?
+      Object.values(member.clubAssignments).find(a => a && a.active)?.advancedClassOption
+      : member.advancedClassOption) || 'progressive';
+
+  const classObj = pathfinderClasses.find(c => String(c.value) === String(memberClass));
+  const baseClassName = classObj?.label || memberClass || 'No asignada';
+  
+  // Clean up 'E: ' or other prefixes if they exist in some data sources
+  const cleanBaseName = baseClassName.replace(/^E:\s*/, '');
+  const myClassName = (modality === 'advanced' || modality === 'advanced-only') ? `${cleanBaseName} Avanzado` : cleanBaseName;
 
 
   // Filter unit members (Privacy: same unit only)
@@ -24259,10 +24280,35 @@ const MemberPortal = ({
                   {myUnit.name}
                 </span>
               )}
-              {member.pathfinderClass && (
-                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-100">
-                  {myClassName}
-                </span>
+              {memberClass && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-100 rounded-full shadow-sm">
+                  {memberClass === 'master_guide_invested' ? (
+                    <MasterGuideBadge label="Guía Mayor Investido" size={20} />
+                  ) : memberClass === 'master_guide_candidate' ? (
+                    <MasterGuideBadge label="Aspirante a Guía Mayor" grayscale={true} size={20} />
+                  ) : (
+                    <>
+                      {(modality === 'progressive' || modality === 'both' || modality === 'none' || !modality) && (
+                        <RegularClassBadge 
+                          colorClass={classObj?.color} 
+                          label={cleanBaseName} 
+                          size={18} 
+                        />
+                      )}
+                      {(modality === 'both' || modality === 'advanced' || modality === 'advanced-only') && (
+                        <AdvancedClassBadge 
+                          colorClass={classObj?.color} 
+                          label={`${cleanBaseName} Avanzado`} 
+                          width={36} 
+                          height={12} 
+                        />
+                      )}
+                    </>
+                  )}
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-700">
+                    {myClassName}
+                  </span>
+                </div>
               )}
             </div>
 
