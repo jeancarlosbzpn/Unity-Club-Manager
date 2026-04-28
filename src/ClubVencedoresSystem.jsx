@@ -23943,6 +23943,7 @@ const MemberPortal = ({
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
   const [showUniformModal, setShowUniformModal] = useState(false);
+  const [showFinanceModal, setShowFinanceModal] = useState(false);
 
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -24414,6 +24415,15 @@ const MemberPortal = ({
     .filter(t => ['income', 'Ingreso', 'Ingresos'].includes(t.type) || !t.type)
     .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
+  // Financial Breakdown by Category
+  const financeBreakdown = myTransactions
+    .filter(t => ['income', 'Ingreso', 'Ingresos'].includes(t.type) || !t.type)
+    .reduce((acc, t) => {
+      const category = t.category || 'Otros';
+      acc[category] = (acc[category] || 0) + (Number(t.amount) || 0);
+      return acc;
+    }, {});
+
   // --- Enhanced Class Info ---
   const memberClass = (() => {
     if (member.membershipClass) return member.membershipClass;
@@ -24766,12 +24776,17 @@ const MemberPortal = ({
           </div>
 
           {/* Total Paid */}
-          <div className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group">
+          <div 
+            onClick={() => setShowFinanceModal(true)}
+            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-emerald-200"
+          >
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
               <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
             <div className="text-2xl font-black tracking-tighter text-gray-900">${totalPaid}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Pagado</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1">
+              Total Pagado <ChevronRight className="w-3 h-3 text-emerald-500 opacity-0 group-hover:opacity-100 transition-all" />
+            </div>
           </div>
 
           {/* Class — full width */}
@@ -25114,6 +25129,64 @@ const MemberPortal = ({
                   className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
                 >
                   Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showFinanceModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                    <DollarSign className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-gray-900">Desglose de Pagos</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tus aportes por categoría</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowFinanceModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {Object.entries(financeBreakdown).length === 0 ? (
+                  <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[30px]">
+                    <DollarSign className="w-12 h-12 mx-auto text-gray-200 mb-4 opacity-50" />
+                    <p className="text-sm font-black uppercase tracking-widest text-gray-400">No hay pagos registrados</p>
+                  </div>
+                ) : (
+                  Object.entries(financeBreakdown)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([category, amount], idx) => (
+                      <div key={idx} className="bg-gray-50 border border-gray-100 rounded-[30px] p-6 flex items-center justify-between shadow-sm group hover:border-emerald-200 transition-all">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-gray-100 group-hover:bg-emerald-50 transition-colors">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          </div>
+                          <div>
+                            <div className="text-lg font-black tracking-tight text-gray-900 capitalize">{category}</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total pagado</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-black tracking-tighter text-emerald-600">${amount}</div>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                 <button 
+                  onClick={() => setShowFinanceModal(false)}
+                  className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 active:scale-95"
+                >
+                  Entendido
                 </button>
               </div>
             </div>
