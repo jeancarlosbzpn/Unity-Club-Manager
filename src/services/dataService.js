@@ -194,6 +194,11 @@ export const dataService = {
     });
   },
 
+  saveFullState: async (allData, changedKeys = null) => {
+    const keysToSync = changedKeys || Object.keys(allData);
+    for (const key of keysToSync) {
+      if (allData[key] !== undefined) await dataService.writeData(key, allData[key]);
+    }
     return { success: true };
   },
 
