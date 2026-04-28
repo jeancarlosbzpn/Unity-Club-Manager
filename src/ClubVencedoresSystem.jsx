@@ -25322,38 +25322,6 @@ const MemberPortal = ({
                     return pathfinderClasses.find(c => String(c.value) === String(baseClass)) || { label: baseClass, color: 'bg-gray-100 text-gray-600 border-gray-200' };
                   })();
 
-                  // Calculate class insignia colors and style
-                  const insigniaConfig = (() => {
-                    const val = dClassObj.value || '';
-                    const config = {
-                      color: '#808080', // Default grey
-                      isBar: true,
-                      hasStar: false,
-                      isAdvanced: d.modality === 'advanced' || d.modality === 'advanced-only' || d.advancedClassOption === 'advanced'
-                    };
-
-                    if (val === 'friend') {
-                      config.color = '#7e7e7e';
-                      config.hasStar = true;
-                      config.isBar = false;
-                    } else if (val === 'companion') {
-                      config.color = '#e42919';
-                    } else if (val === 'explorer') {
-                      config.color = '#00a651';
-                    } else if (val === 'ranger') {
-                      config.color = '#545454';
-                    } else if (val === 'voyager') {
-                      config.color = '#800000';
-                    } else if (val === 'guide') {
-                      config.color = '#00a651'; // Guia is often green bar with yellow stripe too
-                    } else if (val.includes('master_guide')) {
-                      config.color = '#d4af37';
-                      config.isBar = false;
-                      config.isMaster = true;
-                    }
-                    return config;
-                  })();
-
                   return (
                     <div key={d.id} className="flex flex-col items-center min-w-[220px] p-6 bg-gray-50 rounded-[40px] border border-gray-100 group hover:border-amber-200 hover:bg-white hover:shadow-xl hover:shadow-amber-100/20 transition-all duration-500">
                       <div className="relative mb-4">
@@ -25373,37 +25341,12 @@ const MemberPortal = ({
                         </div>
                         
                         <div className="flex flex-col gap-2 mt-4">
-                          <div className={`text-[10px] font-black uppercase tracking-widest py-2 px-3 rounded-2xl border bg-white border-gray-100 flex items-center justify-center gap-3 shadow-sm text-gray-600`}>
-                            {/* Insignia Rendering */}
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              {insigniaConfig.isMaster ? (
-                                <img src={IconGuias} className="w-5 h-5 object-contain" style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))' }} />
-                              ) : (
-                                <>
-                                  {insigniaConfig.isAdvanced && (
-                                    <div className="w-5 h-5 rounded-full flex items-center justify-center shadow-sm border border-white/20" style={{ backgroundColor: insigniaConfig.color }}>
-                                      <svg viewBox="0 0 24 24" className="w-3 h-3 fill-white">
-                                        <path d="M21.99,2v1.99s-9.99,16.12-9.99,16.12L2,3.95v-1.95h19.99M24,0h0,0ZM24,0H0v4.52l12,19.38L23.98,4.56,24,0h0Z" />
-                                      </svg>
-                                    </div>
-                                  )}
-                                  {insigniaConfig.isBar ? (
-                                    <div className="h-4 w-10 rounded-sm relative overflow-hidden shadow-sm border border-white/20" style={{ backgroundColor: insigniaConfig.color }}>
-                                      <div className="absolute inset-y-0 left-1/3 right-1/3 bg-[#feca05]" />
-                                    </div>
-                                  ) : insigniaConfig.hasStar ? (
-                                    <div className="w-5 h-5 rounded-md flex items-center justify-center shadow-sm border border-white/20" style={{ backgroundColor: insigniaConfig.color }}>
-                                      <Star className="w-3 h-3 text-white fill-white" />
-                                    </div>
-                                  ) : null}
-                                </>
-                              )}
-                            </div>
-                            <span className="truncate">{dClassObj.label}</span>
+                          <div className={`text-[10px] font-black uppercase tracking-widest py-2.5 px-4 rounded-2xl border flex items-center justify-center gap-2 shadow-sm ${dClassObj.color || 'bg-white border-gray-100 text-gray-400'}`}>
+                            {dClassObj.label}
                           </div>
                           
                           {d.primaryContact && (
-                            <a href={`tel:${d.primaryContact}`} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-white border border-indigo-100 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-300 shadow-sm whitespace-nowrap">
+                            <a href={`tel:${d.primaryContact}`} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-white border border-indigo-100 py-2.5 px-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all duration-300 shadow-sm whitespace-nowrap">
                               <Phone className="w-3 h-3" /> {formatPhone(d.primaryContact)}
                             </a>
                           )}
