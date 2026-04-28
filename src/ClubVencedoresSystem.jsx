@@ -10267,7 +10267,10 @@ const ClubVencedoresSystem = () => {
         member={liveMember}
         onLogout={() => {
           setPortalMember(null);
-          localStorage.removeItem('clubvencedores_current_user');
+          // Only clear localStorage if this was a real member login (not an admin preview)
+          if (!isAuthenticated) {
+            localStorage.removeItem('clubvencedores_current_user');
+          }
         }}
         onRefresh={handleDataRefresh}
         isSyncing={syncStatus === 'syncing'}
@@ -14058,6 +14061,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                       <Edit2 className="w-4 h-4" />
                                                     </button>
                                                   )}
+                                                <button
+                                                  onClick={() => setPortalMember(member)}
+                                                  className="p-1.5 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded-lg transition-colors"
+                                                  title="Ver Portal del Miembro"
+                                                >
+                                                  <Eye className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                   onClick={() => printMemberForm(member)}
                                                   className="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
