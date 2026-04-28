@@ -1,6 +1,6 @@
 // VERSION ESTABILIZADA - RESTAURACIÓN COMPLETA (BASE f083133)
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit, Edit2, Save, X, User, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, RefreshCcw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud, LogOut, CalendarCheck, ShieldCheck, Info } from 'lucide-react';
+import { Search, Plus, Edit, Edit2, Save, X, User, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, RefreshCcw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud, LogOut, CalendarCheck, ShieldCheck, Info, Send } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import ReactQuill, { Quill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -23910,6 +23910,127 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
 
 // ===========================================
+// UNIT CHAT COMPONENT
+// ===========================================
+
+const UnitChat = ({ isOpen, onClose, unitId, currentMember }) => {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen || !unitId) return;
+    
+    // Subscribe to unit_messages
+    // Note: dataService handles the collection prefix automatically
+    const unsubscribe = dataService.subscribeToKey('unit_messages', (allMessages) => {
+      const unitMessages = allMessages
+        .filter(m => String(m.unitId) === String(unitId))
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      setMessages(unitMessages);
+    });
+    
+    return () => unsubscribe();
+  }, [isOpen, unitId]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!newMessage.trim()) return;
+    
+    const msg = {
+      id: Date.now().toString(),
+      unitId,
+      senderId: currentMember.id,
+      senderName: currentMember.firstName,
+      text: newMessage.trim(),
+      timestamp: Date.now()
+    };
+    
+    // Fetch current to append (simple persistence pattern for this app)
+    const currentAll = await dataService.readData('unit_messages') || [];
+    await dataService.writeData('unit_messages', [...currentAll, msg]);
+    setNewMessage('');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] shadow-2xl animate-in slide-in-from-bottom-10 duration-500 flex flex-col h-[85vh]">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-100 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black tracking-tight text-gray-900">Chat de Unidad</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Comunicación en tiempo real</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 bg-gray-100 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+              <X className="w-5 h-5" />
+            </button>
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+              <MessageCircle className="w-12 h-12 mb-2 text-gray-300" />
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400">No hay mensajes aún<br/>¡Sé el primero en escribir!</p>
+            </div>
+          ) : (
+            messages.map(msg => {
+              const isMine = String(msg.senderId) === String(currentMember.id);
+              return (
+                <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                  <div className={`max-w-[80%] p-4 rounded-3xl text-sm font-medium shadow-sm ${
+                    isMine ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'
+                  }`}>
+                    {!isMine && <div className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">{msg.senderName}</div>}
+                    {msg.text}
+                  </div>
+                  <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1 px-1">
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="p-6 border-t border-gray-100">
+          <div className="relative flex items-center">
+            <input 
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Escribe un mensaje..."
+              className="w-full bg-gray-100 border-none rounded-2xl py-4 pl-5 pr-14 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            />
+            <button 
+              onClick={handleSend}
+              className="absolute right-2 p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-600/20"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// ===========================================
 // MEMBER PORTAL COMPONENT
 // ===========================================
 
@@ -23944,6 +24065,7 @@ const MemberPortal = ({
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
   const [showUniformModal, setShowUniformModal] = useState(false);
   const [showFinanceModal, setShowFinanceModal] = useState(false);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -25208,6 +25330,13 @@ const MemberPortal = ({
               </div>
             </div>
           </div>
+        {showChatModal && (
+          <UnitChat 
+            isOpen={showChatModal} 
+            onClose={() => setShowChatModal(false)}
+            unitId={member.unitId}
+            currentMember={member}
+          />
         )}
 
         {/* Main Bento Grid */}
@@ -25332,17 +25461,27 @@ const MemberPortal = ({
           {/* 4. My Unit (With Scores) */}
           <section className="space-y-4 col-span-1 md:col-span-2">
             <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-3">
-                {myUnit?.logo ? (
-                  <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
-                    <img src={myUnit.logo} alt="Logo" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 border border-red-100">
-                    <Users className="w-4 h-4 text-red-600" />
-                  </div>
-                )}
-                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
+              <div className="flex items-center justify-between px-1 w-full">
+                <div className="flex items-center gap-3">
+                  {myUnit?.logo ? (
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
+                      <img src={myUnit.logo} alt="Logo" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 border border-red-100">
+                      <Users className="w-4 h-4 text-red-600" />
+                    </div>
+                  )}
+                  <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
+                </div>
+
+                <button 
+                  onClick={() => setShowChatModal(true)}
+                  className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all group flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Chat de Unidad</span>
+                </button>
               </div>
               <div className="flex gap-4">
                 <div className="text-right">

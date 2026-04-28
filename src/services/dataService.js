@@ -41,7 +41,7 @@ const ALL_COLLECTION_KEYS = [
   'homeworks', 'memberHomeworkStatus',
   'inventory', 'inventoryCategories', 'firstAidItems', 'tents', 'tentAssignments',
   'uniformItems', 'uniformCategories', 'uniformInspections', 'memberUniforms',
-  'reminders', 'campDetails', 'memberProgress'
+  'reminders', 'campDetails', 'memberProgress', 'unit_messages'
 ];
 
 export const dataService = {
