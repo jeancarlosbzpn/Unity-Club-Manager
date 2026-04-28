@@ -25341,8 +25341,10 @@ const MemberPortal = ({
                         </div>
                       </div>
                       
-                      <div className="text-center w-full">
-                        <div className="text-[14px] font-black text-gray-900 mb-1 whitespace-nowrap">{d.firstName} {d.lastName}</div>
+                      <div className="text-center w-full px-2">
+                        <div className="text-[14px] font-black text-gray-900 mb-1 leading-[1.1] min-h-[32px] flex items-center justify-center">
+                          {d.firstName} {d.lastName}
+                        </div>
                         <div className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-3 whitespace-nowrap">
                           {translatePosition ? translatePosition(dPosition, d.gender) : dPosition}
                         </div>
