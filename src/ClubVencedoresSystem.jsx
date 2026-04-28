@@ -12326,12 +12326,19 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   <p className="text-sm">Sin foto seleccionada</p>
                                 </div>
                               )}
-                              <label className="cursor-pointer bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                                <span className="flex items-center gap-2">
-                                  <Upload className="w-4 h-4" />
-                                  Subir Foto
-                                </span>
-                                <input type="file" className="hidden" accept="image/*" onChange={handleInventoryPhotoChange} />
+                              <label className={`cursor-pointer bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {isUploading ? (
+                                  <span className="flex items-center gap-2 text-indigo-600">
+                                    <RefreshCw className="w-4 h-4 animate-spin" />
+                                    Subiendo...
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-2">
+                                    <Upload className="w-4 h-4" />
+                                    Subir Foto
+                                  </span>
+                                )}
+                                <input type="file" className="hidden" accept="image/*" onChange={handleInventoryPhotoChange} disabled={isUploading} />
                               </label>
                             </div>
 
@@ -12432,10 +12439,24 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <div className="md:col-span-2 flex gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                               <button
                                 onClick={handleInventorySubmit}
-                                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                                disabled={isUploading}
+                                className={`flex-1 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                                  isUploading 
+                                    ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                }`}
                               >
-                                <Save className="w-5 h-5" />
-                                {editingInventoryItem ? 'Guardar Cambios' : 'Agregar Artículo'}
+                                {isUploading ? (
+                                  <>
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                    Subiendo...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Save className="w-5 h-5" />
+                                    {editingInventoryItem ? 'Guardar Cambios' : 'Agregar Artículo'}
+                                  </>
+                                )}
                               </button>
                               <button
                                 onClick={resetInventoryForm}
@@ -12547,12 +12568,19 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 <p className="text-sm">Sin foto seleccionada</p>
                               </div>
                             )}
-                            <label className="cursor-pointer bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
-                              <span className="flex items-center gap-2">
-                                <Upload className="w-4 h-4" />
-                                Subir Foto
-                              </span>
-                              <input type="file" className="hidden" accept="image/*" onChange={handleTentPhotoChange} />
+                            <label className={`cursor-pointer bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                              {isUploading ? (
+                                <span className="flex items-center gap-2 text-indigo-600">
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  Subiendo...
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <Upload className="w-4 h-4" />
+                                  Subir Foto
+                                </span>
+                              )}
+                              <input type="file" className="hidden" accept="image/*" onChange={handleTentPhotoChange} disabled={isUploading} />
                             </label>
                           </div>
 
@@ -12585,7 +12613,27 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </div>
                           </div>
                           <div className="flex gap-4 mt-6 pt-6 border-t">
-                            <button onClick={handleTentSubmit} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium">Guardar</button>
+                            <button
+                              onClick={handleTentSubmit}
+                              disabled={isUploading}
+                              className={`px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                                isUploading 
+                                  ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                              }`}
+                            >
+                              {isUploading ? (
+                                <>
+                                  <RefreshCw className="w-5 h-5 animate-spin" />
+                                  Subiendo...
+                                </>
+                              ) : (
+                                <>
+                                  <Save className="w-5 h-5" />
+                                  Guardar
+                                </>
+                              )}
+                            </button>
                             <button onClick={resetTentForm} className="border border-gray-300 rounded-lg font-medium text-gray-700 px-6 py-3 hover:bg-gray-50">Cancelar</button>
                           </div>
                         </div>
@@ -20576,12 +20624,34 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Factura / Comprobante
                           </label>
-                          <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={handleFinanceFileChange}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
+                          <div className="flex items-center gap-4">
+                            {financeFormData.receipt && (
+                              <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                {financeFormData.receipt.startsWith('data:image') || financeFormData.receipt.includes('storage.googleapis.com') ? (
+                                  <img src={financeFormData.receipt} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                    <FileText className="w-8 h-8 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="flex-1 relative">
+                              <input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                onChange={handleFinanceFileChange}
+                                className={`w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                disabled={isUploading}
+                              />
+                              {isUploading && (
+                                <div className="absolute inset-y-0 right-3 flex items-center gap-2 text-xs font-bold text-green-600">
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  Subiendo...
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Obligatorio para oficializar. Si no se adjunta, quedará como pendiente (Deuda).</p>
                         </div>
                       </>
@@ -20667,11 +20737,25 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   <div className="flex gap-4 mt-8">
                     <button
                       onClick={handleFinanceSubmit}
-                      disabled={isVerifyingReceipt}
-                      className={`flex-1 ${isVerifyingReceipt ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2`}
+                      disabled={isVerifyingReceipt || isUploading}
+                      className={`flex-1 ${isVerifyingReceipt || isUploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2`}
                     >
-                      <Save className="w-5 h-5" />
-                      {isVerifyingReceipt ? 'Analizando con IA...' : 'Guardar Transacción'}
+                      {isUploading ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          Subiendo...
+                        </>
+                      ) : isVerifyingReceipt ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          Analizando con IA...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-5 h-5" />
+                          Guardar Transacción
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={() => { setShowFinanceForm(false); resetFinanceForm(); }}
@@ -21993,19 +22077,27 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 <img src={activityFormData.image} alt="Preview" className="w-full h-full object-cover" />
                               </div>
                             )}
-                            <label className="flex-1">
-                              <div className="flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
-                                <div className="flex flex-col items-center">
-                                  <ImageIcon className="w-5 h-5 text-gray-400 mb-1" />
-                                  <span className="text-xs text-gray-500 text-center">
-                                    {activityFormData.image ? 'Cambiar imagen' : 'Subir imagen'}
-                                  </span>
-                                </div>
+                            <label className="flex-1 relative">
+                              <div className={`flex items-center justify-center w-full px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                {isUploading ? (
+                                  <div className="flex flex-col items-center">
+                                    <RefreshCw className="w-5 h-5 text-blue-500 animate-spin mb-1" />
+                                    <span className="text-xs text-blue-500 font-bold">Subiendo...</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center">
+                                    <ImageIcon className="w-5 h-5 text-gray-400 mb-1" />
+                                    <span className="text-xs text-gray-500 text-center">
+                                      {activityFormData.image ? 'Cambiar imagen' : 'Subir imagen'}
+                                    </span>
+                                  </div>
+                                )}
                                 <input
                                   type="file"
                                   accept="image/*"
                                   onChange={handleImageUpload}
                                   className="hidden"
+                                  disabled={isUploading}
                                 />
                               </div>
                             </label>
@@ -22061,14 +22153,27 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </p>
                         </div>
                       </div>
-
                       <div className="flex gap-4 mt-8">
                         <button
                           onClick={handleActivitySubmit}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                          disabled={isUploading}
+                          className={`flex-1 px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
+                            isUploading 
+                              ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
                         >
-                          <Save className="w-5 h-5" />
-                          {editingActivity ? 'Actualizar' : 'Guardar'}
+                          {isUploading ? (
+                            <>
+                              <RefreshCw className="w-5 h-5 animate-spin" />
+                              Subiendo...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-5 h-5" />
+                              {editingActivity ? 'Actualizar' : 'Guardar'}
+                            </>
+                          )}
                         </button>
                         <button
                           onClick={handleCancelActivity}
