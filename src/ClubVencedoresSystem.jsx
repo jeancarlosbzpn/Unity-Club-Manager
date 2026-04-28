@@ -3424,28 +3424,22 @@ const ClubVencedoresSystem = () => {
           if (apiKey) {
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-            // Use raw receipt for AI if available, fallback to current (which might be URL)
             const sourceReceipt = lastRawReceipt || financeFormData.receipt;
-            if (!sourceReceipt || !sourceReceipt.startsWith('data:')) {
-                console.warn('AI verification skipped: Receipt is already a URL or missing data');
+            
+            if (sourceReceipt && sourceReceipt.startsWith('data:')) {
+              const base64Data = sourceReceipt.split(',')[1];
+              const mimeMatch = sourceReceipt.match(/data:([^;]+);base64,/);
+              const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+              const promptStr = "Analiza este documento/imagen. ¿Es una factura, recibo o comprobante de pago comercial válido? Responde únicamente con 'SI' o 'NO'. Si tienes duda, prefiere decir 'SI'.";
+              const imageParts = [{ inlineData: { data: base64Data, mimeType } }];
+              const result = await model.generateContent([promptStr, ...imageParts]);
+              const responseText = result.response.text().trim().toUpperCase();
+
+              if (!responseText.includes('SI')) {
+                alert('🤖 La Inteligencia Artificial ha detectado que la imagen o documento subido NO parece ser una factura o recibo válido. Por favor, sube un archivo correcto.');
                 setIsVerifyingReceipt(false);
-                // Continue without AI since it's already in storage
-            } else {
-                const base64Data = sourceReceipt.split(',')[1];
-                const mimeMatch = sourceReceipt.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+).*,.*/);
-                const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-
-                const promptStr = "Analiza este documento/imagen. ¿Es una factura, recibo o comprobante de pago comercial válido? Responde únicamente con 'SI' o 'NO'. Si tienes duda, prefiere decir 'SI'.";
-                const imageParts = [{ inlineData: { data: base64Data, mimeType } }];
-
-                const result = await model.generateContent([promptStr, ...imageParts]);
-                const responseText = result.response.text().trim().toUpperCase();
-
-            if (!responseText.includes('SI')) {
-              alert('🤖 La Inteligencia Artificial ha detectado que la imagen o documento subido NO parece ser una factura o recibo válido. Por favor, sube un archivo correcto.');
-              setIsVerifyingReceipt(false);
-              return; // Bloquea que se guarde
+                return;
+              }
             }
           }
         } catch (error) {
@@ -3460,7 +3454,6 @@ const ClubVencedoresSystem = () => {
     }
 
     let finalReceipt = financeFormData.receipt;
-    // Fallback: If still base64, upload now
     if (finalReceipt && finalReceipt.startsWith('data:')) {
       setIsVerifyingReceipt(true);
       try {
@@ -3485,10 +3478,7 @@ const ClubVencedoresSystem = () => {
     try {
       setSyncStatus('saving');
       setTransactions(updatedTransactionsList);
-      
-      // Push to cloud immediately with force
       await dataService.writeData('transactions', updatedTransactionsList, { force: true });
-      
       setSyncStatus('saved');
       resetFinanceForm();
       setShowFinanceForm(false);
