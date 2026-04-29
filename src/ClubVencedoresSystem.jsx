@@ -20262,11 +20262,15 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         </button>
                                         <button
                                           onClick={() => {
-                                            if (confirm(`¿Estás seguro de eliminar el concepto "${c.name}"? Se perderán las marcas de todos los miembros.`)) {
-                                              setFixedPaymentConcepts(prev => prev.filter(x => x.id !== c.id));
+                                              const updatedConcepts = fixedPaymentConcepts.filter(x => x.id !== c.id);
+                                              setFixedPaymentConcepts(updatedConcepts);
                                               const newPayments = { ...fixedPayments };
                                               delete newPayments[c.id];
                                               setFixedPayments(newPayments);
+                                              
+                                              // Forced immediate save
+                                              dataService.writeData('fixedPaymentConcepts', updatedConcepts, { force: true });
+                                              dataService.writeData('fixedPayments', newPayments, { force: true });
                                             }
                                           }}
                                           className="text-red-500 hover:text-red-600 bg-white dark:bg-gray-800 p-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all z-20"
@@ -20581,29 +20585,35 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <button
                                 onClick={() => {
                                   if (newConceptName.trim()) {
+                                    let updatedConcepts = [];
                                     if (editingConcept) {
-                                      // Edit existing
-                                      setFixedPaymentConcepts(prev => prev.map(c => {
+                                      updatedConcepts = fixedPaymentConcepts.map(c => {
                                         if (c.id === editingConcept.id) {
                                           return {
                                             ...c,
                                             name: newConceptName,
                                             amount: parseFloat(newConceptAmount) || 0,
-                                            linkedActivityId: document.getElementById('newConceptLink').value || null // Get from DOM since simpler than new state
+                                            linkedActivityId: document.getElementById('newConceptLink').value || null
                                           };
                                         }
                                         return c;
-                                      }));
+                                      });
                                     } else {
-                                      // Create new
-                                      setFixedPaymentConcepts(prev => [...prev, {
+                                      const newConcept = {
                                         id: Date.now().toString(),
                                         name: newConceptName,
                                         amount: parseFloat(newConceptAmount) || 0,
                                         isVariable: false,
                                         linkedActivityId: document.getElementById('newConceptLink').value || null
-                                      }]);
+                                      };
+                                      updatedConcepts = [...fixedPaymentConcepts, newConcept];
                                     }
+
+                                    setFixedPaymentConcepts(updatedConcepts);
+                                    
+                                    // Forced immediate save to prevent data loss on refresh
+                                    dataService.writeData('fixedPaymentConcepts', updatedConcepts, { force: true });
+                                    
                                     setShowNewConceptModal(false);
                                     setEditingConcept(null);
                                     setNewConceptName('');
