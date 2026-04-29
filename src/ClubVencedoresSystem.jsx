@@ -20261,18 +20261,19 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <Edit className="w-3.5 h-3.5" />
                                         </button>
                                         <button
-                                          onClick={() => {
-                                              const updatedConcepts = fixedPaymentConcepts.filter(x => x.id !== c.id);
-                                              setFixedPaymentConcepts(updatedConcepts);
-                                              const newPayments = { ...fixedPayments };
-                                              delete newPayments[c.id];
-                                              setFixedPayments(newPayments);
-                                              
-                                              // Forced immediate save
-                                              dataService.writeData('fixedPaymentConcepts', updatedConcepts, { force: true });
-                                              dataService.writeData('fixedPayments', newPayments, { force: true });
-                                            }
-                                          }}
+                                           onClick={() => {
+                                             if (confirm(`¿Estás seguro de eliminar el concepto "${c.name}"? Se perderán las marcas de todos los miembros.`)) {
+                                               const updatedConcepts = fixedPaymentConcepts.filter(x => x.id !== c.id);
+                                               setFixedPaymentConcepts(updatedConcepts);
+                                               const newPayments = { ...fixedPayments };
+                                               delete newPayments[c.id];
+                                               setFixedPayments(newPayments);
+                                               
+                                               // Forced immediate save
+                                               dataService.writeData('fixedPaymentConcepts', updatedConcepts, { force: true });
+                                               dataService.writeData('fixedPayments', newPayments, { force: true });
+                                             }
+                                           }}
                                           className="text-red-500 hover:text-red-600 bg-white dark:bg-gray-800 p-1.5 rounded-md shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all z-20"
                                           title="Eliminar columna"
                                         >
