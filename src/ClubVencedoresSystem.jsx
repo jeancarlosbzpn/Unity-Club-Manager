@@ -10446,6 +10446,7 @@ const ClubVencedoresSystem = () => {
         activities={activities}
         masterGuideData={masterGuideData}
         financeCategories={financeCategories}
+        fixedPaymentConcepts={fixedPaymentConcepts}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
           const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
@@ -24184,7 +24185,8 @@ const MemberPortal = ({
   masterGuideData = { requirements: [], evaluationDates: {} },
   instructorName = null,
   isAdminPreview = false,
-  financeCategories = []
+  financeCategories = [],
+  fixedPaymentConcepts = []
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -25252,7 +25254,10 @@ const MemberPortal = ({
                     const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
                     const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
                     
-                    const linkedCats = (financeCategories || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name);
+                    const linkedCats = [
+                      ...(financeCategories || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name),
+                      ...(fixedPaymentConcepts || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name)
+                    ];
                     const totalPaidForAct = Object.entries(financeBreakdown).reduce((sum, [cat, amt]) => {
                       if (cat === activity.title || linkedCats.includes(cat)) return sum + amt;
                       return sum;
