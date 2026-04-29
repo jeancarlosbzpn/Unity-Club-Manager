@@ -10445,6 +10445,7 @@ const ClubVencedoresSystem = () => {
         setMemberHomeworkStatus={setMemberHomeworkStatus}
         activities={activities}
         masterGuideData={masterGuideData}
+        financeCategories={financeCategories}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
           const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
@@ -24182,7 +24183,8 @@ const MemberPortal = ({
   activities = [],
   masterGuideData = { requirements: [], evaluationDates: {} },
   instructorName = null,
-  isAdminPreview = false
+  isAdminPreview = false,
+  financeCategories = []
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -25250,6 +25252,13 @@ const MemberPortal = ({
                     const day = !isNaN(actDate.getTime()) ? actDate.getDate() : '?';
                     const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
                     
+                    const linkedCats = (financeCategories || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name);
+                    const totalPaidForAct = Object.entries(financeBreakdown).reduce((sum, [cat, amt]) => {
+                      if (cat === activity.title || linkedCats.includes(cat)) return sum + amt;
+                      return sum;
+                    }, 0);
+                    const isPaid = activity.cost > 0 && totalPaidForAct >= Number(activity.cost);
+
                     return (
                       <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-[30px] p-5 flex items-center gap-4 shadow-sm group">
                         <div className="flex flex-col items-center justify-center min-w-[55px] h-[65px] bg-blue-50 rounded-2xl text-blue-600 border border-blue-100">
@@ -25268,6 +25277,21 @@ const MemberPortal = ({
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3" /> {activity.location || 'Club Local'}
                           </p>
+                          {(activity.uniform || activity.cost > 0) && (
+                            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-50">
+                              {activity.uniform && (
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                                  <Shirt className="w-3 h-3" /> {activity.uniform}
+                                </div>
+                              )}
+                              {activity.cost > 0 && (
+                                <div className={`flex items-center gap-1 text-[10px] font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'} uppercase tracking-wider`}>
+                                  <DollarSign className="w-3 h-3" /> 
+                                  <span className={isPaid ? 'underline decoration-2 underline-offset-2' : ''}>${activity.cost}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
