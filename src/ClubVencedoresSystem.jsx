@@ -25303,22 +25303,26 @@ const MemberPortal = ({
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3" /> {activity.location || 'Club Local'}
                           </p>
-                          {(activity.uniform || displayPrice > 0) && (
-                            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-50">
-                              {activity.uniform && (
-                                <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
-                                  <Shirt className="w-3 h-3" /> {activity.uniform}
-                                </div>
-                              )}
-                              {displayPrice > 0 && (
-                                <div className={`flex items-center gap-1 text-[10px] font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'} uppercase tracking-wider`}>
-                                  <DollarSign className="w-3 h-3" /> 
-                                  <span className={isPaid ? 'underline decoration-2 underline-offset-2' : ''}>${displayPrice}</span>
-                                </div>
-                              )}
+                          {activity.uniform && (
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 uppercase tracking-wider mt-2 pt-2 border-t border-gray-50">
+                              <Shirt className="w-3 h-3" /> {activity.uniform}
                             </div>
                           )}
                         </div>
+
+                        {displayPrice > 0 && (
+                          <div className={`flex flex-col items-end justify-center pl-4 border-l border-gray-100 ml-2 min-w-[90px]`}>
+                            <div className={`text-xl font-black ${isPaid ? 'text-gray-300' : 'text-emerald-600'} flex items-center gap-0.5`}>
+                              <span className="text-sm font-bold opacity-70">$</span>
+                              <span className={isPaid ? 'line-through decoration-2 decoration-emerald-500' : ''}>
+                                {displayPrice}
+                              </span>
+                            </div>
+                            <span className={`text-[9px] font-bold uppercase tracking-tighter ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
+                              {isPaid ? 'PAGADO' : 'PENDIENTE'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })
