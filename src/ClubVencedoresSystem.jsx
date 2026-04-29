@@ -25255,19 +25255,23 @@ const MemberPortal = ({
                     const monthName = !isNaN(actDate.getTime()) ? actDate.toLocaleDateString('es-ES', { month: 'short' }).replace('.', '') : '---';
                     
                     const linkedCats = [
-                      ...(financeCategories || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name),
-                      ...(fixedPaymentConcepts || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name)
+                      ...(financeCategories || []).filter(c => String(c.linkedActivityId) === String(activity.id)).map(c => c.name),
+                      ...(fixedPaymentConcepts || []).filter(c => String(c.linkedActivityId) === String(activity.id)).map(c => c.name)
                     ];
 
-                    const linkedConceptPrice = (fixedPaymentConcepts || [])
-                      .find(c => c.linkedActivityId === activity.id)?.amount || 0;
+                    const linkedConcept = (fixedPaymentConcepts || [])
+                      .find(c => String(c.linkedActivityId) === String(activity.id));
                     
-                    const displayPrice = Number(activity.cost) || Number(linkedConceptPrice);
+                    const linkedConceptPrice = linkedConcept ? Number(linkedConcept.amount) : 0;
+                    const activityCost = Number(activity.cost) || 0;
+                    
+                    const displayPrice = activityCost || linkedConceptPrice;
 
                     const totalPaidForAct = Object.entries(financeBreakdown).reduce((sum, [cat, amt]) => {
-                      if (cat === activity.title || linkedCats.includes(cat)) return sum + amt;
+                      if (cat === activity.title || linkedCats.includes(cat)) return sum + (Number(amt) || 0);
                       return sum;
                     }, 0);
+                    
                     const isPaid = displayPrice > 0 && totalPaidForAct >= displayPrice;
 
                     return (
