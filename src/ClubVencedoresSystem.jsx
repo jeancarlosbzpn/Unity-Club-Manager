@@ -25258,11 +25258,17 @@ const MemberPortal = ({
                       ...(financeCategories || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name),
                       ...(fixedPaymentConcepts || []).filter(c => c.linkedActivityId === activity.id).map(c => c.name)
                     ];
+
+                    const linkedConceptPrice = (fixedPaymentConcepts || [])
+                      .find(c => c.linkedActivityId === activity.id)?.amount || 0;
+                    
+                    const displayPrice = Number(activity.cost) || Number(linkedConceptPrice);
+
                     const totalPaidForAct = Object.entries(financeBreakdown).reduce((sum, [cat, amt]) => {
                       if (cat === activity.title || linkedCats.includes(cat)) return sum + amt;
                       return sum;
                     }, 0);
-                    const isPaid = activity.cost > 0 && totalPaidForAct >= Number(activity.cost);
+                    const isPaid = displayPrice > 0 && totalPaidForAct >= displayPrice;
 
                     return (
                       <div key={activity.id || idx} className="bg-white border border-gray-100 rounded-[30px] p-5 flex items-center gap-4 shadow-sm group">
@@ -25282,17 +25288,17 @@ const MemberPortal = ({
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3" /> {activity.location || 'Club Local'}
                           </p>
-                          {(activity.uniform || activity.cost > 0) && (
+                          {(activity.uniform || displayPrice > 0) && (
                             <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-50">
                               {activity.uniform && (
                                 <div className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
                                   <Shirt className="w-3 h-3" /> {activity.uniform}
                                 </div>
                               )}
-                              {activity.cost > 0 && (
+                              {displayPrice > 0 && (
                                 <div className={`flex items-center gap-1 text-[10px] font-bold ${isPaid ? 'text-emerald-600' : 'text-amber-600'} uppercase tracking-wider`}>
                                   <DollarSign className="w-3 h-3" /> 
-                                  <span className={isPaid ? 'underline decoration-2 underline-offset-2' : ''}>${activity.cost}</span>
+                                  <span className={isPaid ? 'underline decoration-2 underline-offset-2' : ''}>${displayPrice}</span>
                                 </div>
                               )}
                             </div>
