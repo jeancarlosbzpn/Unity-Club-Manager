@@ -2568,9 +2568,19 @@ const ClubVencedoresSystem = () => {
     setShowReminderForm(true);
   };
 
-  const handleDeleteReminder = (id) => {
+  const handleDeleteReminder = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este recordatorio?')) {
-      setReminders(prev => prev.filter(r => r.id !== id));
+      try {
+        setSyncStatus('saving');
+        const updatedReminders = reminders.filter(r => r.id !== id);
+        await dataService.writeData('reminders', updatedReminders, { force: true });
+        setReminders(updatedReminders);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      } catch (error) {
+        console.error("Error deleting reminder:", error);
+        setSyncStatus('error');
+      }
     }
   };
 
@@ -3200,10 +3210,25 @@ const ClubVencedoresSystem = () => {
   };
 
   // Delete member
-  const handleDeleteMember = (memberId) => {
+  const handleDeleteMember = async (memberId) => {
     const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    
     if (confirm(`Are you sure you want to delete ${member.firstName} ${member.lastName}? This action cannot be undone.`)) {
-      setMembers(prev => prev.filter(m => m.id !== memberId));
+      try {
+        setSyncStatus('saving');
+        const updatedMembers = members.filter(m => m.id !== memberId);
+        
+        await dataService.writeData('members', updatedMembers, { force: true });
+        
+        setMembers(updatedMembers);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      } catch (error) {
+        console.error("Error deleting member:", error);
+        setSyncStatus('error');
+        alert('⚠️ Error al eliminar el miembro en la nube.');
+      }
     }
   };
 
@@ -3892,11 +3917,24 @@ const ClubVencedoresSystem = () => {
     setShowActivityForm(true);
   };
 
-  const handleDeleteActivity = (activityId) => {
+  const handleDeleteActivity = async (activityId) => {
     if (confirm('Are you sure you want to delete this activity?')) {
-      setActivities(prev => prev.filter(a => a.id !== activityId));
-      setShowActivityForm(false);
-      setEditingActivity(null);
+      try {
+        setSyncStatus('saving');
+        const updatedActivities = activities.filter(a => a.id !== activityId);
+        
+        await dataService.writeData('activities', updatedActivities, { force: true });
+        
+        setActivities(updatedActivities);
+        setShowActivityForm(false);
+        setEditingActivity(null);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      } catch (error) {
+        console.error("Error deleting activity:", error);
+        setSyncStatus('error');
+        alert('⚠️ Error al eliminar la actividad en la nube.');
+      }
     }
   };
 
@@ -9945,61 +9983,80 @@ const ClubVencedoresSystem = () => {
     }
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!validateNewUserForm()) return;
 
-    if (editingUser) {
-      // Update existing user
-      const updatedUser = {
-        ...editingUser,
-        name: newUserFormData.name,
-        username: newUserFormData.username,
-        position: newUserFormData.positions?.[0] || newUserFormData.position,
-        positions: newUserFormData.positions || [newUserFormData.position],
-        instructorClass: newUserFormData.instructorClass || '',
-        role: 'user',
-        allowedModules: newUserFormData.allowedModules || [],
-        modulePermissions: newUserFormData.modulePermissions || {}
-      };
+    try {
+      setSyncStatus('saving');
+      let updatedUsers;
 
-      if (newUserFormData.password) {
-        updatedUser.password = newUserFormData.password;
+      if (editingUser) {
+        // Update existing user
+        const updatedUser = {
+          ...editingUser,
+          name: newUserFormData.name,
+          username: newUserFormData.username,
+          position: newUserFormData.positions?.[0] || newUserFormData.position,
+          positions: newUserFormData.positions || [newUserFormData.position],
+          instructorClass: newUserFormData.instructorClass || '',
+          role: editingUser.role || 'user',
+          allowedModules: newUserFormData.allowedModules || [],
+          modulePermissions: newUserFormData.modulePermissions || {}
+        };
+
+        if (newUserFormData.password) {
+          updatedUser.password = newUserFormData.password;
+        }
+
+        updatedUsers = users.map(u =>
+          u.username === editingUser.username ? updatedUser : u
+        );
+      } else {
+        // Add new user
+        const newUser = {
+          name: newUserFormData.name,
+          username: newUserFormData.username,
+          password: newUserFormData.password,
+          position: newUserFormData.positions?.[0] || newUserFormData.position,
+          positions: newUserFormData.positions || [newUserFormData.position],
+          instructorClass: newUserFormData.instructorClass || '',
+          role: 'user',
+          allowedModules: newUserFormData.allowedModules || [],
+          modulePermissions: newUserFormData.modulePermissions || {}
+        };
+
+        updatedUsers = [...users, newUser];
       }
 
-      setUsers(prev => prev.map(u =>
-        u.username === editingUser.username ? updatedUser : u
-      ));
-    } else {
-      // Add new user
-      const newUser = {
-        name: newUserFormData.name,
-        username: newUserFormData.username,
-        password: newUserFormData.password,
-        position: newUserFormData.positions?.[0] || newUserFormData.position,
-        positions: newUserFormData.positions || [newUserFormData.position],
-        instructorClass: newUserFormData.instructorClass || '',
+      // PERSIST TO CLOUD IMMEDIATELY
+      await dataService.writeData('users', updatedUsers, { force: true });
+      
+      setUsers(updatedUsers);
+      setSyncStatus('saved');
+      
+      // Reset form
+      setNewUserFormData({
+        name: '',
+        username: '',
+        password: '',
+        confirmPassword: '',
+        position: '',
+        positions: [],
+        instructorClass: '',
         role: 'user',
-        allowedModules: newUserFormData.allowedModules || [],
-        modulePermissions: newUserFormData.modulePermissions || {}
-      };
-
-      setUsers(prev => [...prev, newUser]);
+        allowedModules: [],
+        modulePermissions: {}
+      });
+      setEditingUser(null);
+      setShowAddUserForm(false);
+      
+      setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      alert(editingUser ? '✅ Usuario actualizado correctamente' : '✅ Usuario creado correctamente');
+    } catch (error) {
+      console.error("Error saving user:", error);
+      setSyncStatus('error');
+      alert('⚠️ Error al guardar el usuario en la nube: ' + error.message);
     }
-
-    setNewUserFormData({
-      name: '',
-      username: '',
-      password: '',
-      confirmPassword: '',
-      position: '',
-      positions: [],
-      instructorClass: '',
-      role: 'user',
-      allowedModules: [],
-      modulePermissions: {}
-    });
-    setEditingUser(null);
-    setShowAddUserForm(false);
   };
 
   const handleEditUser = (user) => {
@@ -10019,13 +10076,26 @@ const ClubVencedoresSystem = () => {
     setShowAddUserForm(true);
   };
 
-  const handleDeleteUser = (username) => {
+  const handleDeleteUser = async (username) => {
     if (username === adminUser.username) {
       alert('Cannot delete the main administrator account');
       return;
     }
     if (confirm('Are you sure you want to delete this user?')) {
-      setUsers(prev => prev.filter(u => u.username !== username));
+      try {
+        setSyncStatus('saving');
+        const updatedUsers = users.filter(u => u.username !== username);
+        
+        await dataService.writeData('users', updatedUsers, { force: true });
+        
+        setUsers(updatedUsers);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        setSyncStatus('error');
+        alert('⚠️ Error al eliminar el usuario en la nube.');
+      }
     }
   };
 
