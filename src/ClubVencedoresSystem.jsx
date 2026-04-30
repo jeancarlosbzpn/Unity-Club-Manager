@@ -10077,11 +10077,15 @@ const ClubVencedoresSystem = () => {
   };
 
   const handleDeleteUser = async (username) => {
-    if (username === adminUser.username) {
-      alert('Cannot delete the main administrator account');
+    // Safety check to prevent deleting yourself
+    const currentUsername = currentUser?.username || (currentUser?.email ? currentUser.email.split('@')[0] : null);
+    
+    if (username === currentUsername) {
+      alert('No puedes eliminar tu propia cuenta de administrador.');
       return;
     }
-    if (confirm('Are you sure you want to delete this user?')) {
+
+    if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
       try {
         setSyncStatus('saving');
         const updatedUsers = users.filter(u => u.username !== username);
@@ -10091,10 +10095,11 @@ const ClubVencedoresSystem = () => {
         setUsers(updatedUsers);
         setSyncStatus('saved');
         setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+        alert('✅ Usuario eliminado correctamente.');
       } catch (error) {
         console.error("Error deleting user:", error);
         setSyncStatus('error');
-        alert('⚠️ Error al eliminar el usuario en la nube.');
+        alert('⚠️ Error al eliminar el usuario en la nube: ' + (error.message || 'Error de conexión'));
       }
     }
   };
