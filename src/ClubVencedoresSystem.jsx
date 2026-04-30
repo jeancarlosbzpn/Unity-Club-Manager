@@ -1189,6 +1189,8 @@ const ClubVencedoresSystem = () => {
   });
   const [editingRequirement, setEditingRequirement] = useState(null);
   const [viewingGMDetail, setViewingGMDetail] = useState(null);
+  const [showUniformDetailModal, setShowUniformDetailModal] = useState(false);
+  const [selectedUniformItemReport, setSelectedUniformItemReport] = useState(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22733,6 +22735,71 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
 
+                    {/* Uniformity Summary Report */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                        <Shirt className="w-5 h-5 text-indigo-600" />
+                        Resumen de Uniformidad (Faltantes)
+                      </h3>
+                      <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                        {(() => {
+                          const report = {};
+                          members.forEach(member => {
+                            const myInspections = (uniformInspections || [])
+                              .filter(i => i.memberId === member.id)
+                              .sort((a, b) => b.date.localeCompare(a.date));
+                            const last = myInspections[0];
+                            const appItems = getApplicableUniformItems(member);
+                            const missingIds = last ? (last.itemsMissing || []) : appItems.map(i => i.id);
+                            
+                            missingIds.forEach(id => {
+                              if (!report[id]) {
+                                const item = (uniformItems || []).find(ui => ui.id === id);
+                                if (item) report[id] = { item, count: 0, members: [] };
+                              }
+                              if (report[id]) {
+                                report[id].count++;
+                                report[id].members.push(member);
+                              }
+                            });
+                          });
+
+                          const sortedReport = Object.values(report).sort((a, b) => b.count - a.count);
+
+                          if (sortedReport.length === 0) return (
+                            <div className="flex flex-col items-center justify-center py-10 text-center">
+                              <CheckCircle className="w-12 h-12 text-green-500 mb-2 opacity-20" />
+                              <p className="text-gray-500 text-sm">¡Todo el club está debidamente uniformado!</p>
+                            </div>
+                          );
+
+                          return sortedReport.map(r => (
+                            <button
+                              key={r.item.id}
+                              onClick={() => {
+                                setSelectedUniformItemReport(r);
+                                setShowUniformDetailModal(true);
+                              }}
+                              className="w-full flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm group-hover:scale-110 transition-transform">
+                                  <Shirt className="w-4 h-4 text-indigo-500" />
+                                </div>
+                                <span className="text-gray-700 dark:text-gray-200 font-bold">{r.item.label}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-xs font-black">
+                                  Faltan {r.count}
+                                </span>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                              </div>
+                            </button>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+
                     {/* Productivity / Activities Report */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                       <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -22825,6 +22892,62 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   </div>
 
                   {/* Invoices Modal */}
+                  {/* Uniform Detail Modal */}
+                  {showUniformDetailModal && selectedUniformItemReport && (
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b dark:border-gray-700 flex items-center justify-between bg-indigo-600">
+                          <div className="flex items-center gap-3 text-white">
+                            <Shirt className="w-6 h-6" />
+                            <div>
+                              <h3 className="text-xl font-black">{selectedUniformItemReport.item.label}</h3>
+                              <p className="text-xs text-indigo-100 opacity-80 uppercase tracking-widest">Miembros a los que les falta este elemento</p>
+                            </div>
+                          </div>
+                          <button onClick={() => setShowUniformDetailModal(false)} className="text-white hover:bg-white/20 p-2 rounded-full transition-colors">
+                            <X className="w-6 h-6" />
+                          </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900/30">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {selectedUniformItemReport.members.sort((a, b) => a.firstName.localeCompare(b.firstName)).map(member => (
+                              <div key={member.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4">
+                                <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">
+                                  {member.firstName.charAt(0)}{member.lastName.charAt(0)}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-bold text-gray-900 dark:text-white leading-tight">{member.firstName} {member.lastName}</h4>
+                                  <p className="text-[10px] text-gray-500 uppercase tracking-tighter">{member.pathfinderClass || 'Sin Clase'}</p>
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    // Navigate to member profile if possible or just show info
+                                    setEditingMember(member);
+                                    setShowForm(true);
+                                    setShowUniformDetailModal(false);
+                                  }}
+                                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title="Ver Perfil"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-between items-center text-xs text-gray-500">
+                          <span>Total de miembros: <strong>{selectedUniformItemReport.members.length}</strong></span>
+                          <button 
+                            onClick={() => setShowUniformDetailModal(false)}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold"
+                          >
+                            Entendido
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {showInvoicesModal && (() => {
                     const invoiceTransactions = transactions.filter(t => t.receipt);
 
