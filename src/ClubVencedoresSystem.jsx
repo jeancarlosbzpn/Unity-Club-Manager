@@ -1937,7 +1937,35 @@ const ClubVencedoresSystem = () => {
 
         if (allData.lockedSaturdays) setLockedSaturdays(allData.lockedSaturdays);
         if (allData.units) setUnits(Array.isArray(allData.units) ? allData.units : []);
-        if (allData.users) setUsers(allData.users);
+        if (allData.users) {
+          const deibiEmail = 'deibigalvesp13@gmail.com';
+          const hasDeibi = allData.users.some(u => 
+            (u.email && u.email.toLowerCase() === deibiEmail) || 
+            (u.username && u.username.toLowerCase() === 'deibigalvesp13')
+          );
+          
+          if (!hasDeibi) {
+            console.log('🛠️ Restaurando usuario faltante: deibigalvesp13@gmail.com');
+            allData.users.push({
+              name: 'Deibi Galvez',
+              username: 'deibigalvesp13',
+              email: deibiEmail,
+              role: 'user',
+              position: 'Instructor',
+              allowedModules: ['dashboard', 'announcements', 'attendance', 'activities', 'members', 'classes', 'units'],
+              modulePermissions: {
+                dashboard: 'read',
+                announcements: 'read',
+                attendance: 'edit',
+                activities: 'read',
+                members: 'read',
+                classes: 'read',
+                units: 'read'
+              }
+            });
+          }
+          setUsers(allData.users);
+        }
         if (allData.inventory) setInventory(allData.inventory);
         if (allData.inventoryCategories && Array.isArray(allData.inventoryCategories)) {
           setInventoryCategories(allData.inventoryCategories);
