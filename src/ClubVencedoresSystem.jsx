@@ -24660,6 +24660,29 @@ const MemberPortal = ({
       return `${y}-${m}`;
     };
 
+    const isAwardReady = (monthStr) => {
+      if (!monthStr) return false;
+      const [y, m] = monthStr.split('-').map(Number);
+      
+      // The award for month Y-M is ready only AFTER the first Saturday of month Y-(M+1)
+      let nextY = y;
+      let nextM = m + 1;
+      if (nextM > 12) {
+        nextM = 1;
+        nextY++;
+      }
+      
+      const firstSat = new Date(nextY, nextM - 1, 1);
+      const day = firstSat.getDay();
+      const diff = (6 - day + 7) % 7;
+      firstSat.setDate(firstSat.getDate() + diff);
+      
+      // Reveal after the Saturday has passed (Sunday 00:00 or late Saturday)
+      firstSat.setHours(23, 59, 59, 999);
+      
+      return now > firstSat;
+    };
+
     const getCanonicalMemberId = (recordId) => {
       if (!recordId) return null;
       const rid = String(recordId).trim().toLowerCase();
@@ -24675,12 +24698,12 @@ const MemberPortal = ({
     const allPastMonths = new Set();
     safePoints.forEach(p => { 
       const norm = normalizeMonth(p.month);
-      if (norm && norm < currentMonthPrefix) allPastMonths.add(norm); 
+      if (norm && isAwardReady(norm)) allPastMonths.add(norm); 
     });
     meritEntries.forEach(e => { 
       if (e.date) {
         const norm = normalizeMonth(String(e.date).substring(0, 7));
-        if (norm && norm < currentMonthPrefix) allPastMonths.add(norm);
+        if (norm && isAwardReady(norm)) allPastMonths.add(norm);
       }
     });
     
