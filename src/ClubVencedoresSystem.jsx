@@ -7636,29 +7636,38 @@ const ClubVencedoresSystem = () => {
     };
 
     const handleToggleHomeworkCompletion = (homeworkId, memberId, isCompleted) => {
+      console.log('🔄 Toggling homework:', { homeworkId, memberId, isCompleted });
+      
       // 1. Update Homework completedBy
-      setHomeworks(prev => prev.map(h => {
-        if (h.id === homeworkId) {
-          const completedBy = h.completedBy || [];
-          if (isCompleted) {
-            return { ...h, completedBy: [...new Set([...completedBy, memberId])] };
-          } else {
-            return { ...h, completedBy: completedBy.filter(id => id !== memberId) };
+      setHomeworks(prev => {
+        const updated = prev.map(h => {
+          if (String(h.id) === String(homeworkId)) {
+            const completedBy = h.completedBy || [];
+            if (isCompleted) {
+              return { ...h, completedBy: [...new Set([...completedBy, String(memberId)])] };
+            } else {
+              return { ...h, completedBy: completedBy.filter(id => String(id) !== String(memberId)) };
+            }
           }
-        }
-        return h;
-      }));
+          return h;
+        });
+        console.log('✅ Homeworks updated');
+        return updated;
+      });
 
       // 2. Sync with Points System (current selectedSaturday)
-      if (!selectedSaturday) return;
+      if (!selectedSaturday) {
+        console.warn('⚠️ No selectedSaturday - points won\'t be synced');
+        return;
+      }
 
       setPoints(prev => {
-        const existing = prev.find(p => p.memberId === memberId && p.month === selectedPointsMonth);
+        const existing = prev.find(p => String(p.memberId) === String(memberId) && p.month === selectedPointsMonth);
         const scoreToAdd = isCompleted ? 5 : 0;
 
         if (existing) {
           return prev.map(p => {
-            if (p.memberId === memberId && p.month === selectedPointsMonth) {
+            if (String(p.memberId) === String(memberId) && p.month === selectedPointsMonth) {
               const currentSat = p.saturdays[selectedSaturday] || {};
               return {
                 ...p,
@@ -7673,7 +7682,7 @@ const ClubVencedoresSystem = () => {
         } else {
           return [...prev, {
             id: `${memberId}-${selectedPointsMonth}`,
-            memberId: memberId,
+            memberId: String(memberId),
             month: selectedPointsMonth,
             saturdays: {
               [selectedSaturday]: { homework: scoreToAdd }
@@ -7943,7 +7952,7 @@ const ClubVencedoresSystem = () => {
                         return findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
                       })
                       .map(member => {
-                        const isCompleted = (selectedHomeworkForEval.completedBy || []).includes(member.id);
+                        const isCompleted = (selectedHomeworkForEval.completedBy || []).some(id => String(id) === String(member.id));
                         return (
                           <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl hover:border-green-200 transition-all group">
                             <div className="flex items-center gap-3">
