@@ -1483,7 +1483,9 @@ const ClubVencedoresSystem = () => {
           units: 'clubvencedores_units',
           users: 'clubvencedores_users',
           inventory: 'clubvencedores_inventory',
-          masterGuideData: 'clubvencedores_masterGuideData'
+          masterGuideData: 'clubvencedores_masterGuideData',
+          homeworks: 'clubvencedores_homeworks',
+          memberHomeworkStatus: 'clubvencedores_memberHomeworkStatus'
         };
         Object.keys(STORAGE_KEYS).forEach(k => {
           const local = localStorage.getItem(STORAGE_KEYS[k]);
@@ -1991,12 +1993,13 @@ const ClubVencedoresSystem = () => {
         if (allData.requirementSections) setRequirementSections(allData.requirementSections);
         if (allData.firstAidItems) setFirstAidItems(allData.firstAidItems);
         if (allData.disciplineRecords) setDisciplineRecords(allData.disciplineRecords);
-        if (allData.announcements) setAnnouncements(allData.announcements);
-        if (allData.homeworks) setHomeworks(allData.homeworks);
-        if (allData.memberHomeworkStatus) setMemberHomeworkStatus(allData.memberHomeworkStatus);
+        setAnnouncements(allData.announcements || []);
+        setHomeworks(allData.homeworks || []);
+        setMemberHomeworkStatus(allData.memberHomeworkStatus || []);
 
         window.__lastDataInit = Date.now(); // Reset lockout timer
         setDataLoaded(true); // Enable auto-save now that we have loaded data
+        prevDataRef.current = { ...allData }; // Initialize baseline for differential saving
         console.log('✅ Data loaded successfully!');
 
         // --- PHANTOM UNIT CLEANUP ---
@@ -2073,7 +2076,8 @@ const ClubVencedoresSystem = () => {
           'disciplineRecords': disciplineRecords,
           'announcements': announcements, 
           'attendanceRecords': attendanceRecords,
-          'qualifications': memberProgress // FIXED: qualifications is stored in memberProgress state
+          'qualifications': qualifications,
+          'memberProgress': memberProgress
         }[key];
 
         // DEBUG: Log state content to identify where the data is
@@ -2238,72 +2242,66 @@ const ClubVencedoresSystem = () => {
     }
   }, [isAuthenticated, dataLoaded, currentUser]);
 
+  // Track previous state for differential saving
+  const prevDataRef = useRef({});
+
   // ========================================
-  // AUTO-SAVE DATA ON CHANGES
+  // AUTO-SAVE DATA ON CHANGES (Optimized)
   // ========================================
   useEffect(() => {
     const saveData = async () => {
-      // SAFETY CHECK: Only save if data has been successfully loaded from disk.
       if (!dataLoaded) return;
-
-      // Secondary check: ensure we at least have users (admin always exists)
       if (users.length === 0) return;
 
-
-      const dataToSave = {
-        members,
-        transactions,
-        activities,
-        points,
-        lockedSaturdays,
-        units,
-        users,
-        inventory,
-        cuotaAmount,
-        masterGuideData,
-        announcements,
-        financeCategories,
-        reminders,
-        inventoryCategories,
-        tents,
-        tentAssignments,
-        uniformInspections,
-        memberUniforms,
-        uniformItems,
-        uniformCategories,
-        clubSettings,
-        duesConfig: {
-          startDate: duesStartDate,
-          skippedSaturdays
-        },
-        qualifications,
-        disciplineRecords,
-        fixedPaymentConcepts,
-        fixedPayments,
-        attendanceRecords,
-        campDetails,
-        classRequirements,
-        evaluationGroups,
-        memberProgress,
-        requirementSections,
-        firstAidItems,
-        homeworks,
-        memberHomeworkStatus
+      const currentData = {
+        members, transactions, activities, points, lockedSaturdays, units, users,
+        inventory, cuotaAmount, masterGuideData, announcements, financeCategories,
+        reminders, inventoryCategories, tents, tentAssignments, uniformInspections,
+        memberUniforms, uniformItems, uniformCategories, clubSettings,
+        duesConfig: { startDate: duesStartDate, skippedSaturdays },
+        qualifications, disciplineRecords, fixedPaymentConcepts, fixedPayments,
+        attendanceRecords, campDetails, classRequirements, evaluationGroups,
+        memberProgress, requirementSections, firstAidItems, homeworks, memberHomeworkStatus
       };
 
+      // Find changed keys
+      const changedKeys = Object.keys(currentData).filter(key => {
+        // Deep compare for complex objects/arrays
+        const prev = prevDataRef.current[key];
+        const curr = currentData[key];
+        return JSON.stringify(prev) !== JSON.stringify(curr);
+      });
+
+      if (changedKeys.length === 0) return;
+
       try {
-        // SAFETY: Only save if we have dataLoaded flag TRUE
-        if (!dataLoaded) return;
-
         setSyncStatus('saving');
-        const cleanData = JSON.parse(JSON.stringify(dataToSave));
-        await saveToElectron(cleanData);
-
-        setSyncStatus('saved');
-        setHasUnsavedChanges(false);
         
-        // Return to idle after a few seconds
-        setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+        // Deep copy only changed parts for safety
+        const dataToSave = {};
+        changedKeys.forEach(k => { dataToSave[k] = JSON.parse(JSON.stringify(currentData[k])); });
+
+        // Save only what changed
+        const result = await dataService.saveFullState(currentData, changedKeys);
+
+        if (result.success) {
+          setSyncStatus('saved');
+          setHasUnsavedChanges(false);
+          prevDataRef.current = { ...currentData }; // Update baseline
+          
+          // LocalStorage fallback sync for critical keys
+          const criticalKeys = ['members', 'transactions', 'activities', 'points', 'units', 'users', 'homeworks', 'memberHomeworkStatus'];
+          changedKeys.forEach(k => {
+            if (criticalKeys.includes(k)) {
+              try { localStorage.setItem(`clubvencedores_${k}`, JSON.stringify(currentData[k])); } catch(e) {}
+            }
+          });
+
+          setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+        } else {
+          console.error("Save failed for keys:", result.errors);
+          setSyncStatus('error');
+        }
       } catch (err) {
         console.error("Error sanitizing/saving data:", err);
         setSyncStatus('error');
@@ -2313,7 +2311,7 @@ const ClubVencedoresSystem = () => {
     if (dataLoaded) {
       setHasUnsavedChanges(true);
     }
-    const debounceSave = setTimeout(saveData, 1000); // Debounce saves
+    const debounceSave = setTimeout(saveData, 1000);
     return () => clearTimeout(debounceSave);
 
   }, [members, transactions, activities, points, lockedSaturdays, units, users, cuotaAmount, inventory, inventoryCategories, masterGuideData, financeCategories, duesStartDate, skippedSaturdays, tents, tentAssignments, uniformItems, uniformCategories, clubSettings, qualifications, fixedPaymentConcepts, fixedPayments, attendanceRecords, campDetails, classRequirements, evaluationGroups, memberProgress, requirementSections, firstAidItems, disciplineRecords, memberUniforms, uniformInspections, reminders, homeworks, memberHomeworkStatus, dataLoaded, retryTrigger, isUploading]);

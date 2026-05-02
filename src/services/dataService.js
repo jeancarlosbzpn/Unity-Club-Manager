@@ -103,9 +103,9 @@ export const dataService = {
     }
 
     const now = Date.now();
-    if (!window.__lastDataInit) window.__lastDataInit = now;
-    // Reduce lockout to 2 seconds to allow faster interaction after load
-    if (now - window.__lastDataInit < 2000 && !options.force) {
+    // The 2s lockout is redundant because ClubVencedoresSystem already uses 'dataLoaded'
+    // to prevent saving before initialization. Removing it to allow immediate interaction.
+    if (now - window.__lastDataInit < 500 && !options.force) {
       return { success: false, error: 'init_lockout' };
     }
 
@@ -123,8 +123,14 @@ export const dataService = {
         const localCount = isArray ? data.length : Object.keys(data).length;
 
         if (cloudCount > 5) {
-          if (localCount === 0) return { success: false, error: 'wipe_protection' };
-          if (localCount < cloudCount * 0.7) return { success: false, error: 'wipe_protection' };
+          if (localCount === 0) {
+            console.error(`🛑 WIPE PROTECTION: Attempted to save empty list to '${key}' when cloud has ${cloudCount} items.`);
+            return { success: false, error: 'wipe_protection' };
+          }
+          if (localCount < cloudCount * 0.7) {
+            console.error(`🛑 WIPE PROTECTION: Attempted to save ${localCount} items to '${key}' when cloud has ${cloudCount} (too many deletions).`);
+            return { success: false, error: 'wipe_protection' };
+          }
         }
 
         if (isArray) {
@@ -159,13 +165,17 @@ export const dataService = {
           await batch.commit();
         }
 
-        // Update Metadata
-        await setDoc(doc(db, 'club_vencedores_data', key), { 
-          isCollection: true, 
-          isMap: isObject,
-          updatedAt: new Date().toISOString(),
-          data: sanitizeData(data) // Backup in master doc
-        }, { merge: true });
+        // Update Metadata and Master Doc backup
+        try {
+          await setDoc(doc(db, 'club_vencedores_data', key), { 
+            isCollection: true, 
+            isMap: isObject,
+            updatedAt: new Date().toISOString(),
+            data: sanitizeData(data) // Backup in master doc
+          }, { merge: true });
+        } catch (masterErr) {
+          console.warn(`⚠️ Master doc backup failed for '${key}' (likely size limit), but collection was updated.`, masterErr);
+        }
 
         return { success: true };
       }
@@ -197,8 +207,19 @@ export const dataService = {
 
   saveFullState: async (allData, changedKeys = null) => {
     const keysToSync = changedKeys || Object.keys(allData);
+    const results = [];
+    
     for (const key of keysToSync) {
-      if (allData[key] !== undefined) await dataService.writeData(key, allData[key]);
+      if (allData[key] !== undefined) {
+        const res = await dataService.writeData(key, allData[key]);
+        results.push({ key, ...res });
+      }
+    }
+    
+    const errors = results.filter(r => !r.success);
+    if (errors.length > 0) {
+      console.error('❌ Errors during saveFullState:', errors);
+      return { success: false, errors };
     }
     return { success: true };
   },
