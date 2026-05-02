@@ -7902,16 +7902,19 @@ const ClubVencedoresSystem = () => {
               <div className="flex-1 overflow-y-auto pr-2 space-y-2 mb-6">
                 {members
                   .filter(m => {
-                    const isRegular = String(m.role || '').toLowerCase() === 'member' || String(m.role || '').toLowerCase() === 'aspirante';
+                    const role = String(m.role || '').toLowerCase();
+                    const isRegular = role === 'member' || role === 'aspirante' || role === '' || !m.role;
+                    
                     const mClub = String(m.membershipClub || m.club || '').toLowerCase();
                     const hClub = String(selectedHomeworkForEval.club || '').toLowerCase();
-                    const matchesClub = mClub === hClub;
+                    // More permissive club check: if member has no club, or it matches
+                    const matchesClub = !mClub || mClub === hClub || (hClub === 'conquistadores' && mClub === 'guiasmayores');
                     
                     const mClassRaw = String(m.membershipClass || m.pathfinderClass || m.currentClass || m.class || '').toLowerCase();
                     const hClassRaw = String(selectedHomeworkForEval.className || '').toLowerCase();
                     
-                    // Cross-reference with class lists to handle value vs label mismatches
                     const findClassLabel = (val) => {
+                      if (!val) return '';
                       const pf = pathfinderClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
                       const av = aventurerosClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
                       return (pf ? pf.label : (av ? av.label : val)).toLowerCase();
@@ -7919,30 +7922,50 @@ const ClubVencedoresSystem = () => {
 
                     const matchesClass = findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
                     
-                    return isRegular && matchesClub && matchesClass;
-                  })
-                  .map(member => {
-                    const isCompleted = (selectedHomeworkForEval.completedBy || []).includes(member.id);
-                    return (
-                      <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl hover:border-green-200 transition-all group">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-gray-400 border border-gray-100 group-hover:border-green-100 overflow-hidden">
-                            {member.photo ? <img src={member.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5" />}
+                    return matchesClass && (isRegular || matchesClass); // If they match the class, show them
+                  }).length === 0 ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                      <Users className="w-8 h-8 mb-2 opacity-20" />
+                      <p className="text-xs font-bold">No se encontraron miembros en la clase {selectedHomeworkForEval.className}</p>
+                      <p className="text-[10px] mt-1 opacity-60">Verifica que los miembros tengan asignada esta clase en su perfil.</p>
+                    </div>
+                  ) : (
+                    members
+                      .filter(m => {
+                        const mClassRaw = String(m.membershipClass || m.pathfinderClass || m.currentClass || m.class || '').toLowerCase();
+                        const hClassRaw = String(selectedHomeworkForEval.className || '').toLowerCase();
+                        const findClassLabel = (val) => {
+                          if (!val) return '';
+                          const pf = pathfinderClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
+                          const av = aventurerosClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
+                          return (pf ? pf.label : (av ? av.label : val)).toLowerCase();
+                        };
+                        return findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
+                      })
+                      .map(member => {
+                        const isCompleted = (selectedHomeworkForEval.completedBy || []).includes(member.id);
+                        return (
+                          <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl hover:border-green-200 transition-all group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-gray-400 border border-gray-100 group-hover:border-green-100 overflow-hidden">
+                                {member.photo ? <img src={member.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-gray-900 leading-tight">{member.name} {member.lastName}</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{member.unitId || 'Sin unidad'}</p>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => handleToggleHomeworkCompletion(selectedHomeworkForEval.id, member.id, !isCompleted)}
+                              className={`w-12 h-6 rounded-full transition-all relative ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`}
+                            >
+                              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isCompleted ? 'right-1' : 'left-1'}`} />
+                            </button>
                           </div>
-                          <div>
-                            <p className="text-sm font-black text-gray-900 leading-tight">{member.name} {member.lastName}</p>
-                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{member.unitId || 'Sin unidad'}</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => handleToggleHomeworkCompletion(selectedHomeworkForEval.id, member.id, !isCompleted)}
-                          className={`w-12 h-6 rounded-full transition-all relative ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`}
-                        >
-                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isCompleted ? 'right-1' : 'left-1'}`} />
-                        </button>
-                      </div>
-                    );
-                  })}
+                        );
+                      })
+                  )}
+              </div>
               </div>
 
               <button 
