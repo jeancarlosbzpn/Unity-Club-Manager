@@ -7617,10 +7617,18 @@ const ClubVencedoresSystem = () => {
 
     const handleSaveHomework = () => {
       if (!homeworkFormData.title) return alert("Título requerido");
+      if (!homeworkFormData.dueDate) return alert("Fecha de entrega requerida");
       
-      if (editingHomework) {
-        setHomeworks(prev => prev.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt, completedBy: h.completedBy || [] } : h));
-      } else {
+      if (!editingHomework) {
+        const exists = homeworks.some(h => 
+          h.club === homeworkFormData.club && 
+          String(h.className).toLowerCase() === String(homeworkFormData.className).toLowerCase() && 
+          h.dueDate === homeworkFormData.dueDate
+        );
+        if (exists) {
+          return alert(`⚠️ Ya existe una tarea para la clase ${homeworkFormData.className} el día ${homeworkFormData.dueDate}. Solamente se permite una tarea por clase cada sábado para evitar duplicidad de puntos.`);
+        }
+        
         const newHomework = {
           ...homeworkFormData,
           id: Date.now().toString(),
@@ -7629,10 +7637,20 @@ const ClubVencedoresSystem = () => {
           completedBy: []
         };
         setHomeworks(prev => [...prev, newHomework]);
+      } else {
+        setHomeworks(prev => prev.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt, completedBy: h.completedBy || [] } : h));
       }
       setShowHomeworkForm(false);
       setEditingHomework(null);
       setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '', priority: 'Normal', externalLink: '' });
+    };
+
+    const handleFinalizeEvaluation = (homeworkId) => {
+      if (confirm("¿Finalizar evaluación? Los puntos ya están guardados en el módulo de puntaje. La tarea se borrará para dejar el espacio limpio para el próximo sábado.")) {
+        setHomeworks(prev => prev.filter(h => String(h.id) !== String(homeworkId)));
+        setShowHomeworkEvaluationModal(false);
+        setSelectedHomeworkForEval(null);
+      }
     };
 
     const handleToggleHomeworkCompletion = (homeworkId, memberId, isCompleted) => {
@@ -7997,12 +8015,20 @@ const ClubVencedoresSystem = () => {
                       })
                   )}
               </div>
-              <button 
-                onClick={() => setShowHomeworkEvaluationModal(false)}
-                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all shadow-lg active:scale-95"
-              >
-                Cerrar Evaluación
-              </button>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowHomeworkEvaluationModal(false)}
+                  className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-all active:scale-95"
+                >
+                  Cerrar
+                </button>
+                <button 
+                  onClick={() => handleFinalizeEvaluation(selectedHomeworkForEval.id)}
+                  className="flex-[2] py-4 bg-green-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-green-700 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" /> Finalizar y Limpiar
+                </button>
+              </div>
             </div>
           </div>
         )}
