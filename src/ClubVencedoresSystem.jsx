@@ -7951,7 +7951,7 @@ const ClubVencedoresSystem = () => {
                                 {member.photo ? <img src={member.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5" />}
                               </div>
                               <div>
-                                <p className="text-sm font-black text-gray-900 leading-tight">{member.name} {member.lastName}</p>
+                                <p className="text-sm font-black text-gray-900 leading-tight">{member.firstName} {member.lastName}</p>
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{member.unitId || 'Sin unidad'}</p>
                               </div>
                             </div>
