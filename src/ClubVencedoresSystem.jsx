@@ -7902,12 +7902,23 @@ const ClubVencedoresSystem = () => {
               <div className="flex-1 overflow-y-auto pr-2 space-y-2 mb-6">
                 {members
                   .filter(m => {
-                    const isRegular = m.role === 'member' || m.role === 'aspirante';
-                    const matchesClub = m.club === selectedHomeworkForEval.club;
-                    const matchesClass = (m.class === selectedHomeworkForEval.className) || 
-                                       (m.currentClass === selectedHomeworkForEval.className) ||
-                                       (m.membershipClass === selectedHomeworkForEval.className) ||
-                                       (m.pathfinderClass === selectedHomeworkForEval.className);
+                    const isRegular = String(m.role || '').toLowerCase() === 'member' || String(m.role || '').toLowerCase() === 'aspirante';
+                    const mClub = String(m.membershipClub || m.club || '').toLowerCase();
+                    const hClub = String(selectedHomeworkForEval.club || '').toLowerCase();
+                    const matchesClub = mClub === hClub;
+                    
+                    const mClassRaw = String(m.membershipClass || m.pathfinderClass || m.currentClass || m.class || '').toLowerCase();
+                    const hClassRaw = String(selectedHomeworkForEval.className || '').toLowerCase();
+                    
+                    // Cross-reference with class lists to handle value vs label mismatches
+                    const findClassLabel = (val) => {
+                      const pf = pathfinderClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
+                      const av = aventurerosClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
+                      return (pf ? pf.label : (av ? av.label : val)).toLowerCase();
+                    };
+
+                    const matchesClass = findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
+                    
                     return isRegular && matchesClub && matchesClass;
                   })
                   .map(member => {
