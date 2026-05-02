@@ -7966,8 +7966,6 @@ const ClubVencedoresSystem = () => {
                       })
                   )}
               </div>
-              </div>
-
               <button 
                 onClick={() => setShowHomeworkEvaluationModal(false)}
                 className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all shadow-lg active:scale-95"
