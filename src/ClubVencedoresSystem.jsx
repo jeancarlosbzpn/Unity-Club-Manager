@@ -14227,8 +14227,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Género</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tipo Sangre</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Clase</th>
-                                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Portal</th>
-                                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
+                                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Portal</th>
+                                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y">
@@ -14385,9 +14385,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 );
                                               })()}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
                                               {member.lastPortalAccess ? (
-                                                <div className="flex flex-col gap-1">
+                                                <div className="flex flex-col gap-1 items-center justify-center">
                                                   <div className="text-[10px] text-gray-500 dark:text-gray-400 font-bold">
                                                     {(() => {
                                                       const d = new Date(member.lastPortalAccess);
@@ -14419,9 +14419,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                   )}
                                                 </div>
                                               ) : (
-                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500 italic text-[9px] font-bold uppercase tracking-wider">
-                                                  <AlertCircle className="w-3 h-3" />
-                                                  Sin acceso
+                                                <div className="flex justify-center items-center">
+                                                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500 italic text-[9px] font-bold uppercase tracking-wider">
+                                                    <AlertCircle className="w-3 h-3" />
+                                                    Sin acceso
+                                                  </div>
                                                 </div>
                                               )}
                                             </td>
