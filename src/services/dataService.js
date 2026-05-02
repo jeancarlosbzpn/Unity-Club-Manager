@@ -34,7 +34,7 @@ const toSnakeCase = (str) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerC
 
 const ALL_COLLECTION_KEYS = [
   'members', 'transactions', 'users', 'points', 'units', 'activities',
-  'attendanceRecords', 'lockedSaturdays',
+  'attendanceRecords',
   'fixedPayments', 'fixedPaymentConcepts', 'financeCategories',
   'disciplineRecords', 'announcements',
   'qualifications', 'classRequirements', 'evaluationGroups', 'requirementSections',
