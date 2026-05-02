@@ -14224,7 +14224,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         <tr>
                                           <th className="pl-24 pr-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nombre</th>
                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Edad</th>
-                                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Género</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tipo Sangre</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Clase</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Portal</th>
@@ -14324,7 +14323,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                               </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-300">{member.age || getMemberAge(member)} años</td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{member.gender === 'Female' ? 'Femenino' : 'Masculino'}</td>
                                             <td className="px-6 py-4 text-center">
                                               {member.bloodType ? (
                                                 <span className="px-2 py-1 text-xs font-bold rounded-full bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-800">
