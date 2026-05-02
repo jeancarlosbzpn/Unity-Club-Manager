@@ -7685,7 +7685,7 @@ const ClubVencedoresSystem = () => {
         const diff = d.getDate() + (6 - (day === 0 ? 7 : day)); 
         const satDate = new Date(d.setDate(diff));
         targetSat = satDate.toISOString().split('T')[0];
-        targetMonth = targetSat.substring(0, 7).replace('-', ''); // YYYYMM
+        targetMonth = targetSat.substring(0, 7); // "YYYY-MM"
         
         console.log('📅 Auto-selected Saturday:', targetSat, 'Month:', targetMonth);
         
