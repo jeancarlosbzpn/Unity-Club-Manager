@@ -7618,7 +7618,7 @@ const ClubVencedoresSystem = () => {
       if (!homeworkFormData.title) return alert("Título requerido");
       
       if (editingHomework) {
-        setHomeworks(homeworks.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt, completedBy: h.completedBy || [] } : h));
+        setHomeworks(prev => prev.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt, completedBy: h.completedBy || [] } : h));
       } else {
         const newHomework = {
           ...homeworkFormData,
@@ -7627,7 +7627,7 @@ const ClubVencedoresSystem = () => {
           createdAt: new Date().toISOString(),
           completedBy: []
         };
-        setHomeworks([...homeworks, newHomework]);
+        setHomeworks(prev => [...prev, newHomework]);
       }
       setShowHomeworkForm(false);
       setEditingHomework(null);

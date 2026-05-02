@@ -104,7 +104,8 @@ export const dataService = {
 
     const now = Date.now();
     if (!window.__lastDataInit) window.__lastDataInit = now;
-    if (now - window.__lastDataInit < 5000 && !options.force) {
+    // Reduce lockout to 2 seconds to allow faster interaction after load
+    if (now - window.__lastDataInit < 2000 && !options.force) {
       return { success: false, error: 'init_lockout' };
     }
 
