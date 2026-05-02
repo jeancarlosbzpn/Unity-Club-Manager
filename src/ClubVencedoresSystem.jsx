@@ -292,6 +292,28 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const pathfinderClasses = [
+  { value: 'friend', label: 'Amigo', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800' },
+  { value: 'companion', label: 'Compañero', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-800' },
+  { value: 'explorer', label: 'Explorador', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-800' },
+  { value: 'ranger', label: 'Orientador', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-600' },
+  { value: 'voyager', label: 'Viajero', color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800' },
+  { value: 'guide', label: 'Guía', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-800' },
+  { value: 'master_guide_candidate', label: 'Aspirante a Guía Mayor', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800', minAge: 16 },
+  { value: 'master_guide_invested', label: 'Guía Mayor Investido', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-800', minAge: 18 }
+];
+
+const PATHFINDER_HIERARCHY = ['friend', 'companion', 'explorer', 'ranger', 'voyager', 'guide', 'master_guide_candidate', 'master_guide_invested'];
+
+const aventurerosClasses = [
+  { value: 'Corderitos', label: 'Corderitos (4 años)', minAge: 4, maxAge: 4, color: 'bg-white border-gray-300' },
+  { value: 'Aves Madrugadoras', label: 'Aves Madrugadoras (5 años)', minAge: 5, maxAge: 5, color: 'bg-blue-50 border-blue-200' },
+  { value: 'Abejas Industriosas', label: 'Abejas Industriosas (6 años)', minAge: 6, maxAge: 6, color: 'bg-yellow-50 border-yellow-200' },
+  { value: 'Rayos de Sol', label: 'Rayos de Sol (7 años)', minAge: 7, maxAge: 7, color: 'bg-orange-50 border-orange-200' },
+  { value: 'Constructores', label: 'Constructores (8 años)', minAge: 8, maxAge: 8, color: 'bg-blue-100 border-blue-300' },
+  { value: 'Manos Ayudadoras', label: 'Manos Ayudadoras (9 años)', minAge: 9, maxAge: 9, color: 'bg-purple-50 border-purple-200' }
+];
+
 const ClubVencedoresSystem = () => {
   // Authentication state
   const [activityViewMode, setActivityViewMode] = useState('calendar'); // 'calendar' | 'list'
@@ -1255,19 +1277,7 @@ const ClubVencedoresSystem = () => {
   const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 
-  const pathfinderClasses = [
-    { value: 'friend', label: 'Amigo', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800' },
-    { value: 'companion', label: 'Compañero', color: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-300 dark:border-red-800' },
-    { value: 'explorer', label: 'Explorador', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-300 dark:border-green-800' },
-    { value: 'ranger', label: 'Orientador', color: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-600' },
-    { value: 'voyager', label: 'Viajero', color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800' },
-    { value: 'guide', label: 'Guía', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-800' },
-    { value: 'master_guide_candidate', label: 'Aspirante a Guía Mayor', color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800', minAge: 16 },
-    { value: 'master_guide_invested', label: 'Guía Mayor Investido', color: 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-300 dark:border-orange-800', minAge: 18 }
-  ];
-
   // Helper for cumulative uniform logic
-  const PATHFINDER_HIERARCHY = ['friend', 'companion', 'explorer', 'ranger', 'voyager', 'guide', 'master_guide_candidate', 'master_guide_invested'];
 
   const DIRECTIVE_POSITIONS = [
     'Director',
@@ -1371,15 +1381,6 @@ const ClubVencedoresSystem = () => {
       return true;
     });
   };
-
-  const aventurerosClasses = [
-    { value: 'Corderitos', label: 'Corderitos (4 años)', minAge: 4, maxAge: 4, color: 'bg-white border-gray-300' },
-    { value: 'Aves Madrugadoras', label: 'Aves Madrugadoras (5 años)', minAge: 5, maxAge: 5, color: 'bg-blue-50 border-blue-200' },
-    { value: 'Abejas Industriosas', label: 'Abejas Industriosas (6 años)', minAge: 6, maxAge: 6, color: 'bg-yellow-50 border-yellow-200' },
-    { value: 'Rayos de Sol', label: 'Rayos de Sol (7 años)', minAge: 7, maxAge: 7, color: 'bg-orange-50 border-orange-200' },
-    { value: 'Constructores', label: 'Constructores (8 años)', minAge: 8, maxAge: 8, color: 'bg-blue-100 border-blue-300' },
-    { value: 'Manos Ayudadoras', label: 'Manos Ayudadoras (9 años)', minAge: 9, maxAge: 9, color: 'bg-purple-50 border-purple-200' }
-  ];
 
   const guiasMayoresClassesList = pathfinderClasses.slice(6); // Aspirante and Investido
 
@@ -7564,7 +7565,9 @@ const ClubVencedoresSystem = () => {
     className: 'Amigo',
     title: '',
     description: '',
-    dueDate: ''
+    dueDate: '',
+    priority: 'Normal',
+    externalLink: ''
   });
 
   const renderHomeworksModule = () => {
