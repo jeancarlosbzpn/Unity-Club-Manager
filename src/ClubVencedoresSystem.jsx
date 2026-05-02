@@ -7567,7 +7567,9 @@ const ClubVencedoresSystem = () => {
     description: '',
     dueDate: '',
     priority: 'Normal',
-    externalLink: ''
+    externalLink: '',
+    modalityProgressive: true,
+    modalityAdvanced: false
   });
 
   const renderHomeworksModule = () => {
@@ -7642,7 +7644,7 @@ const ClubVencedoresSystem = () => {
       }
       setShowHomeworkForm(false);
       setEditingHomework(null);
-      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '', priority: 'Normal', externalLink: '' });
+      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '', priority: 'Normal', externalLink: '', modalityProgressive: true, modalityAdvanced: false });
     };
 
     const handleFinalizeEvaluation = (homeworkId) => {
@@ -7810,6 +7812,31 @@ const ClubVencedoresSystem = () => {
                     .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                 </select>
               </div>
+              {homeworkFormData.club !== 'aventureros' && (
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Dirigido a:</label>
+                  <div className="flex gap-4 p-2 bg-gray-50 border border-gray-100 rounded-xl h-[42px] items-center">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                        checked={homeworkFormData.modalityProgressive}
+                        onChange={e => setHomeworkFormData({...homeworkFormData, modalityProgressive: e.target.checked})}
+                      />
+                      <span className="text-xs font-bold text-gray-600 group-hover:text-red-600 transition-colors uppercase tracking-tight">Progresiva</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                        checked={homeworkFormData.modalityAdvanced}
+                        onChange={e => setHomeworkFormData({...homeworkFormData, modalityAdvanced: e.target.checked})}
+                      />
+                      <span className="text-xs font-bold text-gray-600 group-hover:text-red-600 transition-colors uppercase tracking-tight">Avanzada</span>
+                    </label>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Prioridad</label>
                 <select 
@@ -7971,7 +7998,19 @@ const ClubVencedoresSystem = () => {
 
                     const matchesClass = findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
                     
-                    return matchesClass && (isRegular || matchesClass); // If they match the class, show them
+                    // Modality Check (Progressive vs Advanced)
+                    let matchesModality = true;
+                    if (hClub !== 'aventureros') {
+                      const mModality = m.membershipClassModality || 'progressive';
+                      const hProg = selectedHomeworkForEval.modalityProgressive !== false; // Default true for safety
+                      const hAdv = selectedHomeworkForEval.modalityAdvanced === true;     // Default false
+                      
+                      matchesModality = false;
+                      if (hProg && (mModality === 'progressive' || mModality === 'both')) matchesModality = true;
+                      if (hAdv && (mModality === 'advanced' || mModality === 'both')) matchesModality = true;
+                    }
+                    
+                    return matchesClass && matchesModality && (isRegular || matchesClass);
                   }).length === 0 ? (
                     <div className="py-12 flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                       <Users className="w-8 h-8 mb-2 opacity-20" />
