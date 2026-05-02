@@ -7564,12 +7564,10 @@ const ClubVencedoresSystem = () => {
     club: 'conquistadores',
     className: 'Amigo',
     title: '',
-    description: '',
     dueDate: '',
     priority: 'Normal',
     externalLink: '',
-    modalityProgressive: true,
-    modalityAdvanced: false
+    subtasks: [{ id: Date.now().toString(), text: '', modalityProgressive: true, modalityAdvanced: false }]
   });
 
   const renderHomeworksModule = () => {
@@ -7644,7 +7642,7 @@ const ClubVencedoresSystem = () => {
       }
       setShowHomeworkForm(false);
       setEditingHomework(null);
-      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '', priority: 'Normal', externalLink: '', modalityProgressive: true, modalityAdvanced: false });
+      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', dueDate: '', priority: 'Normal', externalLink: '', subtasks: [{ id: Date.now().toString(), text: '', modalityProgressive: true, modalityAdvanced: false }] });
     };
 
     const handleFinalizeEvaluation = (homeworkId) => {
@@ -7812,31 +7810,6 @@ const ClubVencedoresSystem = () => {
                     .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                 </select>
               </div>
-              {homeworkFormData.club !== 'aventureros' && (
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Dirigido a:</label>
-                  <div className="flex gap-4 p-2 bg-gray-50 border border-gray-100 rounded-xl h-[42px] items-center">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
-                        checked={homeworkFormData.modalityProgressive}
-                        onChange={e => setHomeworkFormData({...homeworkFormData, modalityProgressive: e.target.checked})}
-                      />
-                      <span className="text-xs font-bold text-gray-600 group-hover:text-red-600 transition-colors uppercase tracking-tight">Progresiva</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
-                        checked={homeworkFormData.modalityAdvanced}
-                        onChange={e => setHomeworkFormData({...homeworkFormData, modalityAdvanced: e.target.checked})}
-                      />
-                      <span className="text-xs font-bold text-gray-600 group-hover:text-red-600 transition-colors uppercase tracking-tight">Avanzada</span>
-                    </label>
-                  </div>
-                </div>
-              )}
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Prioridad</label>
                 <select 
@@ -7861,14 +7834,81 @@ const ClubVencedoresSystem = () => {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Descripción / Instrucciones</label>
-              <textarea 
-                className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all min-h-[100px]"
-                value={homeworkFormData.description}
-                onChange={e => setHomeworkFormData({...homeworkFormData, description: e.target.value})}
-                placeholder="Describe los detalles de la tarea..."
-              />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400">Tareas Detalladas</label>
+                <button 
+                  type="button"
+                  onClick={() => setHomeworkFormData({
+                    ...homeworkFormData, 
+                    subtasks: [...homeworkFormData.subtasks, { id: Date.now().toString(), text: '', modalityProgressive: true, modalityAdvanced: false }]
+                  })}
+                  className="px-3 py-1 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-100 flex items-center gap-1 transition-all"
+                >
+                  <PlusCircle className="w-3 h-3" /> Agregar Tarea
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {homeworkFormData.subtasks.map((task, index) => (
+                  <div key={task.id} className="flex flex-col md:flex-row gap-2 p-3 bg-gray-50 border border-gray-100 rounded-2xl group animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex-1">
+                      <input 
+                        type="text"
+                        className="w-full px-3 py-2 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all text-xs font-bold"
+                        value={task.text}
+                        onChange={e => {
+                          const newSubtasks = [...homeworkFormData.subtasks];
+                          newSubtasks[index].text = e.target.value;
+                          setHomeworkFormData({...homeworkFormData, subtasks: newSubtasks});
+                        }}
+                        placeholder="Ej: Completar requisitos de nudos"
+                      />
+                    </div>
+                    <div className="flex items-center gap-4 px-3 bg-white border border-gray-100 rounded-xl h-9">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                          checked={task.modalityProgressive}
+                          onChange={e => {
+                            const newSubtasks = [...homeworkFormData.subtasks];
+                            newSubtasks[index].modalityProgressive = e.target.checked;
+                            setHomeworkFormData({...homeworkFormData, subtasks: newSubtasks});
+                          }}
+                        />
+                        <span className="text-[9px] font-black uppercase tracking-tight text-gray-500">Prog.</span>
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-3.5 h-3.5 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                          checked={task.modalityAdvanced}
+                          onChange={e => {
+                            const newSubtasks = [...homeworkFormData.subtasks];
+                            newSubtasks[index].modalityAdvanced = e.target.checked;
+                            setHomeworkFormData({...homeworkFormData, subtasks: newSubtasks});
+                          }}
+                        />
+                        <span className="text-[9px] font-black uppercase tracking-tight text-gray-500">Avan.</span>
+                      </label>
+                    </div>
+                    {homeworkFormData.subtasks.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newSubtasks = homeworkFormData.subtasks.filter((_, i) => i !== index);
+                          setHomeworkFormData({...homeworkFormData, subtasks: newSubtasks});
+                        }}
+                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="flex justify-end gap-3">
               <button onClick={() => { setShowHomeworkForm(false); setEditingHomework(null); }} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
@@ -7915,7 +7955,17 @@ const ClubVencedoresSystem = () => {
                 <span className="text-[10px] font-bold text-gray-400 italic">Vence: {homework.dueDate || 'Sin fecha'}</span>
               </div>
               <h4 className="font-black text-gray-900 mb-1">{homework.title}</h4>
-              <p className="text-gray-500 text-xs line-clamp-3 mb-4">{homework.description}</p>
+              <div className="space-y-1 mb-4">
+                {(homework.subtasks || []).map((st, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1 flex-shrink-0" />
+                    <p className="text-gray-600 text-[10px] font-bold leading-tight">{st.text}</p>
+                  </div>
+                ))}
+                {(!homework.subtasks || homework.subtasks.length === 0) && homework.description && (
+                  <p className="text-gray-500 text-xs line-clamp-3">{homework.description}</p>
+                )}
+              </div>
               
               <div className="flex flex-col gap-2 pt-3 border-t border-gray-50">
                 <div className="flex gap-2">
@@ -7998,60 +8048,96 @@ const ClubVencedoresSystem = () => {
 
                     const matchesClass = findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
                     
-                    // Modality Check (Progressive vs Advanced)
-                    let matchesModality = true;
-                    if (hClub !== 'aventureros') {
-                      const mModality = m.membershipClassModality || 'progressive';
-                      const hProg = selectedHomeworkForEval.modalityProgressive !== false; // Default true for safety
-                      const hAdv = selectedHomeworkForEval.modalityAdvanced === true;     // Default false
-                      
-                      matchesModality = false;
-                      if (hProg && (mModality === 'progressive' || mModality === 'both')) matchesModality = true;
-                      if (hAdv && (mModality === 'advanced' || mModality === 'both')) matchesModality = true;
-                    }
+                    // Modality Check (Progressive vs Advanced Subtasks)
+                    const mModality = m.membershipClassModality || 'progressive';
+                    const hSubtasks = selectedHomeworkForEval.subtasks || [];
+                    
+                    const applicableSubtasks = hSubtasks.filter(st => {
+                      if (hClub === 'aventureros') return true;
+                      if (st.modalityProgressive && (mModality === 'progressive' || mModality === 'both')) return true;
+                      if (st.modalityAdvanced && (mModality === 'advanced' || mModality === 'both')) return true;
+                      return false;
+                    });
+
+                    const matchesModality = hClub === 'aventureros' ? true : applicableSubtasks.length > 0;
                     
                     return matchesClass && matchesModality && (isRegular || matchesClass);
                   }).length === 0 ? (
                     <div className="py-12 flex flex-col items-center justify-center text-gray-400 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                       <Users className="w-8 h-8 mb-2 opacity-20" />
                       <p className="text-xs font-bold">No se encontraron miembros en la clase {selectedHomeworkForEval.className}</p>
-                      <p className="text-[10px] mt-1 opacity-60">Verifica que los miembros tengan asignada esta clase en su perfil.</p>
                     </div>
                   ) : (
-                    members
-                      .filter(m => {
-                        const mClassRaw = String(m.membershipClass || m.pathfinderClass || m.currentClass || m.class || '').toLowerCase();
-                        const hClassRaw = String(selectedHomeworkForEval.className || '').toLowerCase();
-                        const findClassLabel = (val) => {
-                          if (!val) return '';
-                          const pf = pathfinderClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
-                          const av = aventurerosClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
-                          return (pf ? pf.label : (av ? av.label : val)).toLowerCase();
-                        };
-                        return findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
-                      })
-                      .map(member => {
-                        const isCompleted = (selectedHomeworkForEval.completedBy || []).some(id => String(id) === String(member.id));
-                        return (
-                          <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl hover:border-green-200 transition-all group">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-gray-400 border border-gray-100 group-hover:border-green-100 overflow-hidden">
-                                {member.photo ? <img src={member.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5" />}
+                    <div className="space-y-2">
+                      {members
+                        .filter(m => {
+                          const role = String(m.role || '').toLowerCase();
+                          const isRegular = role === 'member' || role === 'aspirante' || role === '' || !m.role;
+                          const mClub = String(m.membershipClub || m.club || '').toLowerCase();
+                          const hClub = String(selectedHomeworkForEval.club || '').toLowerCase();
+                          const matchesClub = !mClub || mClub === hClub || (hClub === 'conquistadores' && mClub === 'guiasmayores');
+                          const mClassRaw = String(m.membershipClass || m.pathfinderClass || m.currentClass || m.class || '').toLowerCase();
+                          const hClassRaw = String(selectedHomeworkForEval.className || '').toLowerCase();
+                          const findClassLabel = (val) => {
+                            if (!val) return '';
+                            const pf = pathfinderClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
+                            const av = aventurerosClasses.find(c => c.value.toLowerCase() === val || c.label.toLowerCase() === val);
+                            return (pf ? pf.label : (av ? av.label : val)).toLowerCase();
+                          };
+                          const matchesClass = findClassLabel(mClassRaw) === findClassLabel(hClassRaw);
+                          
+                          // Modality Check (Progressive vs Advanced Subtasks)
+                          const mModality = m.membershipClassModality || 'progressive';
+                          const hSubtasks = selectedHomeworkForEval.subtasks || [];
+                          const applicableSubtasks = hSubtasks.filter(st => {
+                            if (hClub === 'aventureros') return true;
+                            if (st.modalityProgressive && (mModality === 'progressive' || mModality === 'both')) return true;
+                            if (st.modalityAdvanced && (mModality === 'advanced' || mModality === 'both')) return true;
+                            return false;
+                          });
+                          const matchesModality = hClub === 'aventureros' ? true : applicableSubtasks.length > 0;
+                          
+                          return matchesClass && matchesModality && (isRegular || matchesClass);
+                        })
+                        .map(member => {
+                          const isCompleted = (selectedHomeworkForEval.completedBy || []).some(id => String(id) === String(member.id));
+                          const mModality = member.membershipClassModality || 'progressive';
+                          const hClub = String(selectedHomeworkForEval.club || '').toLowerCase();
+                          const memberSubtasks = (selectedHomeworkForEval.subtasks || []).filter(st => {
+                            if (hClub === 'aventureros') return true;
+                            if (st.modalityProgressive && (mModality === 'progressive' || mModality === 'both')) return true;
+                            if (st.modalityAdvanced && (mModality === 'advanced' || mModality === 'both')) return true;
+                            return false;
+                          });
+
+                          return (
+                            <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl hover:border-green-200 transition-all group">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-gray-400 border border-gray-100 group-hover:border-green-100 overflow-hidden">
+                                  {member.photo ? <img src={member.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-gray-900 leading-tight">{member.firstName} {member.lastName}</p>
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {memberSubtasks.map((st, i) => (
+                                      <span key={i} className="text-[8px] px-1.5 py-0.5 bg-white border border-gray-100 rounded-md text-gray-400 font-bold uppercase truncate max-w-[80px]">
+                                        {st.text}
+                                      </span>
+                                    ))}
+                                    {memberSubtasks.length === 0 && <span className="text-[8px] text-gray-300 italic">Sin tareas específicas</span>}
+                                  </div>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-black text-gray-900 leading-tight">{member.firstName} {member.lastName}</p>
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{member.unitId || 'Sin unidad'}</p>
-                              </div>
+                              <button 
+                                onClick={() => handleToggleHomeworkCompletion(selectedHomeworkForEval.id, member.id, !isCompleted)}
+                                className={`w-12 h-6 rounded-full transition-all relative flex-shrink-0 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`}
+                              >
+                                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isCompleted ? 'right-1' : 'left-1'}`} />
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => handleToggleHomeworkCompletion(selectedHomeworkForEval.id, member.id, !isCompleted)}
-                              className={`w-12 h-6 rounded-full transition-all relative ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`}
-                            >
-                              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isCompleted ? 'right-1' : 'left-1'}`} />
-                            </button>
-                          </div>
-                        );
-                      })
+                          );
+                        })}
+                    </div>
                   )}
               </div>
               <div className="flex gap-3">
