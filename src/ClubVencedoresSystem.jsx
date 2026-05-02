@@ -735,6 +735,8 @@ const ClubVencedoresSystem = () => {
   const [selectedPointsMonth, setSelectedPointsMonth] = useState(getLocalYYYYMM); // YYYY-MM format
   const [editingPoints, setEditingPoints] = useState(null);
   const [selectedSaturday, setSelectedSaturday] = useState('');
+  const [showHomeworkEvaluationModal, setShowHomeworkEvaluationModal] = useState(false);
+  const [selectedHomeworkForEval, setSelectedHomeworkForEval] = useState(null);
   const [lockedSaturdays, setLockedSaturdays] = useState([]); // Array of locked saturday dates
   const [gradesTab, setGradesTab] = useState('club'); // 'society', 'morning', 'club', 'leaderboard'
 
@@ -875,7 +877,7 @@ const ClubVencedoresSystem = () => {
   const [newUniformCategory, setNewUniformCategory] = useState('');
 
   // Homeworks Module State
-  const [homeworks, setHomeworks] = useState([]); // { id, club, className, title, description, dueDate, createdAt, instructorId }
+  const [homeworks, setHomeworks] = useState([]); // { id, club, className, title, description, dueDate, createdAt, instructorId, priority, externalLink, completedBy: [] }
   const [memberHomeworkStatus, setMemberHomeworkStatus] = useState([]); // { memberId, homeworkId, completed, completedAt }
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -7616,19 +7618,68 @@ const ClubVencedoresSystem = () => {
       if (!homeworkFormData.title) return alert("Título requerido");
       
       if (editingHomework) {
-        setHomeworks(homeworks.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt } : h));
+        setHomeworks(homeworks.map(h => h.id === editingHomework.id ? { ...homeworkFormData, id: h.id, instructorId: h.instructorId, createdAt: h.createdAt, completedBy: h.completedBy || [] } : h));
       } else {
         const newHomework = {
           ...homeworkFormData,
           id: Date.now().toString(),
           instructorId: currentUser.id,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          completedBy: []
         };
         setHomeworks([...homeworks, newHomework]);
       }
       setShowHomeworkForm(false);
       setEditingHomework(null);
-      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '' });
+      setHomeworkFormData({ club: 'conquistadores', className: 'Amigo', title: '', description: '', dueDate: '', priority: 'Normal', externalLink: '' });
+    };
+
+    const handleToggleHomeworkCompletion = (homeworkId, memberId, isCompleted) => {
+      // 1. Update Homework completedBy
+      setHomeworks(prev => prev.map(h => {
+        if (h.id === homeworkId) {
+          const completedBy = h.completedBy || [];
+          if (isCompleted) {
+            return { ...h, completedBy: [...new Set([...completedBy, memberId])] };
+          } else {
+            return { ...h, completedBy: completedBy.filter(id => id !== memberId) };
+          }
+        }
+        return h;
+      }));
+
+      // 2. Sync with Points System (current selectedSaturday)
+      if (!selectedSaturday) return;
+
+      setPoints(prev => {
+        const existing = prev.find(p => p.memberId === memberId && p.month === selectedPointsMonth);
+        const scoreToAdd = isCompleted ? 5 : 0;
+
+        if (existing) {
+          return prev.map(p => {
+            if (p.memberId === memberId && p.month === selectedPointsMonth) {
+              const currentSat = p.saturdays[selectedSaturday] || {};
+              return {
+                ...p,
+                saturdays: {
+                  ...p.saturdays,
+                  [selectedSaturday]: { ...currentSat, homework: scoreToAdd }
+                }
+              };
+            }
+            return p;
+          });
+        } else {
+          return [...prev, {
+            id: `${memberId}-${selectedPointsMonth}`,
+            memberId: memberId,
+            month: selectedPointsMonth,
+            saturdays: {
+              [selectedSaturday]: { homework: scoreToAdd }
+            }
+          }];
+        }
+      });
     };
 
     return (
@@ -7709,6 +7760,29 @@ const ClubVencedoresSystem = () => {
                     .map(c => <option key={c.value} value={c.label}>{c.label}</option>)}
                 </select>
               </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Prioridad</label>
+                <select 
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none"
+                  value={homeworkFormData.priority}
+                  onChange={e => setHomeworkFormData({...homeworkFormData, priority: e.target.value})}
+                >
+                  <option value="Baja">⚪ Baja</option>
+                  <option value="Normal">🔵 Normal</option>
+                  <option value="Alta">🟠 Alta</option>
+                  <option value="Crítica">🔴 Crítica</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Enlace de Recurso (Opcional)</label>
+                <input 
+                  type="url"
+                  className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                  value={homeworkFormData.externalLink}
+                  onChange={e => setHomeworkFormData({...homeworkFormData, externalLink: e.target.value})}
+                  placeholder="https://ejemplo.com/recurso"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Descripción / Instrucciones</label>
@@ -7747,16 +7821,50 @@ const ClubVencedoresSystem = () => {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-md">{homework.className}</span>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border shadow-sm ${
+                    homework.priority === 'Crítica' ? 'bg-red-50 text-red-600 border-red-200' :
+                    homework.priority === 'Alta' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                    homework.priority === 'Baja' ? 'bg-gray-50 text-gray-400 border-gray-200' :
+                    'bg-blue-50 text-blue-600 border-blue-200'
+                  }`}>
+                    {homework.priority || 'Normal'}
+                  </span>
+                  <span className="text-[10px] font-bold text-gray-400 px-2 py-0.5 bg-gray-50 rounded-full border border-gray-100">
+                    {homework.className}
+                  </span>
+                </div>
                 <span className="text-[10px] font-bold text-gray-400 italic">Vence: {homework.dueDate || 'Sin fecha'}</span>
               </div>
               <h4 className="font-black text-gray-900 mb-1">{homework.title}</h4>
               <p className="text-gray-500 text-xs line-clamp-3 mb-4">{homework.description}</p>
               
-              <div className="pt-3 border-t border-gray-50 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-400">
-                <span>{homework.club}</span>
-                <span>Asignada el {new Date(homework.createdAt).toLocaleDateString()}</span>
+              <div className="flex flex-col gap-2 pt-3 border-t border-gray-50">
+                <div className="flex gap-2">
+                  {homework.externalLink && (
+                    <a 
+                      href={homework.externalLink} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-colors flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Ver Recurso
+                    </a>
+                  )}
+                  {!isReadOnly && isInstructor && (
+                    <button 
+                      onClick={() => { setSelectedHomeworkForEval(homework); setShowHomeworkEvaluationModal(true); }}
+                      className="flex-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-colors flex items-center justify-center gap-2"
+                    >
+                      <ClipboardCheck className="w-3 h-3" /> Evaluar Miembros
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-gray-300">
+                  <span>{homework.club}</span>
+                  <span>{new Date(homework.createdAt).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
           ))}
@@ -7767,6 +7875,71 @@ const ClubVencedoresSystem = () => {
             </div>
           )}
         </div>
+
+        {/* Evaluation Modal */}
+        {showHomeworkEvaluationModal && selectedHomeworkForEval && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-[40px] p-8 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[85vh] flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-xl font-black tracking-tight text-gray-900">Evaluar Tarea</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Asigna 5 puntos automáticamente</p>
+                </div>
+                <button onClick={() => setShowHomeworkEvaluationModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
+                <p className="text-xs font-black uppercase tracking-widest text-red-600 mb-1">{selectedHomeworkForEval.title}</p>
+                <div className="flex items-center gap-4 text-[10px] font-bold text-red-400">
+                  <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {selectedHomeworkForEval.className}</span>
+                  <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {selectedHomeworkForEval.dueDate}</span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-2 space-y-2 mb-6">
+                {members
+                  .filter(m => {
+                    const isRegular = m.role === 'member' || m.role === 'aspirante';
+                    const matchesClub = m.club === selectedHomeworkForEval.club;
+                    const matchesClass = (m.class === selectedHomeworkForEval.className) || 
+                                       (m.currentClass === selectedHomeworkForEval.className);
+                    return isRegular && matchesClub && matchesClass;
+                  })
+                  .map(member => {
+                    const isCompleted = (selectedHomeworkForEval.completedBy || []).includes(member.id);
+                    return (
+                      <div key={member.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-3xl hover:border-green-200 transition-all group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-gray-400 border border-gray-100 group-hover:border-green-100 overflow-hidden">
+                            {member.photo ? <img src={member.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5" />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-gray-900 leading-tight">{member.name} {member.lastName}</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{member.unitId || 'Sin unidad'}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleToggleHomeworkCompletion(selectedHomeworkForEval.id, member.id, !isCompleted)}
+                          className={`w-12 h-6 rounded-full transition-all relative ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isCompleted ? 'right-1' : 'left-1'}`} />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <button 
+                onClick={() => setShowHomeworkEvaluationModal(false)}
+                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all shadow-lg active:scale-95"
+              >
+                Cerrar Evaluación
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -19332,10 +19505,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                         }
                                                                       });
                                                                     }}
+                                                                    disabled={category === 'homework'}
                                                                     className={`w-10 md:w-12 px-1 py-1 text-center text-sm border rounded font-semibold bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${satPoints[category] > 0
                                                                       ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300'
                                                                       : 'border-gray-300 dark:border-gray-600'
-                                                                      } `}
+                                                                      } ${category === 'homework' ? 'opacity-70 cursor-not-allowed' : ''}`}
                                                                   />
                                                                 )}
                                                               </td>
