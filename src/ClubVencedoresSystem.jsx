@@ -10492,6 +10492,14 @@ const ClubVencedoresSystem = () => {
       }
     };
 
+    const updateMemberPortalStatus = async (memberId, data) => {
+      setMembers(prev => {
+        const updated = prev.map(m => String(m.id) === String(memberId) ? { ...m, ...data } : m);
+        dataService.writeData('members', updated);
+        return updated;
+      });
+    };
+
     return (
       <MemberPortal
         member={liveMember}
@@ -10524,6 +10532,8 @@ const ClubVencedoresSystem = () => {
         masterGuideData={masterGuideData}
         financeCategories={financeCategories}
         fixedPaymentConcepts={fixedPaymentConcepts}
+        isAdminPreview={isAuthenticated}
+        onUpdateMember={updateMemberPortalStatus}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
           const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
@@ -14217,6 +14227,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Género</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tipo Sangre</th>
                                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Clase</th>
+                                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Portal</th>
                                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
                                         </tr>
                                       </thead>
@@ -14373,6 +14384,31 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                   </div>
                                                 );
                                               })()}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                              {member.lastPortalAccess ? (
+                                                <div className="flex flex-col">
+                                                  <span className="text-gray-800 dark:text-gray-200 font-bold text-xs">
+                                                    {new Date(member.lastPortalAccess).toLocaleDateString()}
+                                                  </span>
+                                                  <span className="text-gray-400 text-[10px]">
+                                                    {new Date(member.lastPortalAccess).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                  </span>
+                                                  {announcements.length > 0 && (
+                                                    member.lastSeenAnnouncementId === announcements[0].id ? (
+                                                      <span className="text-green-500 font-bold text-[9px] mt-1 flex items-center gap-1">
+                                                        <CheckCircle className="w-2.5 h-2.5" /> Vio Anuncios
+                                                      </span>
+                                                    ) : (
+                                                      <span className="text-amber-500 font-bold text-[9px] mt-1 flex items-center gap-1">
+                                                        <Clock className="w-2.5 h-2.5" /> Pendiente
+                                                      </span>
+                                                    )
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                <span className="text-gray-400 italic text-[10px]">Nunca entró</span>
+                                              )}
                                             </td>
                                             <td className="px-6 py-4">
                                               <div className="flex items-center gap-2">
@@ -24395,7 +24431,8 @@ const MemberPortal = ({
   instructorName = null,
   isAdminPreview = false,
   financeCategories = [],
-  fixedPaymentConcepts = []
+  fixedPaymentConcepts = [],
+  onUpdateMember
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -24403,6 +24440,29 @@ const MemberPortal = ({
   const [showUniformModal, setShowUniformModal] = useState(false);
   const [showFinanceModal, setShowFinanceModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+
+  // Portal Access & Announcements Tracking
+  useEffect(() => {
+    if (isAdminPreview) return;
+    
+    const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
+    const latestId = latestAnnouncement ? latestAnnouncement.id : null;
+    
+    // Throttle updates: only if never accessed, or 5+ mins since last access, or new announcement seen
+    const lastUpdate = member.lastPortalAccess || 0;
+    const now = Date.now();
+    const fiveMinutes = 1000 * 60 * 5;
+    const seenLatest = member.lastSeenAnnouncementId === latestId;
+    
+    if ((now - lastUpdate > fiveMinutes) || !seenLatest) {
+      if (onUpdateMember) {
+        onUpdateMember(member.id, {
+          lastPortalAccess: now,
+          lastSeenAnnouncementId: latestId
+        });
+      }
+    }
+  }, [member.id, announcements.length, isAdminPreview]);
 
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -24642,14 +24702,11 @@ const MemberPortal = ({
   const displayMonthPoints = monthPoints + monthMerits;
 
   // --- GALARDONES (Awards) ---
-  const myAwards = (() => {
-    const winners = {}; // month -> { winnerIds: [], score }
+  const { myAwards, unitWinsCount } = (() => {
+    const winners = {}; // month -> { conquistadorIds: [], directivoIds: [], unitIds: [], cScore: 0, dScore: 0, uScore: 0 }
     
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1;
-    const currentMonthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-
+    
     const normalizeMonth = (mStr) => {
       if (!mStr) return null;
       const s = String(mStr).trim();
@@ -24694,6 +24751,13 @@ const MemberPortal = ({
       return found ? found.id : recordId;
     };
 
+    const isMemberDirectivo = (m) => {
+      if (!m) return false;
+      const hasPosition = m.position && m.position.trim() !== '';
+      const hasDirectiveRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+      return hasPosition || hasDirectiveRoles;
+    };
+
     // 1. Collect all months that appear in the data and are in the past
     const allPastMonths = new Set();
     safePoints.forEach(p => { 
@@ -24707,8 +24771,13 @@ const MemberPortal = ({
       }
     });
     
+    const memberMap = {};
+    members.forEach(m => { memberMap[m.id] = m; });
+
     Array.from(allPastMonths).forEach(mStr => {
-      const scores = {}; // canonicalId -> score
+      const cScores = {}; // conquistadorId -> score
+      const dScores = {}; // directivoId -> score
+      const uTotalScores = {}; // unitId -> total score sum
       
       // Points
       safePoints.forEach(p => {
@@ -24724,7 +24793,18 @@ const MemberPortal = ({
           });
         }
         const cId = getCanonicalMemberId(p.memberId);
-        if (cId) scores[cId] = (scores[cId] || 0) + sum;
+        if (!cId) return;
+        const m = memberMap[cId];
+        if (m) {
+          if (isMemberDirectivo(m)) {
+            dScores[cId] = (dScores[cId] || 0) + sum;
+          } else {
+            cScores[cId] = (cScores[cId] || 0) + sum;
+          }
+          if (m.unitId) {
+            uTotalScores[m.unitId] = (uTotalScores[m.unitId] || 0) + sum;
+          }
+        }
       });
 
       // Merits
@@ -24733,30 +24813,64 @@ const MemberPortal = ({
         const mIds = Array.isArray(e.memberIds) ? e.memberIds : [e.memberId];
         mIds.forEach(id => {
           const cId = getCanonicalMemberId(id);
-          if (cId) scores[cId] = (scores[cId] || 0) + (Number(e.points) || 0);
+          if (!cId) return;
+          const m = memberMap[cId];
+          if (m) {
+            const pointsVal = (Number(e.points) || 0);
+            if (isMemberDirectivo(m)) {
+              dScores[cId] = (dScores[cId] || 0) + pointsVal;
+            } else {
+              cScores[cId] = (cScores[cId] || 0) + pointsVal;
+            }
+            if (m.unitId) {
+              uTotalScores[m.unitId] = (uTotalScores[m.unitId] || 0) + pointsVal;
+            }
+          }
         });
       });
 
-      // Determine Winner(s)
-      let maxScore = 0;
-      let topIds = [];
-      Object.entries(scores).forEach(([id, score]) => {
-        if (score > maxScore) {
-          maxScore = score;
-          topIds = [id];
-        } else if (score === maxScore && maxScore > 0) {
-          topIds.push(id);
+      // Determine Winner(s) - Conquistador
+      let maxC = 0, topC = [];
+      Object.entries(cScores).forEach(([id, s]) => {
+        if (s > maxC) { maxC = s; topC = [id]; }
+        else if (s === maxC && maxC > 0) { topC.push(id); }
+      });
+
+      // Determine Winner(s) - Directivo
+      let maxD = 0, topD = [];
+      Object.entries(dScores).forEach(([id, s]) => {
+        if (s > maxD) { maxD = s; topD = [id]; }
+        else if (s === maxD && maxD > 0) { topD.push(id); }
+      });
+
+      // Determine Winner(s) - Unit (Highest Average)
+      let maxU = 0, topU = [];
+      units.forEach(u => {
+        const uMembersCount = members.filter(m => String(m.unitId) === String(u.id)).length;
+        if (uMembersCount > 0) {
+          const avg = (uTotalScores[u.id] || 0) / uMembersCount;
+          if (avg > maxU) { maxU = avg; topU = [u.id]; }
+          else if (Math.abs(avg - maxU) < 0.001 && maxU > 0) { topU.push(u.id); }
         }
       });
       
-      if (topIds.length > 0) {
-        winners[mStr] = { winnerIds: topIds, score: maxScore };
-      }
+      winners[mStr] = { 
+        conquistadorIds: topC, cScore: maxC, 
+        directivoIds: topD, dScore: maxD,
+        unitIds: topU, uScore: Math.round(maxU)
+      };
     });
     
-    return Object.entries(winners)
-      .filter(([month, data]) => data.winnerIds.some(id => isThisMember(id)))
+    const isMe = (id) => isThisMember(id);
+    const myUnitId = member.unitId ? String(member.unitId) : null;
+
+    const awards = Object.entries(winners)
       .map(([month, data]) => {
+        const wonAsC = data.conquistadorIds.some(id => isMe(id));
+        const wonAsD = data.directivoIds.some(id => isMe(id));
+        
+        if (!wonAsC && !wonAsD) return null;
+
         let monthName = month;
         try {
           const [y, m] = month.split('-');
@@ -24765,13 +24879,21 @@ const MemberPortal = ({
         
         return {
           month,
-          score: data.score,
+          score: wonAsC ? data.cScore : data.dScore,
           name: monthName,
-          title: 'Conquistador del Mes'
+          title: wonAsD ? 'Directivo del Mes' : 'Conquistador del Mes'
         };
       })
+      .filter(Boolean)
       .sort((a, b) => b.month.localeCompare(a.month));
+
+    const unitWins = myUnitId ? Object.values(winners).filter(data => 
+      data.unitIds.some(uid => String(uid) === myUnitId)
+    ).length : 0;
+
+    return { myAwards: awards, unitWinsCount: unitWins };
   })();
+
 
   // --- ACTIVITIES ---
   const upcomingActivities = (() => {
@@ -25869,7 +25991,17 @@ const MemberPortal = ({
                       <Users className="w-4 h-4 text-red-600" />
                     </div>
                   )}
-                  <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
+                  <div className="flex flex-col">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Mi Unidad: {myUnit?.name || '-'}</h3>
+                    {unitWinsCount > 0 && (
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Trophy className="w-2.5 h-2.5 text-amber-500" />
+                        <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tight">
+                          {unitWinsCount} {unitWinsCount === 1 ? 'vez' : 'veces'} Unidad del Mes
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <button 
