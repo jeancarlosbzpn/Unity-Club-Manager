@@ -7658,6 +7658,20 @@ const ClubVencedoresSystem = () => {
         return updated;
       });
 
+      // 1.1 Update Selected Homework State (for real-time UI update in modal)
+      setSelectedHomeworkForEval(prev => {
+        if (prev && String(prev.id) === String(homeworkId)) {
+          const completedBy = (prev.completedBy || []).map(id => String(id));
+          const strMemberId = String(memberId);
+          if (isCompleted) {
+            return { ...prev, completedBy: [...new Set([...completedBy, strMemberId])] };
+          } else {
+            return { ...prev, completedBy: completedBy.filter(id => id !== strMemberId) };
+          }
+        }
+        return prev;
+      });
+
       // 2. Sync with Points System (current selectedSaturday)
       if (!selectedSaturday) {
         console.warn('⚠️ No selectedSaturday - points won\'t be synced');
