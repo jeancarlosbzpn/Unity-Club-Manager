@@ -14387,14 +14387,21 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                               {member.lastPortalAccess ? (
-                                                <div className="flex flex-col gap-1.5 min-w-[100px]">
-                                                  <div className="flex items-baseline gap-1.5">
-                                                    <span className="text-gray-900 dark:text-white font-bold text-xs">
-                                                      {new Date(member.lastPortalAccess).toLocaleDateString('es-ES', { day: 'numeric', month: 'numeric', year: '2-digit' })}
-                                                    </span>
-                                                    <span className="text-gray-400 dark:text-gray-500 text-[9px] font-medium uppercase">
-                                                      {new Date(member.lastPortalAccess).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                                <div className="flex flex-col gap-1">
+                                                  <div className="text-[10px] text-gray-500 dark:text-gray-400 font-bold">
+                                                    {(() => {
+                                                      const d = new Date(member.lastPortalAccess);
+                                                      const now = new Date();
+                                                      const isToday = d.toDateString() === now.toDateString();
+                                                      const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+                                                      const isYesterday = d.toDateString() === yesterday.toDateString();
+                                                      
+                                                      let label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                                                      if (isToday) label = 'Hoy';
+                                                      else if (isYesterday) label = 'Ayer';
+                                                      
+                                                      return `${label} a las ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                                                    })()}
                                                   </div>
                                                   
                                                   {announcements.length > 0 && (
@@ -14412,7 +14419,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                   )}
                                                 </div>
                                               ) : (
-                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500 italic text-[9px] font-medium">
+                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500 italic text-[9px] font-bold uppercase tracking-wider">
                                                   <AlertCircle className="w-3 h-3" />
                                                   Sin acceso
                                                 </div>
