@@ -19540,10 +19540,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                       const value = val === '' ? 0 : Math.min(maxPoints, Math.max(0, parseInt(val) || 0));
 
                                                                       setPoints(prev => {
-                                                                        const existing = prev.find(p => p.memberId === member.id && p.month === selectedPointsMonth);
+                                                                        const existing = prev.find(p => String(p.memberId) === String(member.id) && p.month === selectedPointsMonth);
                                                                         if (existing) {
                                                                           return prev.map(p => {
-                                                                            if (p.memberId === member.id && p.month === selectedPointsMonth) {
+                                                                            if (String(p.memberId) === String(member.id) && p.month === selectedPointsMonth) {
                                                                               return {
                                                                                 ...p,
                                                                                 saturdays: {
@@ -19571,11 +19571,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                                         }
                                                                       });
                                                                     }}
-                                                                    disabled={category === 'homework'}
                                                                     className={`w-10 md:w-12 px-1 py-1 text-center text-sm border rounded font-semibold bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${satPoints[category] > 0
                                                                       ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-300'
                                                                       : 'border-gray-300 dark:border-gray-600'
-                                                                      } ${category === 'homework' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                                                      }`}
                                                                   />
                                                                 )}
                                                               </td>
