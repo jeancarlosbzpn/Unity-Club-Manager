@@ -14385,29 +14385,37 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 );
                                               })()}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 whitespace-nowrap">
                                               {member.lastPortalAccess ? (
-                                                <div className="flex flex-col">
-                                                  <span className="text-gray-800 dark:text-gray-200 font-bold text-xs">
-                                                    {new Date(member.lastPortalAccess).toLocaleDateString()}
-                                                  </span>
-                                                  <span className="text-gray-400 text-[10px]">
-                                                    {new Date(member.lastPortalAccess).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                  </span>
+                                                <div className="flex flex-col gap-1.5 min-w-[100px]">
+                                                  <div className="flex items-baseline gap-1.5">
+                                                    <span className="text-gray-900 dark:text-white font-bold text-xs">
+                                                      {new Date(member.lastPortalAccess).toLocaleDateString('es-ES', { day: 'numeric', month: 'numeric', year: '2-digit' })}
+                                                    </span>
+                                                    <span className="text-gray-400 dark:text-gray-500 text-[9px] font-medium uppercase">
+                                                      {new Date(member.lastPortalAccess).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                  </div>
+                                                  
                                                   {announcements.length > 0 && (
-                                                    member.lastSeenAnnouncementId === announcements[0].id ? (
-                                                      <span className="text-green-500 font-bold text-[9px] mt-1 flex items-center gap-1">
-                                                        <CheckCircle className="w-2.5 h-2.5" /> Vio Anuncios
-                                                      </span>
-                                                    ) : (
-                                                      <span className="text-amber-500 font-bold text-[9px] mt-1 flex items-center gap-1">
-                                                        <Clock className="w-2.5 h-2.5" /> Pendiente
-                                                      </span>
-                                                    )
+                                                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] font-black uppercase tracking-wider w-fit shadow-sm ${
+                                                      member.lastSeenAnnouncementId === announcements[0].id
+                                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800'
+                                                        : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800'
+                                                    }`}>
+                                                      {member.lastSeenAnnouncementId === announcements[0].id ? (
+                                                        <><CheckCircle className="w-2.5 h-2.5" /> Al día</>
+                                                      ) : (
+                                                        <><Clock className="w-2.5 h-2.5" /> Pendiente</>
+                                                      )}
+                                                    </div>
                                                   )}
                                                 </div>
                                               ) : (
-                                                <span className="text-gray-400 italic text-[10px]">Nunca entró</span>
+                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-gray-400 dark:text-gray-500 italic text-[9px] font-medium">
+                                                  <AlertCircle className="w-3 h-3" />
+                                                  Sin acceso
+                                                </div>
                                               )}
                                             </td>
                                             <td className="px-6 py-4">
