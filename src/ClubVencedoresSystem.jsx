@@ -7672,27 +7672,16 @@ const ClubVencedoresSystem = () => {
         return prev;
       });
 
-      // 2. Sync with Points System
-      let targetSat = selectedSaturday;
-      let targetMonth = selectedPointsMonth;
+      // 2. Sync with Points System (Always use current week's Saturday for evaluation)
+      const d = new Date();
+      const day = d.getDay();
+      // Calculate Saturday of the current week
+      const diff = d.getDate() + (6 - (day === 0 ? 7 : day)); 
+      const satDate = new Date(d.setDate(diff));
+      const targetSat = satDate.toISOString().split('T')[0];
+      const targetMonth = targetSat.substring(0, 7); // "YYYY-MM"
       
-      if (!targetSat) {
-        // Calculate current week's Saturday
-        const d = new Date();
-        const day = d.getDay();
-        // If today is Sunday (0), we usually want the Saturday that just passed
-        // Otherwise, we want the Saturday of the current week
-        const diff = d.getDate() + (6 - (day === 0 ? 7 : day)); 
-        const satDate = new Date(d.setDate(diff));
-        targetSat = satDate.toISOString().split('T')[0];
-        targetMonth = targetSat.substring(0, 7); // "YYYY-MM"
-        
-        console.log('📅 Auto-selected Saturday:', targetSat, 'Month:', targetMonth);
-        
-        // Update global states so they are in sync when user switches modules
-        setSelectedSaturday(targetSat);
-        setSelectedPointsMonth(targetMonth);
-      }
+      console.log('📅 Point allocation for Saturday:', targetSat);
 
       setPoints(prev => {
         const existing = prev.find(p => String(p.memberId) === String(memberId) && p.month === targetMonth);
