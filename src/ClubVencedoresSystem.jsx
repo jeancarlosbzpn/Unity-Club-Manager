@@ -7642,11 +7642,14 @@ const ClubVencedoresSystem = () => {
       setHomeworks(prev => {
         const updated = prev.map(h => {
           if (String(h.id) === String(homeworkId)) {
-            const completedBy = h.completedBy || [];
+            // Normalize existing completedBy to strings
+            const completedBy = (h.completedBy || []).map(id => String(id));
+            const strMemberId = String(memberId);
+            
             if (isCompleted) {
-              return { ...h, completedBy: [...new Set([...completedBy, String(memberId)])] };
+              return { ...h, completedBy: [...new Set([...completedBy, strMemberId])] };
             } else {
-              return { ...h, completedBy: completedBy.filter(id => String(id) !== String(memberId)) };
+              return { ...h, completedBy: completedBy.filter(id => id !== strMemberId) };
             }
           }
           return h;
