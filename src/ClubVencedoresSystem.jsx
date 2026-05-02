@@ -7672,25 +7672,41 @@ const ClubVencedoresSystem = () => {
         return prev;
       });
 
-      // 2. Sync with Points System (current selectedSaturday)
-      if (!selectedSaturday) {
-        console.warn('⚠️ No selectedSaturday - points won\'t be synced');
-        return;
+      // 2. Sync with Points System
+      let targetSat = selectedSaturday;
+      let targetMonth = selectedPointsMonth;
+      
+      if (!targetSat) {
+        // Calculate current week's Saturday
+        const d = new Date();
+        const day = d.getDay();
+        // If today is Sunday (0), we usually want the Saturday that just passed
+        // Otherwise, we want the Saturday of the current week
+        const diff = d.getDate() + (6 - (day === 0 ? 7 : day)); 
+        const satDate = new Date(d.setDate(diff));
+        targetSat = satDate.toISOString().split('T')[0];
+        targetMonth = targetSat.substring(0, 7).replace('-', ''); // YYYYMM
+        
+        console.log('📅 Auto-selected Saturday:', targetSat, 'Month:', targetMonth);
+        
+        // Update global states so they are in sync when user switches modules
+        setSelectedSaturday(targetSat);
+        setSelectedPointsMonth(targetMonth);
       }
 
       setPoints(prev => {
-        const existing = prev.find(p => String(p.memberId) === String(memberId) && p.month === selectedPointsMonth);
+        const existing = prev.find(p => String(p.memberId) === String(memberId) && p.month === targetMonth);
         const scoreToAdd = isCompleted ? 5 : 0;
 
         if (existing) {
           return prev.map(p => {
-            if (String(p.memberId) === String(memberId) && p.month === selectedPointsMonth) {
-              const currentSat = p.saturdays[selectedSaturday] || {};
+            if (String(p.memberId) === String(memberId) && p.month === targetMonth) {
+              const currentSat = p.saturdays[targetSat] || {};
               return {
                 ...p,
                 saturdays: {
                   ...p.saturdays,
-                  [selectedSaturday]: { ...currentSat, homework: scoreToAdd }
+                  [targetSat]: { ...currentSat, homework: scoreToAdd }
                 }
               };
             }
@@ -7698,11 +7714,11 @@ const ClubVencedoresSystem = () => {
           });
         } else {
           return [...prev, {
-            id: `${memberId}-${selectedPointsMonth}`,
+            id: `${memberId}-${targetMonth}`,
             memberId: String(memberId),
-            month: selectedPointsMonth,
+            month: targetMonth,
             saturdays: {
-              [selectedSaturday]: { homework: scoreToAdd }
+              [targetSat]: { homework: scoreToAdd }
             }
           }];
         }
