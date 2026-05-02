@@ -25358,8 +25358,7 @@ const MemberPortal = ({
           return false;
         }
       })
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
-      .slice(0, 10);
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
   })();
 
   // --- UNIFORMITY ---
