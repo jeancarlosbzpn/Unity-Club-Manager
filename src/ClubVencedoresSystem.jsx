@@ -25183,7 +25183,17 @@ const MemberPortal = ({
     if (!myClass) return [];
 
     return homeworks
-      .filter(h => String(h.className).toLowerCase() === String(myClass).toLowerCase())
+      .filter(h => {
+        const hwClass = String(h.className).toLowerCase();
+        const memClass = String(myClass).toLowerCase();
+        
+        // Find the label for memClass if it's an ID
+        const pfClass = pathfinderClasses.find(c => c.value.toLowerCase() === memClass);
+        const avClass = aventurerosClasses.find(c => c.value.toLowerCase() === memClass);
+        const memClassLabel = (pfClass?.label || avClass?.label || '').toLowerCase();
+
+        return hwClass === memClass || hwClass === memClassLabel;
+      })
       .map(h => {
         const status = memberHomeworkStatus.find(s => s.homeworkId === h.id && isThisMember(s.memberId));
         return {
@@ -25969,19 +25979,41 @@ const MemberPortal = ({
                 ) : (
                   myHomeworks.map(hw => (
                     <div key={hw.id} className={`p-5 rounded-[30px] border transition-all ${hw.isCompleted ? 'bg-gray-50 border-gray-100 opacity-70' : 'bg-white border-gray-200 shadow-sm'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                            hw.priority === 'Crítica' ? 'bg-red-50 text-red-600 border-red-200' :
+                            hw.priority === 'Alta' ? 'bg-orange-50 text-orange-600 border-orange-200' :
+                            hw.priority === 'Baja' ? 'bg-gray-50 text-gray-400 border-gray-200' :
+                            'bg-blue-50 text-blue-600 border-blue-200'
+                          }`}>
+                            {hw.priority || 'Normal'}
+                          </span>
+                        </div>
+                        {hw.dueDate && <span className="text-[9px] font-bold text-gray-400 italic">Vence: {hw.dueDate}</span>}
+                      </div>
+
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className={`font-black text-base ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
-                            {hw.dueDate && <span className="px-2 py-0.5 bg-red-50 text-red-500 text-[8px] font-black rounded-full uppercase">Vence: {hw.dueDate}</span>}
-                          </div>
-                          <p className="text-sm text-gray-500">{hw.description}</p>
+                          <h4 className={`font-black text-base mb-1 ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
+                          <p className="text-sm text-gray-500 mb-4">{hw.description}</p>
+                          
+                          {hw.externalLink && (
+                            <a 
+                              href={hw.externalLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Ver Recurso
+                            </a>
+                          )}
                         </div>
                         <button 
                           onClick={() => handleToggleHomework(hw.id)}
-                          className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${hw.isCompleted ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
                         >
-                          <Check className="w-5 h-5" />
+                          <Check className="w-6 h-6" />
                         </button>
                       </div>
                     </div>
