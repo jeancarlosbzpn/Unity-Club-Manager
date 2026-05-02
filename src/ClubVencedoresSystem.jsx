@@ -7853,7 +7853,7 @@ const ClubVencedoresSystem = () => {
                       <ExternalLink className="w-3 h-3" /> Ver Recurso
                     </a>
                   )}
-                  {!isReadOnly && isInstructor && (
+                  {!isReadOnly && (isInstructor || canManageAll) && (
                     <button 
                       onClick={() => { setSelectedHomeworkForEval(homework); setShowHomeworkEvaluationModal(true); }}
                       className="flex-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-colors flex items-center justify-center gap-2"
@@ -7905,7 +7905,9 @@ const ClubVencedoresSystem = () => {
                     const isRegular = m.role === 'member' || m.role === 'aspirante';
                     const matchesClub = m.club === selectedHomeworkForEval.club;
                     const matchesClass = (m.class === selectedHomeworkForEval.className) || 
-                                       (m.currentClass === selectedHomeworkForEval.className);
+                                       (m.currentClass === selectedHomeworkForEval.className) ||
+                                       (m.membershipClass === selectedHomeworkForEval.className) ||
+                                       (m.pathfinderClass === selectedHomeworkForEval.className);
                     return isRegular && matchesClub && matchesClass;
                   })
                   .map(member => {
