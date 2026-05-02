@@ -25408,7 +25408,22 @@ const MemberPortal = ({
         const avClass = aventurerosClasses.find(c => c.value.toLowerCase() === memClass);
         const memClassLabel = (pfClass?.label || avClass?.label || '').toLowerCase();
 
-        return hwClass === memClass || hwClass === memClassLabel;
+        const matchesClass = hwClass === memClass || hwClass === memClassLabel;
+        if (!matchesClass) return false;
+
+        // Modality check for subtasks
+        const mModality = member.membershipClassModality || 'progressive';
+        const isAventurero = String(h.club).toLowerCase() === 'aventureros';
+        if (isAventurero) return true;
+
+        const hSubtasks = h.subtasks || [];
+        if (hSubtasks.length === 0) return true; // Show if no subtasks (legacy)
+
+        return hSubtasks.some(st => {
+          if (st.modalityProgressive && (mModality === 'progressive' || mModality === 'both')) return true;
+          if (st.modalityAdvanced && (mModality === 'advanced' || mModality === 'both')) return true;
+          return false;
+        });
       })
       .map(h => {
         const status = memberHomeworkStatus.find(s => s.homeworkId === h.id && isThisMember(s.memberId));
@@ -26212,7 +26227,24 @@ const MemberPortal = ({
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h4 className={`font-black text-base mb-1 ${hw.isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{hw.title}</h4>
-                          <p className="text-sm text-gray-500 mb-4">{hw.description}</p>
+                          <div className="space-y-1.5 mb-4">
+                            {(hw.subtasks || []).filter(st => {
+                               const mModality = member.membershipClassModality || 'progressive';
+                               const isAventurero = String(hw.club).toLowerCase() === 'aventureros';
+                               if (isAventurero) return true;
+                               if (st.modalityProgressive && (mModality === 'progressive' || mModality === 'both')) return true;
+                               if (st.modalityAdvanced && (mModality === 'advanced' || mModality === 'both')) return true;
+                               return false;
+                            }).map((st, i) => (
+                              <div key={i} className="flex items-start gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${hw.isCompleted ? 'bg-gray-300' : 'bg-indigo-400'}`} />
+                                <p className={`text-[11px] font-bold leading-tight ${hw.isCompleted ? 'text-gray-400' : 'text-gray-600'}`}>{st.text}</p>
+                              </div>
+                            ))}
+                            {(!hw.subtasks || hw.subtasks.length === 0) && hw.description && (
+                              <p className="text-sm text-gray-500 mb-4">{hw.description}</p>
+                            )}
+                          </div>
                           
                           {hw.externalLink && (
                             <a 
