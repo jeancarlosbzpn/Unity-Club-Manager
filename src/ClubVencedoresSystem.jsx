@@ -24458,28 +24458,40 @@ const MemberPortal = ({
   const [showFinanceModal, setShowFinanceModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
 
-  // Portal Access & Announcements Tracking
+  const announcementsRef = useRef(null);
+
+  // 1. Track Portal Access (Timestamp only)
   useEffect(() => {
     if (isAdminPreview) return;
-    
-    const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
-    const latestId = latestAnnouncement ? latestAnnouncement.id : null;
-    
-    // Throttle updates: only if never accessed, or 5+ mins since last access, or new announcement seen
     const lastUpdate = member.lastPortalAccess || 0;
     const now = Date.now();
     const fiveMinutes = 1000 * 60 * 5;
-    const seenLatest = member.lastSeenAnnouncementId === latestId;
     
-    if ((now - lastUpdate > fiveMinutes) || !seenLatest) {
+    if (now - lastUpdate > fiveMinutes) {
       if (onUpdateMember) {
-        onUpdateMember(member.id, {
-          lastPortalAccess: now,
-          lastSeenAnnouncementId: latestId
-        });
+        onUpdateMember(member.id, { lastPortalAccess: now });
       }
     }
-  }, [member.id, announcements.length, isAdminPreview]);
+  }, [member.id, isAdminPreview]);
+
+  // 2. Track Announcements Seen (Only if scrolled into view)
+  useEffect(() => {
+    if (isAdminPreview || !announcementsRef.current || announcements.length === 0) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        const latestId = announcements[0].id;
+        if (member.lastSeenAnnouncementId !== latestId && onUpdateMember) {
+          onUpdateMember(member.id, { lastSeenAnnouncementId: latestId });
+        }
+        // No need to observe anymore after seeing it
+        observer.disconnect();
+      }
+    }, { threshold: 0.2 }); // Require 20% of the section to be visible
+
+    observer.observe(announcementsRef.current);
+    return () => observer.disconnect();
+  }, [member.id, announcements.length, isAdminPreview, announcements]);
 
   // Helper for ultra-robust ID matching (handles ID, Portal Code, and String/Number conflicts)
   const isThisMember = (idInRecord) => {
@@ -25878,7 +25890,7 @@ const MemberPortal = ({
         {/* Main Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 1. Announcements Feed (Priority) */}
-          <section className="space-y-4 col-span-1 md:col-span-2">
+          <section ref={announcementsRef} className="space-y-4 col-span-1 md:col-span-2">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-gray-900">
                 <Bell className="w-4 h-4 text-red-600" />
