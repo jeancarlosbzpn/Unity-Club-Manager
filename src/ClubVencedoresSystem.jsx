@@ -405,6 +405,7 @@ const ClubVencedoresSystem = () => {
     position: '',
     positions: [],
     instructorClass: '',
+    instructorClasses: [],
     role: 'user',
     allowedModules: [],
     modulePermissions: {} // New: { moduleId: 'edit' | 'read' | 'none' }
@@ -452,6 +453,10 @@ const ClubVencedoresSystem = () => {
           updatedUser.instructorClass = profile.instructorClass;
           changed = true;
         }
+        if (profile.instructorClasses && JSON.stringify(profile.instructorClasses) !== JSON.stringify(currentUser.instructorClasses)) {
+          updatedUser.instructorClasses = profile.instructorClasses;
+          changed = true;
+        }
         // Force role from DB for non-masters, or keep for masters
         if (!isMaster && profile.role && profile.role !== currentUser.role) {
           updatedUser.role = profile.role;
@@ -479,7 +484,7 @@ const ClubVencedoresSystem = () => {
         setCurrentUser(updatedUser);
       }
     }
-  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.positions, currentUser?.instructorClass, currentUser?.role]);
+  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.positions, currentUser?.instructorClass, currentUser?.instructorClasses, currentUser?.role]);
 
   // Admin credentials (reference to main admin)
   const [adminUser, setAdminUser] = useState(users[0]);
@@ -7414,38 +7419,61 @@ const ClubVencedoresSystem = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
           <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-100 dark:border-indigo-800 flex flex-col items-center">
             <span className="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{eventDates.length}</span>
-            <span className="text-xs uppercase font-bold text-indigo-600 dark:text-indigo-300">Eventos</span>
+            <span className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-300">Eventos</span>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-800 flex flex-col items-center">
             <span className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.P}</span>
-            <span className="text-xs uppercase font-bold text-green-600 dark:text-green-300">Presentes</span>
+            <span className="text-[10px] uppercase font-bold text-green-600 dark:text-green-300">Presentes</span>
           </div>
           <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-100 dark:border-yellow-800 flex flex-col items-center">
             <span className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.L}</span>
-            <span className="text-xs uppercase font-bold text-yellow-600 dark:text-yellow-300">Tardanzas</span>
+            <span className="text-[10px] uppercase font-bold text-yellow-600 dark:text-yellow-300">Tardanzas</span>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 flex flex-col items-center">
             <span className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.E}</span>
-            <span className="text-xs uppercase font-bold text-blue-600 dark:text-blue-300">Excusas</span>
+            <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-300">Excusas</span>
           </div>
-          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-100 dark:border-purple-800 flex flex-col items-center">
-            <span className="text-2xl font-bold text-purple-700 dark:text-purple-400">
-              {(() => {
-                let grandTotalP = 0;
-                let grandTotalEvents = 0;
-                displayedMembers.forEach(m => {
-                  const p = calculateAttendancePercentage(m.id);
-                  grandTotalP += p.total;
-                  grandTotalEvents++;
-                });
-                return grandTotalEvents > 0 ? Math.round(grandTotalP / grandTotalEvents) : 0;
-              })()}%
-            </span>
-            <span className="text-xs uppercase font-bold text-purple-600 dark:text-purple-300">Promedio Gral</span>
-          </div>
+
+          {(() => {
+            let friAvg = 0, satAMAvg = 0, satPMAvg = 0, totalAvg = 0;
+            if (displayedMembers.length > 0) {
+              displayedMembers.forEach(m => {
+                const p = calculateAttendancePercentage(m.id);
+                friAvg += p.friday;
+                satAMAvg += p.satAM;
+                satPMAvg += p.satPM;
+                totalAvg += p.total;
+              });
+              friAvg = Math.round(friAvg / displayedMembers.length);
+              satAMAvg = Math.round(satAMAvg / displayedMembers.length);
+              satPMAvg = Math.round(satPMAvg / displayedMembers.length);
+              totalAvg = Math.round(totalAvg / displayedMembers.length);
+            }
+
+            return (
+              <>
+                <div className="bg-pink-50 dark:bg-pink-900/20 p-4 rounded-lg border border-pink-100 dark:border-pink-800 flex flex-col items-center">
+                  <span className="text-2xl font-bold text-pink-700 dark:text-pink-400">{friAvg}%</span>
+                  <span className="text-[10px] uppercase font-bold text-pink-600 dark:text-pink-300">Prom. Viernes</span>
+                </div>
+                <div className="bg-sky-50 dark:bg-sky-900/20 p-4 rounded-lg border border-sky-100 dark:border-sky-800 flex flex-col items-center">
+                  <span className="text-2xl font-bold text-sky-700 dark:text-sky-400">{satAMAvg}%</span>
+                  <span className="text-[10px] uppercase font-bold text-sky-600 dark:text-sky-300">Prom. Sáb AM</span>
+                </div>
+                <div className="bg-violet-50 dark:bg-violet-900/20 p-4 rounded-lg border border-violet-100 dark:border-violet-800 flex flex-col items-center">
+                  <span className="text-2xl font-bold text-violet-700 dark:text-violet-400">{satPMAvg}%</span>
+                  <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-300">Prom. Club</span>
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 flex flex-col items-center shadow-inner">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">{totalAvg}%</span>
+                  <span className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Prom. Total</span>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Matrix Table */}
@@ -7595,17 +7623,21 @@ const ClubVencedoresSystem = () => {
       });
     }
 
-    // Also check instructor class assigned directly in user profile
-    if (currentUser.instructorClass) {
-      const pf = pathfinderClasses.find(c => c.value === currentUser.instructorClass);
-      const av = aventurerosClasses.find(c => c.value === currentUser.instructorClass);
+    // Also check instructor classes assigned in user profile
+    const profileClasses = currentUser.instructorClasses || (currentUser.instructorClass ? [currentUser.instructorClass] : []);
+    profileClasses.forEach(clsValue => {
+      const pf = pathfinderClasses.find(c => c.value === clsValue);
+      const av = aventurerosClasses.find(c => c.value === clsValue);
       
-      assignedClasses.push({ 
-        club: av ? 'aventureros' : 'conquistadores', 
-        className: currentUser.instructorClass,
-        label: pf ? pf.label : (av ? av.label : currentUser.instructorClass)
-      });
-    }
+      // Avoid duplicates
+      if (!assignedClasses.some(ac => ac.className === clsValue)) {
+        assignedClasses.push({ 
+          club: av ? 'aventureros' : (pf && pathfinderClasses.indexOf(pf) >= 6 ? 'guiasMayores' : 'conquistadores'), 
+          className: clsValue,
+          label: pf ? pf.label : (av ? av.label : clsValue)
+        });
+      }
+    });
 
     const canManageAll = currentUser.role === 'administrator' || userPositions.some(p => ['Director', 'Subdirector', 'Secretario', 'Secretary'].includes(p));
     
@@ -7794,7 +7826,7 @@ const ClubVencedoresSystem = () => {
                 <select 
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                   value={homeworkFormData.className}
-                  disabled={!canManageAll && isInstructor}
+                  disabled={!canManageAll && isInstructor && assignedClasses.length <= 1}
                   onChange={e => setHomeworkFormData({...homeworkFormData, className: e.target.value})}
                 >
                   {homeworkFormData.club === 'aventureros' && aventurerosClasses
@@ -10390,7 +10422,8 @@ const ClubVencedoresSystem = () => {
           username: newUserFormData.username,
           position: newUserFormData.positions?.[0] || newUserFormData.position,
           positions: newUserFormData.positions || [newUserFormData.position],
-          instructorClass: newUserFormData.instructorClass || '',
+          instructorClass: newUserFormData.instructorClasses?.[0] || newUserFormData.instructorClass || '',
+          instructorClasses: newUserFormData.instructorClasses || (newUserFormData.instructorClass ? [newUserFormData.instructorClass] : []),
           role: editingUser.role || 'user',
           allowedModules: newUserFormData.allowedModules || [],
           modulePermissions: newUserFormData.modulePermissions || {}
@@ -10411,7 +10444,8 @@ const ClubVencedoresSystem = () => {
           password: newUserFormData.password,
           position: newUserFormData.positions?.[0] || newUserFormData.position,
           positions: newUserFormData.positions || [newUserFormData.position],
-          instructorClass: newUserFormData.instructorClass || '',
+          instructorClass: newUserFormData.instructorClasses?.[0] || newUserFormData.instructorClass || '',
+          instructorClasses: newUserFormData.instructorClasses || (newUserFormData.instructorClass ? [newUserFormData.instructorClass] : []),
           role: 'user',
           allowedModules: newUserFormData.allowedModules || [],
           modulePermissions: newUserFormData.modulePermissions || {}
@@ -10460,6 +10494,7 @@ const ClubVencedoresSystem = () => {
       position: user.position,
       positions: user.positions || [user.position],
       instructorClass: user.instructorClass || '',
+      instructorClasses: user.instructorClasses || (user.instructorClass ? [user.instructorClass] : []),
       role: user.role,
       allowedModules: user.allowedModules || [],
       modulePermissions: user.modulePermissions || {}
@@ -10503,6 +10538,9 @@ const ClubVencedoresSystem = () => {
       password: '',
       confirmPassword: '',
       position: '',
+      positions: [],
+      instructorClass: '',
+      instructorClasses: [],
       role: 'user',
       allowedModules: [],
       modulePermissions: {}
@@ -11817,19 +11855,38 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   Clase Asignada para Tareas
                                 </label>
                               </div>
-                              <select
-                                value={newUserFormData.instructorClass}
-                                onChange={(e) => setNewUserFormData(prev => ({ ...prev, instructorClass: e.target.value }))}
-                                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white"
-                              >
-                                <option value="">Seleccionar Clase</option>
-                                <optgroup label="Aventureros">
-                                  {aventurerosClasses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                                </optgroup>
-                                <optgroup label="Conquistadores">
-                                  {pathfinderClasses.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                                </optgroup>
-                              </select>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {[...aventurerosClasses, ...pathfinderClasses].map(cls => {
+                                  const isSelected = (newUserFormData.instructorClasses || []).includes(cls.value) || newUserFormData.instructorClass === cls.value;
+                                  return (
+                                    <button
+                                      key={cls.value}
+                                      type="button"
+                                      onClick={() => {
+                                        setNewUserFormData(prev => {
+                                          const current = prev.instructorClasses || (prev.instructorClass ? [prev.instructorClass] : []);
+                                          const next = current.includes(cls.value)
+                                            ? current.filter(c => c !== cls.value)
+                                            : [...current, cls.value];
+                                          return {
+                                            ...prev,
+                                            instructorClasses: next,
+                                            instructorClass: next[0] || '' // Backward compatibility
+                                          };
+                                        });
+                                      }}
+                                      className={`px-3 py-2 rounded-lg border text-[10px] font-bold text-left flex items-center justify-between transition-all ${
+                                        isSelected 
+                                          ? 'bg-indigo-100 dark:bg-indigo-900/30 border-indigo-500 text-indigo-700 dark:text-indigo-300' 
+                                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-indigo-300'
+                                      }`}
+                                    >
+                                      {cls.label}
+                                      {isSelected ? <CheckCircle className="w-3 h-3" /> : <PlusCircle className="w-3 h-3 opacity-30" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                               <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-2 italic flex items-center gap-1">
                                 <Info className="w-3 h-3" />
                                 El instructor solo podrá gestionar tareas de la clase seleccionada aquí.
@@ -25020,8 +25077,10 @@ const MemberPortal = ({
   let attendedCount = 0;
 
   // --- ATTENDANCE SPLIT CALCULATION ---
-  let cultosTotal = 0;
-  let cultosPresent = 0;
+  let fridayTotal = 0;
+  let fridayPresent = 0;
+  let satAMTotal = 0;
+  let satAMPresent = 0;
   let clubTotal = 0;
   let clubPresent = 0;
 
@@ -25029,14 +25088,15 @@ const MemberPortal = ({
   myPointsRecords.forEach(monthRecord => {
     if (monthRecord.saturdays) {
       Object.values(monthRecord.saturdays).forEach(day => {
-        // CULTOS: Friday + Sat AM
+        // Friday Culto
         if (day.attendanceFriday) {
-          cultosTotal++;
-          if (isPresent(day.attendanceFriday)) cultosPresent++;
+          fridayTotal++;
+          if (isPresent(day.attendanceFriday)) fridayPresent++;
         }
+        // Sat AM Culto
         if (day.attendanceSatAM) {
-          cultosTotal++;
-          if (isPresent(day.attendanceSatAM)) cultosPresent++;
+          satAMTotal++;
+          if (isPresent(day.attendanceSatAM)) satAMPresent++;
         }
 
         // CLUB: Sat PM
@@ -25050,13 +25110,20 @@ const MemberPortal = ({
   });
 
   // 2. ADD New Attendance (from attendanceRecords)
-  // Note: We assume attendanceRecords are for 'Club' unless specified otherwise
   const myDirectAttendance = attendanceRecords.filter(r => isThisMember(r.memberId));
   myDirectAttendance.forEach(record => {
     if (record.status) {
       if (record.type === 'culto') {
-        cultosTotal++;
-        if (isPresent(record.status)) cultosPresent++;
+        const date = record.date ? new Date(record.date) : null;
+        const dayOfWeek = date ? date.getDay() : -1;
+        
+        if (dayOfWeek === 6) { // Saturday
+          satAMTotal++;
+          if (isPresent(record.status)) satAMPresent++;
+        } else {
+          fridayTotal++;
+          if (isPresent(record.status)) fridayPresent++;
+        }
       } else {
         clubTotal++;
         if (isPresent(record.status)) clubPresent++;
@@ -25064,7 +25131,8 @@ const MemberPortal = ({
     }
   });
 
-  const attendanceRateCultos = cultosTotal > 0 ? Math.round((cultosPresent / cultosTotal) * 100) : 0;
+  const attendanceRateFriday = fridayTotal > 0 ? Math.round((fridayPresent / fridayTotal) * 100) : 0;
+  const attendanceRateSatAM = satAMTotal > 0 ? Math.round((satAMPresent / satAMTotal) * 100) : 0;
   const attendanceRateClub = clubTotal > 0 ? Math.round((clubPresent / clubTotal) * 100) : 0;
     
   const myScore = meritEntries
@@ -25804,21 +25872,25 @@ const MemberPortal = ({
             )}
 
             {/* Quick-stats row — social-style */}
-            <div className="w-full mt-6 grid grid-cols-3 divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm">
+            <div className="w-full mt-6 grid grid-cols-4 divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm">
               <button
                 onClick={() => setShowAwardsModal(true)}
-                className="flex flex-col items-center py-4 px-2 hover:bg-amber-50 transition-colors active:scale-95 group"
+                className="flex flex-col items-center py-4 px-1 hover:bg-amber-50 transition-colors active:scale-95 group"
               >
                 <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-amber-600 transition-colors">{displayTotalPoints}</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Puntos</span>
               </button>
-              <div className="flex flex-col items-center py-4 px-2">
-                <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateCultos}%</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Cultos</span>
+              <div className="flex flex-col items-center py-4 px-1">
+                <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateFriday}%</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
               </div>
-              <div className="flex flex-col items-center py-4 px-2">
+              <div className="flex flex-col items-center py-4 px-1">
+                <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateSatAM}%</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
+              </div>
+              <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Club</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
               </div>
             </div>
           </div>
