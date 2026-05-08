@@ -25917,8 +25917,8 @@ const MemberPortal = ({
             )}
 
             {/* Quick-stats row — social-style */}
-            <div className={`w-full mt-6 grid ${member.exemptFromScoring ? 'grid-cols-2' : 'grid-cols-4'} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
-              {member.exemptFromScoring ? (
+            <div className={`w-full mt-6 grid ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'grid-cols-2' : 'grid-cols-4'} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
+              {(member.isExemptFromPoints || member.exemptFromScoring) ? (
                 <>
                   <div className="flex flex-col items-center py-5 px-1 bg-white/50">
                     <span className="text-sm font-black tracking-tight text-gray-900 text-center px-2 leading-tight">
