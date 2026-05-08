@@ -25615,18 +25615,25 @@ const MemberPortal = ({
   const cleanBaseName = baseClassName.replace(/^E:\s*/, '');
   const myClassName = (modality === 'advanced' || modality === 'advanced-only') ? `${cleanBaseName} Avanzado` : cleanBaseName;
   
-  const displayPosition = (() => {
-    if (member.position && member.position.trim() !== '') return member.position;
-    if (member.directiveRoles) {
-      for (const club of ['conquistadores', 'aventureros', 'guiasMayores']) {
-        const roles = member.directiveRoles[club];
-        if (roles && Array.isArray(roles) && roles.length > 0 && roles[0].position) {
-          return roles[0].position;
-        }
-      }
+  const allRolesText = (() => {
+    const roles = new Set();
+    if (member.position && member.position.trim() !== '') {
+      roles.add(translatePosition(member.position, member.gender));
     }
-    return '';
+    if (member.directiveRoles) {
+      Object.values(member.directiveRoles).forEach(clubRoles => {
+        if (Array.isArray(clubRoles)) {
+          clubRoles.forEach(r => {
+            if (r.position) roles.add(translatePosition(r.position, member.gender));
+          });
+        }
+      });
+    }
+    return Array.from(roles).join(', ') || "Directiva";
   })();
+
+  const displayPosition = allRolesText;
+
 
 
   // Filter unit members (Privacy: same unit only)
@@ -25920,47 +25927,47 @@ const MemberPortal = ({
             <div className={`w-full mt-6 grid ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'grid-cols-1' : (displayPosition ? 'grid-cols-5' : 'grid-cols-4')} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
               {(member.isExemptFromPoints || member.exemptFromScoring) ? (
                 <div className="flex flex-col items-center py-5 px-1 bg-white/50">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Rol Oficial</span>
                   <span className="text-sm font-black tracking-tight text-gray-900 text-center px-4 leading-tight">
-                    {translatePosition(displayPosition, member.gender) || "Directiva"}
+                    {displayPosition}
                   </span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rol Oficial</span>
                 </div>
               ) : (
                 <>
                   {displayPosition && (
                     <div className="flex flex-col items-center py-4 px-1">
-                      <span className="text-[10px] font-black tracking-tighter text-gray-900 text-center px-1 leading-none h-6 flex items-center justify-center">
-                        {translatePosition(displayPosition, member.gender)}
+                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Rol Oficial</span>
+                      <span className="text-[10px] font-black tracking-tighter text-gray-900 text-center px-1 leading-tight flex items-center justify-center min-h-[1.5rem]">
+                        {displayPosition}
                       </span>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rol Oficial</span>
                     </div>
                   )}
                   <button
                     onClick={() => setShowAwardsModal(true)}
                     className="flex flex-col items-center py-4 px-1 hover:bg-amber-50 transition-colors active:scale-95 group"
                   >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Puntos</span>
                     <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-amber-600 transition-colors">{displayTotalPoints}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Puntos</span>
                   </button>
                   <div className="flex flex-col items-center py-4 px-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 text-center">Viernes</span>
                     <span className={`text-xl font-black tracking-tighter ${attendanceRateFriday >= (clubSettings.minAttendanceFriday ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
                       {attendanceRateFriday}%
                     </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceFriday ?? 75}%</span>
                   </div>
                   <div className="flex flex-col items-center py-4 px-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 text-center">Sábados</span>
                     <span className={`text-xl font-black tracking-tighter ${attendanceRateSatAM >= (clubSettings.minAttendanceSaturday ?? 50) ? 'text-green-600' : 'text-red-600'}`}>
                       {attendanceRateSatAM}%
                     </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceSaturday ?? 50}%</span>
                   </div>
                   <div className="flex flex-col items-center py-4 px-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 text-center">Club</span>
                     <span className={`text-xl font-black tracking-tighter ${attendanceRateClub >= (clubSettings.minAttendanceClub ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
                       {attendanceRateClub}%
                     </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-red-100 px-2 py-0.5 rounded-lg border-gray-100">Mín. {clubSettings.minAttendanceClub ?? 75}%</span>
                   </div>
                 </>
