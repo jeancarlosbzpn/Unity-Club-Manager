@@ -24902,6 +24902,7 @@ const MemberPortal = ({
   const [showUniformModal, setShowUniformModal] = useState(false);
   const [showFinanceModal, setShowFinanceModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
   const announcementsRef = useRef(null);
 
@@ -26423,38 +26424,105 @@ const MemberPortal = ({
                 <span className="text-[10px] font-bold text-gray-400">{filteredAnnouncements.length} anuncios</span>
               )}
             </div>
-            
-            <div className="space-y-4">
+
+            {/* Compact cards grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {filteredAnnouncements.length === 0 ? (
-                <div className="bg-gray-50 rounded-3xl p-8 text-center border border-dashed border-gray-200">
+                <div className="col-span-2 sm:col-span-3 bg-gray-50 rounded-3xl p-8 text-center border border-dashed border-gray-200">
                   <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No hay anuncios para ti</p>
                 </div>
               ) : (
-                filteredAnnouncements.slice(0, 2).map(announcement => (
-                  <div key={announcement.id} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm group hover:border-red-100 transition-all">
+                filteredAnnouncements.map(announcement => (
+                  <button
+                    key={announcement.id}
+                    onClick={() => setSelectedAnnouncement(announcement)}
+                    className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm group hover:shadow-md hover:border-red-100 transition-all text-left active:scale-95"
+                  >
                     <div className={`h-1.5 ${
-                      announcement.type === 'Alert' ? 'bg-red-500' : 
+                      announcement.type === 'Alert' ? 'bg-red-500' :
                       announcement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-300'
                     }`} />
-                    <div className="p-6">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                          announcement.type === 'Alert' ? 'bg-red-50 text-red-600' : 
-                          announcement.type === 'Event' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Aviso'}
-                        </span>
-                        <span className="text-[10px] font-bold text-gray-400">
-                          {new Date(announcement.date).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-600 transition-colors text-gray-900">{announcement.title}</h4>
-                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 whitespace-pre-line">{announcement.content}</p>
+                    <div className="p-4">
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                        announcement.type === 'Alert' ? 'bg-red-50 text-red-600' :
+                        announcement.type === 'Event' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Aviso'}
+                      </span>
+                      <h4 className="text-sm font-black tracking-tight mt-2 text-gray-900 group-hover:text-red-600 transition-colors leading-snug line-clamp-2">
+                        {announcement.title}
+                      </h4>
+                      <p className="text-[10px] font-bold text-gray-400 mt-2">
+                        {new Date(announcement.date).toLocaleDateString()}
+                      </p>
                     </div>
-                  </div>
+                  </button>
                 ))
               )}
             </div>
+
+            {/* Announcement Detail Modal */}
+            {selectedAnnouncement && (
+              <div
+                className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={() => setSelectedAnnouncement(null)}
+              >
+                <div
+                  className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] flex flex-col"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Color bar */}
+                  <div className={`h-2 rounded-t-[40px] flex-shrink-0 ${
+                    selectedAnnouncement.type === 'Alert' ? 'bg-red-500' :
+                    selectedAnnouncement.type === 'Event' ? 'bg-indigo-500' : 'bg-gray-300'
+                  }`} />
+
+                  <div className="p-8 overflow-y-auto flex-1">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex-1 pr-4">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                          selectedAnnouncement.type === 'Alert' ? 'bg-red-50 text-red-600' :
+                          selectedAnnouncement.type === 'Event' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {selectedAnnouncement.type === 'Alert' ? 'Urgente' : selectedAnnouncement.type === 'Event' ? 'Evento' : 'Aviso'}
+                        </span>
+                        <h3 className="text-2xl font-black tracking-tight text-gray-900 mt-3 leading-tight">
+                          {selectedAnnouncement.title}
+                        </h3>
+                        <p className="text-[10px] font-bold text-gray-400 mt-1">
+                          {new Date(selectedAnnouncement.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedAnnouncement(null)}
+                        className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all flex-shrink-0"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-gray-100 mb-6" />
+
+                    {/* Body */}
+                    <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                      {selectedAnnouncement.content}
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-8 pb-8 pt-4 border-t border-gray-100 flex-shrink-0">
+                    <button
+                      onClick={() => setSelectedAnnouncement(null)}
+                      className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all active:scale-95"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* 2. Upcoming Activities (Trigger Modal) */}
