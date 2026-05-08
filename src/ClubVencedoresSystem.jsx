@@ -25012,6 +25012,7 @@ const MemberPortal = ({
   // Local helper to translate position labels with gender agreement
   const translatePosition = (position, gender = 'Male') => {
     if (!position) return '';
+    const posStr = String(position).toLowerCase().trim();
     const isFemale = gender === 'Female' || gender === 'F';
     const map = {
       'director': isFemale ? 'Directora' : 'Director',
@@ -25027,7 +25028,7 @@ const MemberPortal = ({
       'counselor': isFemale ? 'Consejera' : 'Consejero',
       'class instructor': isFemale ? 'Instructora de Clase' : 'Instructor de Clase',
     };
-    return map[position.toLowerCase()] || position;
+    return map[posStr] || position;
   };
 
   const formatPhone = (value) => {
