@@ -25884,41 +25884,17 @@ const MemberPortal = ({
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateFriday}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
+                <span className="text-[7px] font-bold text-red-500 uppercase tracking-tighter mt-1 bg-red-50 px-1.5 rounded-full">Mín. 75%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateSatAM}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
+                <span className="text-[7px] font-bold text-red-500 uppercase tracking-tighter mt-1 bg-red-50 px-1.5 rounded-full">Mín. 50%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
-              </div>
-            </div>
-
-            {/* Investiture Attendance Requirements Notice */}
-            <div className="mt-4 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
-              <div className="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-                <Info className="w-4 h-4 text-red-600" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-600 mb-0.5">Requisito de Investidura</p>
-                <p className="text-[11px] font-bold text-red-500 leading-tight">
-                  Debes mantener una asistencia mínima:
-                </p>
-                <div className="flex gap-3 mt-1.5">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] font-black uppercase tracking-tighter text-red-400 leading-none">Viernes</span>
-                    <span className="text-[10px] font-black text-red-600">75%</span>
-                  </div>
-                  <div className="flex flex-col border-l border-red-200 pl-3">
-                    <span className="text-[8px] font-black uppercase tracking-tighter text-red-400 leading-none">Sábados</span>
-                    <span className="text-[10px] font-black text-red-600">50%</span>
-                  </div>
-                  <div className="flex flex-col border-l border-red-200 pl-3">
-                    <span className="text-[8px] font-black uppercase tracking-tighter text-red-400 leading-none">Club</span>
-                    <span className="text-[10px] font-black text-red-600">75%</span>
-                  </div>
-                </div>
+                <span className="text-[7px] font-bold text-red-500 uppercase tracking-tighter mt-1 bg-red-50 px-1.5 rounded-full">Mín. 75%</span>
               </div>
             </div>
           </div>
