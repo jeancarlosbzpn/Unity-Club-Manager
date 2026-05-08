@@ -25917,22 +25917,14 @@ const MemberPortal = ({
             )}
 
             {/* Quick-stats row — social-style */}
-            <div className={`w-full mt-6 grid ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'grid-cols-2' : 'grid-cols-4'} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
+            <div className={`w-full mt-6 grid ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'grid-cols-1' : 'grid-cols-4'} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
               {(member.isExemptFromPoints || member.exemptFromScoring) ? (
-                <>
-                  <div className="flex flex-col items-center py-5 px-1 bg-white/50">
-                    <span className="text-sm font-black tracking-tight text-gray-900 text-center px-2 leading-tight">
-                      {translatePosition(member.position, member.gender)}
-                    </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rol Oficial</span>
-                  </div>
-                  <div className="flex flex-col items-center py-5 px-1 bg-white/50">
-                    <span className="text-sm font-black tracking-tight text-gray-900 text-center px-2 leading-tight">
-                      {member.memberClass === 'master_guide_invested' ? 'G.M. Investido' : 'Aspirante a G.M.'}
-                    </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rango</span>
-                  </div>
-                </>
+                <div className="flex flex-col items-center py-5 px-1 bg-white/50">
+                  <span className="text-sm font-black tracking-tight text-gray-900 text-center px-4 leading-tight">
+                    {translatePosition(displayPosition, member.gender) || "Directiva"}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rol Oficial</span>
+                </div>
               ) : (
                 <>
                   <button
@@ -25972,24 +25964,26 @@ const MemberPortal = ({
         {/* ── Detailed Stats Grid ── */}
         <div className="grid grid-cols-2 gap-4">
           {/* Points this month */}
-          <div 
-            onClick={() => setShowAwardsModal(true)}
-            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-orange-200"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
-              <Star className="w-5 h-5 text-orange-500" />
+          {!(member.isExemptFromPoints || member.exemptFromScoring) && (
+            <div 
+              onClick={() => setShowAwardsModal(true)}
+              className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-orange-200"
+            >
+              <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
+                <Star className="w-5 h-5 text-orange-500" />
+              </div>
+              <div className="text-2xl font-black tracking-tighter text-gray-900">{displayMonthPoints}</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos de {currentMonthName}</div>
+              <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-1 transition-colors group-active:text-orange-800">
+                Ver Galardones <ChevronRight className="w-3 h-3" />
+              </div>
             </div>
-            <div className="text-2xl font-black tracking-tighter text-gray-900">{displayMonthPoints}</div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos de {currentMonthName}</div>
-            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-1 transition-colors group-active:text-orange-800">
-              Ver Galardones <ChevronRight className="w-3 h-3" />
-            </div>
-          </div>
+          )}
 
           {/* Total Paid */}
           <div 
             onClick={() => setShowFinanceModal(true)}
-            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-emerald-200"
+            className={`bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-emerald-200 ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'col-span-2' : ''}`}
           >
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:bg-emerald-500/20 transition-colors">
               <DollarSign className="w-5 h-5 text-emerald-500" />
