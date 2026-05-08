@@ -25930,21 +25930,21 @@ const MemberPortal = ({
                   {attendanceRateFriday}%
                 </span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
-                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceFriday ?? 75}%</span>
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceFriday ?? 75}%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className={`text-xl font-black tracking-tighter ${attendanceRateSatAM >= (clubSettings.minAttendanceSaturday ?? 50) ? 'text-green-600' : 'text-red-600'}`}>
                   {attendanceRateSatAM}%
                 </span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
-                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceSaturday ?? 50}%</span>
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceSaturday ?? 50}%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className={`text-xl font-black tracking-tighter ${attendanceRateClub >= (clubSettings.minAttendanceClub ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
                   {attendanceRateClub}%
                 </span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
-                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceClub ?? 75}%</span>
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-red-100 px-2 py-0.5 rounded-lg border-gray-100">Mín. {clubSettings.minAttendanceClub ?? 75}%</span>
               </div>
             </div>
           </div>
