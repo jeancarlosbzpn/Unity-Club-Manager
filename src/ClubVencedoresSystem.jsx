@@ -25917,7 +25917,7 @@ const MemberPortal = ({
             )}
 
             {/* Quick-stats row — social-style */}
-            <div className={`w-full mt-6 grid ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'grid-cols-1' : 'grid-cols-4'} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
+            <div className={`w-full mt-6 grid ${(member.isExemptFromPoints || member.exemptFromScoring) ? 'grid-cols-1' : (displayPosition ? 'grid-cols-5' : 'grid-cols-4')} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
               {(member.isExemptFromPoints || member.exemptFromScoring) ? (
                 <div className="flex flex-col items-center py-5 px-1 bg-white/50">
                   <span className="text-sm font-black tracking-tight text-gray-900 text-center px-4 leading-tight">
@@ -25927,6 +25927,14 @@ const MemberPortal = ({
                 </div>
               ) : (
                 <>
+                  {displayPosition && (
+                    <div className="flex flex-col items-center py-4 px-1">
+                      <span className="text-[10px] font-black tracking-tighter text-gray-900 text-center px-1 leading-none h-6 flex items-center justify-center">
+                        {translatePosition(displayPosition, member.gender)}
+                      </span>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rol Oficial</span>
+                    </div>
+                  )}
                   <button
                     onClick={() => setShowAwardsModal(true)}
                     className="flex flex-col items-center py-4 px-1 hover:bg-amber-50 transition-colors active:scale-95 group"
