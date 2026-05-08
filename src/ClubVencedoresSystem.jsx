@@ -25917,35 +25917,54 @@ const MemberPortal = ({
             )}
 
             {/* Quick-stats row — social-style */}
-            <div className="w-full mt-6 grid grid-cols-4 divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm">
-              <button
-                onClick={() => setShowAwardsModal(true)}
-                className="flex flex-col items-center py-4 px-1 hover:bg-amber-50 transition-colors active:scale-95 group"
-              >
-                <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-amber-600 transition-colors">{displayTotalPoints}</span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Puntos</span>
-              </button>
-              <div className="flex flex-col items-center py-4 px-1">
-                <span className={`text-xl font-black tracking-tighter ${attendanceRateFriday >= (clubSettings.minAttendanceFriday ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
-                  {attendanceRateFriday}%
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceFriday ?? 75}%</span>
-              </div>
-              <div className="flex flex-col items-center py-4 px-1">
-                <span className={`text-xl font-black tracking-tighter ${attendanceRateSatAM >= (clubSettings.minAttendanceSaturday ?? 50) ? 'text-green-600' : 'text-red-600'}`}>
-                  {attendanceRateSatAM}%
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceSaturday ?? 50}%</span>
-              </div>
-              <div className="flex flex-col items-center py-4 px-1">
-                <span className={`text-xl font-black tracking-tighter ${attendanceRateClub >= (clubSettings.minAttendanceClub ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
-                  {attendanceRateClub}%
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-red-100 px-2 py-0.5 rounded-lg border-gray-100">Mín. {clubSettings.minAttendanceClub ?? 75}%</span>
-              </div>
+            <div className={`w-full mt-6 grid ${member.exemptFromScoring ? 'grid-cols-2' : 'grid-cols-4'} divide-x divide-gray-100 border border-gray-100 rounded-3xl overflow-hidden bg-gray-50 shadow-sm`}>
+              {member.exemptFromScoring ? (
+                <>
+                  <div className="flex flex-col items-center py-5 px-1 bg-white/50">
+                    <span className="text-sm font-black tracking-tight text-gray-900 text-center px-2 leading-tight">
+                      {translatePosition(member.position, member.gender)}
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rol Oficial</span>
+                  </div>
+                  <div className="flex flex-col items-center py-5 px-1 bg-white/50">
+                    <span className="text-sm font-black tracking-tight text-gray-900 text-center px-2 leading-tight">
+                      {member.memberClass === 'master_guide_invested' ? 'G.M. Investido' : 'Aspirante a G.M.'}
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-1">Rango</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowAwardsModal(true)}
+                    className="flex flex-col items-center py-4 px-1 hover:bg-amber-50 transition-colors active:scale-95 group"
+                  >
+                    <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-amber-600 transition-colors">{displayTotalPoints}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">Puntos</span>
+                  </button>
+                  <div className="flex flex-col items-center py-4 px-1">
+                    <span className={`text-xl font-black tracking-tighter ${attendanceRateFriday >= (clubSettings.minAttendanceFriday ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
+                      {attendanceRateFriday}%
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceFriday ?? 75}%</span>
+                  </div>
+                  <div className="flex flex-col items-center py-4 px-1">
+                    <span className={`text-xl font-black tracking-tighter ${attendanceRateSatAM >= (clubSettings.minAttendanceSaturday ?? 50) ? 'text-green-600' : 'text-red-600'}`}>
+                      {attendanceRateSatAM}%
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceSaturday ?? 50}%</span>
+                  </div>
+                  <div className="flex flex-col items-center py-4 px-1">
+                    <span className={`text-xl font-black tracking-tighter ${attendanceRateClub >= (clubSettings.minAttendanceClub ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
+                      {attendanceRateClub}%
+                    </span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mt-1.5 bg-gray-50 border border-red-100 px-2 py-0.5 rounded-lg border-gray-100">Mín. {clubSettings.minAttendanceClub ?? 75}%</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
