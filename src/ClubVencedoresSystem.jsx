@@ -25615,7 +25615,7 @@ const MemberPortal = ({
   const cleanBaseName = baseClassName.replace(/^E:\s*/, '');
   const myClassName = (modality === 'advanced' || modality === 'advanced-only') ? `${cleanBaseName} Avanzado` : cleanBaseName;
   
-  const allRolesText = (() => {
+  const allRoles = (() => {
     const roles = new Set();
     if (member.position && member.position.trim() !== '') {
       roles.add(translatePosition(member.position, member.gender));
@@ -25629,10 +25629,11 @@ const MemberPortal = ({
         }
       });
     }
-    return Array.from(roles).join(', ') || "Directiva";
+    return Array.from(roles);
   })();
 
-  const displayPosition = allRolesText;
+  const displayPosition = allRoles.length > 0;
+
 
 
 
@@ -25928,18 +25929,34 @@ const MemberPortal = ({
               {(member.isExemptFromPoints || member.exemptFromScoring) ? (
                 <div className="flex flex-col items-center py-5 px-1 bg-white/50">
                   <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Rol Oficial</span>
-                  <span className="text-sm font-black tracking-tight text-gray-900 text-center px-4 leading-tight">
-                    {displayPosition}
-                  </span>
+                  <div className="flex flex-col items-center">
+                    {allRoles.length > 0 ? allRoles.map((role, idx) => (
+                      <span key={idx} className="text-sm font-black tracking-tight text-gray-900 text-center px-4 leading-tight">
+                        {role}
+                      </span>
+                    )) : (
+                      <span className="text-sm font-black tracking-tight text-gray-900 text-center px-4 leading-tight">
+                        Directiva
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <>
                   {displayPosition && (
                     <div className="flex flex-col items-center py-4 px-1">
                       <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Rol Oficial</span>
-                      <span className="text-[10px] font-black tracking-tighter text-gray-900 text-center px-1 leading-tight flex items-center justify-center min-h-[1.5rem]">
-                        {displayPosition}
-                      </span>
+                      <div className="flex flex-col items-center">
+                        {allRoles.length > 0 ? allRoles.map((role, idx) => (
+                          <span key={idx} className="text-[10px] font-black tracking-tighter text-gray-900 text-center px-1 leading-tight">
+                            {role}
+                          </span>
+                        )) : (
+                          <span className="text-[10px] font-black tracking-tighter text-gray-900 text-center px-1 leading-tight">
+                            Directiva
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                   <button
