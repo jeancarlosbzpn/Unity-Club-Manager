@@ -1434,7 +1434,10 @@ const ClubVencedoresSystem = () => {
 
   const [clubSettings, setClubSettings] = useState({
     name: 'TriClub Manager',
-    logo: '' // empty string = default logo
+    logo: '', // empty string = default logo
+    minAttendanceFriday: 75,
+    minAttendanceSaturday: 50,
+    minAttendanceClub: 75
   });
   const [isUploading, setIsUploading] = useState(false);
   const [isSavingInspections, setIsSavingInspections] = useState(false);
@@ -24120,6 +24123,47 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Attendance & Investiture Requirements */}
+                    <div className="mb-8 border-b dark:border-gray-700 pb-6">
+                      <h4 className="font-semibold text-gray-700 dark:text-gray-200 mb-4 bg-gray-50 dark:bg-gray-700 p-2 rounded">Requisitos de Investidura (Asistencia Mínima %)</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asistencia Viernes (%)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={clubSettings.minAttendanceFriday ?? 75}
+                            onChange={(e) => setClubSettings(prev => ({ ...prev, minAttendanceFriday: parseInt(e.target.value) || 0 }))}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asistencia Sábados (%)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={clubSettings.minAttendanceSaturday ?? 50}
+                            onChange={(e) => setClubSettings(prev => ({ ...prev, minAttendanceSaturday: parseInt(e.target.value) || 0 }))}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asistencia Club (%)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={clubSettings.minAttendanceClub ?? 75}
+                            onChange={(e) => setClubSettings(prev => ({ ...prev, minAttendanceClub: parseInt(e.target.value) || 0 }))}
+                            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-3">Estos porcentajes aparecerán como meta mínima en el portal de cada miembro.</p>
+                    </div>
 
                     {/* Sub-Clubs Settings Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -25884,17 +25928,17 @@ const MemberPortal = ({
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateFriday}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
-                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. 75%</span>
+                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceFriday ?? 75}%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateSatAM}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
-                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. 50%</span>
+                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceSaturday ?? 50}%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
-                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. 75%</span>
+                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. {clubSettings.minAttendanceClub ?? 75}%</span>
               </div>
             </div>
           </div>
