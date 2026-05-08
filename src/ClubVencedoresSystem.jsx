@@ -25884,17 +25884,17 @@ const MemberPortal = ({
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateFriday}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Viernes</span>
-                <span className="text-[7px] font-bold text-red-500 uppercase tracking-tighter mt-1 bg-red-50 px-1.5 rounded-full">Mín. 75%</span>
+                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. 75%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateSatAM}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Sábados</span>
-                <span className="text-[7px] font-bold text-red-500 uppercase tracking-tighter mt-1 bg-red-50 px-1.5 rounded-full">Mín. 50%</span>
+                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. 50%</span>
               </div>
               <div className="flex flex-col items-center py-4 px-1">
                 <span className="text-xl font-black tracking-tighter text-gray-900">{attendanceRateClub}%</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5 text-center">Club</span>
-                <span className="text-[7px] font-bold text-red-500 uppercase tracking-tighter mt-1 bg-red-50 px-1.5 rounded-full">Mín. 75%</span>
+                <span className="text-[9px] font-black text-red-600 uppercase tracking-tighter mt-1.5 bg-red-50 border border-red-100 px-2 py-0.5 rounded-lg">Mín. 75%</span>
               </div>
             </div>
           </div>
