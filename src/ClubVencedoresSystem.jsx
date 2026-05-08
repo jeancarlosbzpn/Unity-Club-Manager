@@ -26449,7 +26449,7 @@ const MemberPortal = ({
                         </span>
                       </div>
                       <h4 className="text-lg font-black tracking-tight mb-2 group-hover:text-red-600 transition-colors text-gray-900">{announcement.title}</h4>
-                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{announcement.content}</p>
+                      <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 whitespace-pre-line">{announcement.content}</p>
                     </div>
                   </div>
                 ))
