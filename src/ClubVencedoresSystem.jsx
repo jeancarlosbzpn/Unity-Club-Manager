@@ -92,11 +92,15 @@ if (Quill) {
 }
 
 
-const AventurerosIcon = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props} fill="currentColor">
-    <path d="M12.26,2.8c.7,0,4.32.11,7.2,2.25,2.93,2.18,2.72,3.38,1.9,6.11-.85,2.86-5.83,10.15-9.35,10.18,0,0-.01,0-.02,0-3.52,0-8.51-7.31-9.37-10.18-.82-2.73-1.03-3.93,1.9-6.11,2.88-2.14,6.5-2.25,7.2-2.25.1,0,.16,0,.16,0,.03,0,.07,0,.1,0,.03,0,.06,0,.09,0,.02,0,.08,0,.17,0M12.26.8c-.17,0-.26,0-.26,0,0,0-.09,0-.26,0-1.06,0-5.07.17-8.39,2.64C-.52,6.31-.24,8.54.72,11.73c.95,3.19,6.44,11.61,11.28,11.61h0s0,0,0,0,0,0,0,0h0c4.85,0,10.33-8.42,11.28-11.61.95-3.19,1.24-5.42-2.63-8.29C17.33.98,13.32.8,12.26.8h0Z" />
-  </svg>
-);
+const DIRECTIVA_UNIT_ID = 'unit_directiva_global';
+
+const isMemberDirectivoGlobal = (m) => {
+  if (!m) return false;
+  const hasPosition = m.position && m.position.trim() !== '';
+  const hasDirectiveRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+  return hasPosition || hasDirectiveRoles;
+};
+
 
 const ConquistadoresIcon = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props} fill="currentColor">
@@ -17102,6 +17106,87 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {/* Virtual Directiva Unit */}
+                      {(() => {
+                        const directivosInDirectiva = members.filter(m => !m.unitId && isMemberDirectivoGlobal(m));
+                        const getLeader = (roleKey) => {
+                          const clubs = ['guiasMayores', 'conquistadores', 'aventureros'];
+                          for (const club of clubs) {
+                            const found = directivosInDirectiva.find(m => {
+                              const roles = m.directiveRoles?.[club] || [];
+                              const pos = String(m.position || '').toLowerCase();
+                              return roles.some(r => String(r.position).toLowerCase().includes(roleKey)) || pos.includes(roleKey);
+                            });
+                            if (found) return found;
+                          }
+                          return null;
+                        };
+                        const captain = getLeader('director');
+                        const secretary = getLeader('secretar');
+
+                        return (
+                          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border-2 border-indigo-200 dark:border-indigo-900 ring-2 ring-indigo-50 dark:ring-indigo-950/30">
+                            <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border-b border-indigo-200 dark:border-indigo-800">
+                              <div className="flex items-start gap-4 mb-4">
+                                <div className="w-16 h-16 rounded-lg overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center flex-shrink-0 border-2 border-indigo-200 dark:border-indigo-800">
+                                  {clubSettings.directivaLogo ? (
+                                    <img src={clubSettings.directivaLogo} alt="Directiva" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <Shield className="w-8 h-8 text-indigo-400" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="text-xl font-black text-gray-800 dark:text-white">Directiva</h3>
+                                    <span className="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase rounded-full">Sistema</span>
+                                  </div>
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-indigo-100 text-indigo-700">Global</span>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{directivosInDirectiva.length} directivos</p>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                {captain && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded font-semibold text-xs">Capitán/a</span>
+                                    <span className="text-gray-700 dark:text-gray-200">{captain.firstName} {captain.lastName}</span>
+                                  </div>
+                                )}
+                                {secretary && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded font-semibold text-xs">Secretario/a</span>
+                                    <span className="text-gray-700 dark:text-gray-200">{secretary.firstName} {secretary.lastName}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="p-4">
+                              <div className="flex gap-2 mb-3">
+                                <button
+                                  onClick={() => {
+                                    // Trigger only logo upload for Directiva
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*';
+                                    input.onchange = (e) => handleLogoUpload(e, 'directivaLogo');
+                                    input.click();
+                                  }}
+                                  className="flex-1 px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium flex items-center justify-center gap-2"
+                                >
+                                  <ImageIcon className="w-4 h-4" />
+                                  Editar Logo
+                                </button>
+                                <div className="px-3 py-2 text-xs bg-gray-100 text-gray-400 rounded font-bold uppercase flex items-center justify-center border border-gray-200 cursor-not-allowed" title="Unidad protegida por el sistema">
+                                  <Lock className="w-3 h-3 mr-1" /> Protegida
+                                </div>
+                              </div>
+                              <div className="text-[10px] text-gray-400 font-bold uppercase italic text-center">
+                                Esta unidad se asigna automáticamente a directivos sin unidad regular.
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {units.map((unit) => {
                         const unitMembers = members.filter(m => m.unitId === unit.id);
                         const captain = members.find(m => m.id === unit.captainId);
@@ -23223,7 +23308,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           const counts = {};
                           members.forEach(m => {
                             const unit = units.find(u => u.id === m.unitId);
-                            const name = unit ? unit.name : 'Sin Unidad';
+                            let name = unit ? unit.name : 'Sin Unidad';
+                            
+                            // Check if falls into Directiva unit
+                            if (!unit && isMemberDirectivoGlobal(m)) {
+                              name = 'Directiva';
+                            }
+
                             counts[name] = (counts[name] || 0) + 1;
                           });
                           return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([name, count]) => (
@@ -25097,8 +25188,42 @@ const MemberPortal = ({
   }, 0);
 
   // RESILIENT CALCULATION: Unit
-  const myUnit = units.find(u => String(u.id) === String(member.unitId)) || 
-                 units.find(u => member.unitId && String(u.name).toLowerCase() === String(member.unitId).toLowerCase());
+  const myUnit = (() => {
+    const assigned = units.find(u => String(u.id) === String(member.unitId)) || 
+                     units.find(u => member.unitId && String(u.name).toLowerCase() === String(member.unitId).toLowerCase());
+    if (assigned) return assigned;
+
+    // Fallback to virtual Directiva unit if staff
+    if (isMemberDirectivoGlobal(member)) {
+      const directivosInDirectiva = members.filter(m => !m.unitId && isMemberDirectivoGlobal(m));
+      const getLeader = (roleKey) => {
+        const clubs = ['guiasMayores', 'conquistadores', 'aventureros'];
+        for (const club of clubs) {
+          const found = directivosInDirectiva.find(m => {
+            const roles = m.directiveRoles?.[club] || [];
+            const pos = String(m.position || '').toLowerCase();
+            return roles.some(r => String(r.position).toLowerCase().includes(roleKey)) || pos.includes(roleKey);
+          });
+          if (found) return found;
+        }
+        return null;
+      };
+
+      const captain = getLeader('director');
+      const secretary = getLeader('secretar');
+
+      return {
+        id: DIRECTIVA_UNIT_ID,
+        name: 'Directiva',
+        logo: clubSettings.directivaLogo || null,
+        captainId: captain?.id || '',
+        secretaryId: secretary?.id || '',
+        isDirectiva: true
+      };
+    }
+    return null;
+  })();
+
   
   // Filter announcements for this member
   const filteredAnnouncements = announcements.filter(a => {
@@ -25377,6 +25502,9 @@ const MemberPortal = ({
       // Determine Winner(s) - Unit (Highest Average)
       let maxU = 0, topU = [];
       units.forEach(u => {
+        // EXCLUDE DIRECTIVA UNIT FROM RANKING COMPETITION
+        if (u.id === DIRECTIVA_UNIT_ID) return;
+
         const uMembersCount = members.filter(m => String(m.unitId) === String(u.id)).length;
         if (uMembersCount > 0) {
           const avg = (uTotalScores[u.id] || 0) / uMembersCount;
