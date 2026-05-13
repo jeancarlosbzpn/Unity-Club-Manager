@@ -7,7 +7,7 @@ import 'react-quill-new/dist/quill.snow.css';
 import { Mention, MentionBlot } from 'quill-mention';
 import 'quill-mention/dist/quill.mention.css';
 import ClubLogo from './components/ClubLogo';
-import { saveCollectionToFirestore, loadCollectionFromFirestore, uploadImageToStorage, storage, ref, uploadString, getDownloadURL, auth } from './firebase-config';
+import { uploadImageToStorage, storage, ref, uploadString, getDownloadURL, auth } from './firebase-config';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { dataService, setClubId } from './services/dataService';
 import Login from './components/Login';
@@ -20559,18 +20559,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   firstName: m.firstName || '',
                                   lastName: m.lastName || ''
                                 }));
-                                await saveCollectionToFirestore('transactions', lightTransactions);
-                                await saveCollectionToFirestore('financeCategories', financeCategories);
-                                await saveCollectionToFirestore('publicClubSettings', { 
+                                await dataService.writeData('transactions', lightTransactions);
+                                await dataService.writeData('financeCategories', financeCategories);
+                                await dataService.writeData('publicClubSettings', { 
                                   name: clubSettings?.name || 'Mi Club',
                                   logo: clubSettings?.logo || '',
                                   aventurerosName: clubSettings?.aventurerosName || '',
                                   conquistadoresName: clubSettings?.conquistadoresName || '',
                                   guiasName: clubSettings?.guiasName || ''
                                 });
-                                await saveCollectionToFirestore('membersSummary', membersSummary);
-                                await saveCollectionToFirestore('fixedPaymentConcepts', fixedPaymentConcepts);
-                                await saveCollectionToFirestore('fixedPayments', fixedPayments);
+                                await dataService.writeData('membersSummary', membersSummary);
+                                await dataService.writeData('fixedPaymentConcepts', fixedPaymentConcepts);
+                                await dataService.writeData('fixedPayments', fixedPayments);
                                 alert('✅ ¡Datos publicados en la web exitosamente!\n\n🌐 URL: https://unityclubmanager.web.app');
                               } catch (err) {
                                 alert('❌ Error al publicar: ' + err.message);
@@ -20594,7 +20594,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 const btn = document.getElementById('sync-finance-btn');
                                 if (btn) { btn.textContent = 'Sincronizando...'; btn.disabled = true; }
 
-                                const remoteTransactions = await loadCollectionFromFirestore('transactions');
+                                const remoteTransactions = await dataService.readData('transactions');
 
                                 if (remoteTransactions && Array.isArray(remoteTransactions)) {
                                   let newCount = 0;

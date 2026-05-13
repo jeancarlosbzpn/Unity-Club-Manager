@@ -66,7 +66,8 @@ const ALL_COLLECTION_KEYS = [
   'homeworks', 'memberHomeworkStatus',
   'inventory', 'inventoryCategories', 'firstAidItems', 'tents', 'tentAssignments',
   'uniformItems', 'uniformCategories', 'uniformInspections', 'memberUniforms',
-  'reminders', 'campDetails', 'memberProgress', 'unit_messages'
+  'reminders', 'campDetails', 'memberProgress', 'unit_messages',
+  'clubSettings', 'duesConfig', 'cuotaAmount', 'masterGuideData'
 ];
 
 export const dataService = {
@@ -219,15 +220,24 @@ export const dataService = {
       }
     }
 
-    // Default Master Doc Save
-    await saveCollectionToFirestore(key, sanitizeData(data));
-    return { success: true };
+    // Default Master Doc Save (for single-value keys or legacy structures)
+    const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
+    try {
+      await setDoc(doc(db, masterDocCollection, key), { 
+        data: sanitizeData(data), 
+        updatedAt: new Date().toISOString() 
+      }, { merge: true });
+      return { success: true };
+    } catch (e) {
+      console.error(`❌ Error saving ${key} to ${masterDocCollection}:`, e);
+      return { success: false, error: e.message };
+    }
   },
 
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {};
     const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
-    const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
+    const masterDocCollection = (key === 'users') ? null : getMasterDocPath();
 
     if (ALL_COLLECTION_KEYS.includes(key)) {
       const colRef = collection(db, colName);
