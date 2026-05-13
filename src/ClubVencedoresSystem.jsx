@@ -2335,9 +2335,9 @@ const ClubVencedoresSystem = () => {
       const isMaster = currentUser && masterEmails.includes(currentUser.email);
 
       const changedKeys = Object.keys(currentData).filter(key => {
-        // SECURITY: Non-master admins should NEVER auto-save the users list 
-        // to prevent permission errors and accidental lockouts.
-        if (key === 'users' && !isMaster) return false;
+        // SECURITY: The users list should ONLY be saved through explicit actions 
+        // (Add/Delete/Edit) to prevent race conditions and accidental wipes.
+        if (key === 'users') return false;
 
         // Deep compare for complex objects/arrays
         const prev = prevDataRef.current[key];
