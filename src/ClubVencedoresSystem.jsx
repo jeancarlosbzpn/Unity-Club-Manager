@@ -12326,29 +12326,49 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         createdAt: new Date().toISOString() 
                       });
                       e.target.reset();
-                    }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ID Único (ej: orion)</label>
-                        <input name="clubId" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs" placeholder="ID del club" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo</label>
-                        <input name="clubName" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs" placeholder="Nombre del Club" />
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 col-span-1 md:col-span-2 grid grid-cols-2 gap-3">
-                        <div className="col-span-2 text-[10px] font-bold text-purple-600 uppercase mb-1 flex items-center gap-1">
-                          <Shield className="w-3 h-3" /> Credenciales del Director
+                    }} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Sección 1: Datos del Club */}
+                        <div className="space-y-4">
+                          <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                            <Building className="w-3 h-3" /> Información del Club
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">ID Único</label>
+                              <input name="clubId" required className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm" placeholder="ej: orion" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">Nombre Completo</label>
+                              <input name="clubName" required className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm" placeholder="Nombre del Club" />
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <input name="directorUser" required className="w-full px-3 py-1.5 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white text-xs" placeholder="Usuario Director" />
-                        </div>
-                        <div>
-                          <input name="directorPass" type="password" required className="w-full px-3 py-1.5 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white text-xs" placeholder="Contraseña" />
+
+                        {/* Sección 2: Credenciales del Director */}
+                        <div className="space-y-4 p-4 bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30 rounded-2xl">
+                          <h5 className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                            <Shield className="w-3 h-3" /> Acceso para el Director
+                          </h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-purple-400 uppercase mb-1 ml-1">Usuario</label>
+                              <input name="directorUser" required className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm" placeholder="usuario@gmail.com" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-purple-400 uppercase mb-1 ml-1">Contraseña</label>
+                              <input name="directorPass" type="password" required className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-purple-100 dark:border-purple-800 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all text-sm" placeholder="••••••••" />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors col-span-full lg:col-span-1 lg:mt-0">
-                        Registrar Club y Director
-                      </button>
+
+                      <div className="flex justify-end pt-2">
+                        <button type="submit" className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200 dark:shadow-none transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                          <Plus className="w-5 h-5" />
+                          Registrar Club y Director
+                        </button>
+                      </div>
                     </form>
                   </div>
 
