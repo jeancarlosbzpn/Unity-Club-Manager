@@ -10664,6 +10664,7 @@ const ClubVencedoresSystem = () => {
   const handleDeleteUser = async (username) => {
     // Safety check to prevent deleting yourself
     const currentUsername = currentUser?.username || (currentUser?.email ? currentUser.email.split('@')[0] : null);
+    console.log(`🔐 Auth Check: Deleting "${username}" | Logged in as: "${currentUsername}"`);
     
     if (username === currentUsername) {
       alert('No puedes eliminar tu propia cuenta de administrador.');
