@@ -150,11 +150,12 @@ export const dataService = {
 
       if (isArray || isObject) {
         // Wipe Protection (Skip for 'users' to avoid global permission errors)
+        let currentSnap = null;
         let cloudCount = 0;
         if (key !== 'users') {
           try {
             const colRef = collection(db, colName);
-            const currentSnap = await getDocs(colRef);
+            currentSnap = await getDocs(colRef);
             cloudCount = currentSnap.size;
           } catch (e) {
             console.warn(`⚠️ Wipe protection check failed for '${key}':`, e);
@@ -176,9 +177,11 @@ export const dataService = {
 
         if (isArray) {
           const incomingIds = data.map(item => String(item.id || item.username || Date.now()));
-          currentSnap.docs.forEach(docSnap => {
-            if (!incomingIds.includes(String(docSnap.id))) operations.push({ type: 'delete', ref: docSnap.ref });
-          });
+          if (currentSnap) {
+            currentSnap.docs.forEach(docSnap => {
+              if (!incomingIds.includes(String(docSnap.id))) operations.push({ type: 'delete', ref: docSnap.ref });
+            });
+          }
           data.forEach(item => {
             const id = String(item.id || item.username || Date.now() + Math.random());
             operations.push({ type: 'set', ref: doc(db, colName, id), data: sanitizeData(item) });
@@ -186,9 +189,11 @@ export const dataService = {
         } else {
           // KEYED OBJECT (Map)
           const incomingKeys = Object.keys(data);
-          currentSnap.docs.forEach(docSnap => {
-            if (!incomingKeys.includes(docSnap.id)) operations.push({ type: 'delete', ref: docSnap.ref });
-          });
+          if (currentSnap) {
+            currentSnap.docs.forEach(docSnap => {
+              if (!incomingKeys.includes(docSnap.id)) operations.push({ type: 'delete', ref: docSnap.ref });
+            });
+          }
           incomingKeys.forEach(keyId => {
             operations.push({ type: 'set', ref: doc(db, colName, keyId), data: sanitizeData(data[keyId]) });
           });
