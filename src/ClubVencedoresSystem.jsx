@@ -10531,8 +10531,14 @@ const ClubVencedoresSystem = () => {
       }
 
       // PERSIST TO CLOUD IMMEDIATELY
-      await dataService.writeData('users', updatedUsers, { force: true });
+      const result = await dataService.writeData('users', updatedUsers, { force: true });
       
+      if (!result.success && result.error === 'permission-denied') {
+        alert("⚠️ Error de permisos: No tienes autorización para gestionar usuarios globales.");
+        setSyncStatus('error');
+        return;
+      }
+
       setUsers(updatedUsers);
       setSyncStatus('saved');
       
@@ -10568,9 +10574,44 @@ const ClubVencedoresSystem = () => {
       const existing = clubs.find(c => c.id === clubData.id);
       
       if (existing) {
-        updatedClubs = clubs.map(c => c.id === clubData.id ? clubData : c);
+        updatedClubs = clubs.map(c => c.id === clubData.id ? { ...c, name: clubData.name } : c);
       } else {
-        updatedClubs = [...clubs, clubData];
+        updatedClubs = [...clubs, { id: clubData.id, name: clubData.name, createdAt: clubData.createdAt }];
+      }
+      
+      // Handle Director Account (Create or Update)
+      if (clubData.directorUser && clubData.directorPass) {
+        const directorUsername = clubData.directorUser.trim();
+        const existingDirector = users.find(u => u.username === directorUsername);
+        
+        const directorData = {
+          ...(existingDirector || {}),
+          name: `Director ${clubData.name}`,
+          username: directorUsername,
+          password: clubData.directorPass,
+          position: 'Director',
+          positions: ['Director'],
+          role: 'director',
+          clubId: clubData.id,
+          allowedModules: ['dashboard', 'announcements', 'attendance', 'activities', 'directive', 'members', 'homeworks', 'finances', 'inventory', 'uniforms'],
+          modulePermissions: {
+            dashboard: 'edit', announcements: 'edit', attendance: 'edit', activities: 'edit',
+            directive: 'edit', members: 'edit', homeworks: 'edit', finances: 'edit',
+            inventory: 'edit', uniforms: 'edit'
+          }
+        };
+        
+        let updatedUsers;
+        if (existingDirector) {
+          updatedUsers = users.map(u => u.username === directorUsername ? directorData : u);
+        } else {
+          updatedUsers = [...users, directorData];
+        }
+        
+        const userResult = await dataService.writeData('users', updatedUsers, { force: true });
+        if (userResult.success) {
+          setUsers(updatedUsers);
+        }
       }
       
       await dataService.writeData('clubs', updatedClubs, { force: true });
@@ -11670,7 +11711,7 @@ const ClubVencedoresSystem = () => {
             })()}
 
             <div className="space-y-2">
-              {currentUser?.role === 'administrator' && (
+              {(currentUser?.role === 'administrator' || currentUser?.role === 'director') && (
                 <div className="space-y-1">
                   <button
                     onClick={() => setActiveModule('user-management')}
@@ -11679,13 +11720,15 @@ const ClubVencedoresSystem = () => {
                     <Shield className="w-3.5 h-3.5" />
                     Gestionar Usuarios
                   </button>
-                  <button
-                    onClick={() => setActiveModule('club-management')}
-                    className="w-full bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-[10px] font-medium transition-colors flex items-center justify-center gap-2 border border-dashed border-white/20"
-                  >
-                    <Building className="w-3 h-3" />
-                    Gestionar Clubes
-                  </button>
+                  {currentUser?.role === 'administrator' && (
+                    <button
+                      onClick={() => setActiveModule('club-management')}
+                      className="w-full bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-[10px] font-medium transition-colors flex items-center justify-center gap-2 border border-dashed border-white/20"
+                    >
+                      <Building className="w-3 h-3" />
+                      Gestionar Clubes
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -11825,20 +11868,26 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             {activeModule === 'profile' && renderMemberProfile()}
 
             {/* User Management Module */}
-            {activeModule === 'user-management' && currentUser?.role === 'administrator' && (
+            {(activeModule === 'user-management' && (currentUser?.role === 'administrator' || currentUser?.role === 'director')) && (
               <div>
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         <Users className="w-7 h-7 text-purple-600 dark:text-purple-400" />
-                        User Management
+                        {currentUser?.role === 'administrator' ? 'Gestión Global de Usuarios' : `Gestión de Usuarios - ${currentUser.clubId.toUpperCase()}`}
                       </h2>
-                      <p className="text-gray-600 dark:text-gray-300 mt-1">Manage system users and their permissions</p>
+                      <p className="text-gray-600 dark:text-gray-300 mt-1">
+                        {currentUser?.role === 'administrator' 
+                          ? 'Administra todos los usuarios y directores de la plataforma' 
+                          : 'Administra los miembros de tu directiva y sus accesos'}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-bold text-purple-600">{users.length}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">Total Users</div>
+                      <div className="text-3xl font-bold text-purple-600">
+                        {users.filter(u => currentUser.role === 'administrator' || u.clubId === currentUser.clubId).length}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Usuarios</div>
                     </div>
                   </div>
                 </div>
@@ -11868,7 +11917,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             </tr>
                           </thead>
                           <tbody className="divide-y dark:divide-gray-700">
-                            {users.map((user) => (
+                            {users
+                              .filter(u => currentUser.role === 'administrator' || u.clubId === currentUser.clubId)
+                              .map((user) => (
                               <tr key={user.username} className="hover:bg-purple-50 dark:hover:bg-purple-900/20">
                                 <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{user.name}</td>
                                 <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{user.username}</td>
@@ -11946,22 +11997,28 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Seleccionar Club <span className="text-red-500">*</span>
+                            Club Asignado
                           </label>
-                          <select
-                            name="clubId"
-                            value={newUserFormData.clubId}
-                            onChange={handleNewUserInputChange}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.clubId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
-                          >
-                            <option value="">Seleccione un club...</option>
-                            {clubs.map(c => (
-                              <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
-                            ))}
-                            {clubs.length === 0 && <option value="vencedores">Vencedores (Default)</option>}
-                          </select>
+                          {currentUser?.role === 'administrator' ? (
+                            <select
+                              name="clubId"
+                              value={newUserFormData.clubId}
+                              onChange={handleNewUserInputChange}
+                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.clubId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
+                            >
+                              <option value="">Seleccione un club...</option>
+                              {clubs.map(c => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                              ))}
+                              {clubs.length === 0 && <option value="vencedores">Vencedores (Default)</option>}
+                            </select>
+                          ) : (
+                            <div className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-500 font-bold uppercase">
+                              {currentUser.clubId}
+                            </div>
+                          )}
                           <p className="text-[10px] text-gray-500 mt-1 italic">
-                            Si el club no aparece, créalo primero en "Gestionar Clubes".
+                            {currentUser?.role === 'administrator' ? 'Si el club no aparece, créalo primero en "Gestionar Clubes".' : 'Solo puedes gestionar usuarios de tu propio club.'}
                           </p>
                         </div>
 
@@ -12240,22 +12297,42 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       const formData = new FormData(e.target);
                       const clubId = formData.get('clubId').toLowerCase().trim();
                       const clubName = formData.get('clubName').trim();
-                      if (!clubId || !clubName) return alert('Todos los campos son obligatorios');
+                      const directorUser = formData.get('directorUser')?.trim();
+                      const directorPass = formData.get('directorPass')?.trim();
+                      
+                      if (!clubId || !clubName || !directorUser || !directorPass) return alert('Todos los campos son obligatorios');
                       if (clubs.find(c => c.id === clubId)) return alert('Este ID de club ya existe');
                       
-                      handleSaveClub({ id: clubId, name: clubName, createdAt: new Date().toISOString() });
+                      handleSaveClub({ 
+                        id: clubId, 
+                        name: clubName, 
+                        directorUser, 
+                        directorPass,
+                        createdAt: new Date().toISOString() 
+                      });
                       e.target.reset();
-                    }} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ID Único (ej: orion)</label>
-                        <input name="clubId" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="ID del club" />
+                        <input name="clubId" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs" placeholder="ID del club" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo</label>
-                        <input name="clubName" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Nombre del Club" />
+                        <input name="clubName" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-xs" placeholder="Nombre del Club" />
                       </div>
-                      <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors">
-                        Registrar Club
+                      <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 col-span-1 md:col-span-2 grid grid-cols-2 gap-3">
+                        <div className="col-span-2 text-[10px] font-bold text-purple-600 uppercase mb-1 flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> Credenciales del Director
+                        </div>
+                        <div>
+                          <input name="directorUser" required className="w-full px-3 py-1.5 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white text-xs" placeholder="Usuario Director" />
+                        </div>
+                        <div>
+                          <input name="directorPass" type="password" required className="w-full px-3 py-1.5 border rounded-md dark:bg-gray-800 dark:border-gray-600 dark:text-white text-xs" placeholder="Contraseña" />
+                        </div>
+                      </div>
+                      <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors col-span-full lg:col-span-1 lg:mt-0">
+                        Registrar Club y Director
                       </button>
                     </form>
                   </div>
