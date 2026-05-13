@@ -10992,7 +10992,6 @@ const ClubVencedoresSystem = () => {
           );
           return inst ? `${inst.firstName} ${inst.lastName}` : null;
         })()}
-        isAdminPreview={isAuthenticated}
       />
     );
   }
