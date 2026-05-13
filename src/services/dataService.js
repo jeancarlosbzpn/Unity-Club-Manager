@@ -155,14 +155,12 @@ export const dataService = {
         // Wipe Protection (Skip for global registries to avoid permission/access issues)
         let currentSnap = null;
         let cloudCount = 0;
-        if (key !== 'users' && key !== 'clubs') {
-          try {
-            const colRef = collection(db, colName);
-            currentSnap = await getDocs(colRef);
-            cloudCount = currentSnap.size;
-          } catch (e) {
-            console.warn(`⚠️ Wipe protection check failed for '${key}':`, e);
-          }
+        try {
+          const colRef = collection(db, colName);
+          currentSnap = await getDocs(colRef);
+          cloudCount = currentSnap.size;
+        } catch (e) {
+          console.warn(`⚠️ Fetching current snapshot failed for '${key}':`, e);
         }
         
         const localCount = isArray ? data.length : Object.keys(data).length;
