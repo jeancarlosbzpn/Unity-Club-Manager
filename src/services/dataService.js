@@ -81,7 +81,9 @@ export const dataService = {
     try {
       // Special case for 'users': they live in the global registry 'clubvencedores_users'
       const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
-      const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
+      // Users don't use master doc backup in the same way as other collections, 
+      // and we must avoid cross-club permission errors.
+      const masterDocCollection = (key === 'users') ? null : getMasterDocPath();
       
       // 1. Try Collection First
       if (ALL_COLLECTION_KEYS.includes(key)) {
@@ -91,9 +93,16 @@ export const dataService = {
         if (!querySnapshot.empty) {
           console.log(`✅ Colección '${colName}' encontrada (${querySnapshot.size} docs).`);
           
-          const masterRef = doc(db, masterDocCollection, key);
-          const masterSnap = await getDoc(masterRef);
-          const isMap = masterSnap.exists() && masterSnap.data().isMap === true;
+          let isMap = false;
+          if (masterDocCollection) {
+            try {
+              const masterRef = doc(db, masterDocCollection, key);
+              const masterSnap = await getDoc(masterRef);
+              isMap = masterSnap.exists() && masterSnap.data().isMap === true;
+            } catch (e) {
+              console.warn(`⚠️ Error reading master doc for '${key}':`, e);
+            }
+          }
 
           if (isMap) {
             const map = {};
@@ -106,10 +115,12 @@ export const dataService = {
       }
 
       // 2. Fallback to Master Doc
-      const docRef = doc(db, masterDocCollection, key);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return docSnap.data().data;
+      if (masterDocCollection) {
+        const docRef = doc(db, masterDocCollection, key);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data().data;
+        }
       }
       
       return null;
@@ -134,7 +145,7 @@ export const dataService = {
     if (ALL_COLLECTION_KEYS.includes(key)) {
       // Users always go to global registry
       const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
-      const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
+      const masterDocCollection = (key === 'users') ? null : getMasterDocPath();
       
       const operations = [];
       const isArray = Array.isArray(data);
@@ -191,15 +202,17 @@ export const dataService = {
         }
 
         // Update Metadata and Master Doc backup
-        try {
-          await setDoc(doc(db, masterDocCollection, key), { 
-            isCollection: true, 
-            isMap: isObject,
-            updatedAt: new Date().toISOString(),
-            data: sanitizeData(data) // Backup in master doc
-          }, { merge: true });
-        } catch (masterErr) {
-          console.warn(`⚠️ Master doc backup failed for '${key}' (likely size limit), but collection was updated.`, masterErr);
+        if (masterDocCollection) {
+          try {
+            await setDoc(doc(db, masterDocCollection, key), { 
+              isCollection: true, 
+              isMap: isObject,
+              updatedAt: new Date().toISOString(),
+              data: sanitizeData(data) // Backup in master doc
+            }, { merge: true });
+          } catch (masterErr) {
+            console.warn(`⚠️ Master doc backup failed for '${key}' (likely size limit), but collection was updated.`, masterErr);
+          }
         }
 
         return { success: true };
