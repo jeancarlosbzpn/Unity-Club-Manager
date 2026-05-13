@@ -1494,8 +1494,16 @@ const ClubVencedoresSystem = () => {
           'requirementSections', 'reminders', 'fixedPaymentConcepts', 'fixedPayments'
         ];
         
-        // Load all in parallel
-        const results = await Promise.all(keys.map(k => dataService.readData(k)));
+        // Load all in parallel with individual error handling to prevent hangs
+        const results = await Promise.all(keys.map(async (k) => {
+          try {
+            const res = await dataService.readData(k);
+            return res;
+          } catch (e) {
+            console.error(`❌ Critical error reading key '${k}':`, e);
+            return null;
+          }
+        }));
         keys.forEach((k, i) => { 
           data[k] = results[i] !== null ? results[i] : (dataService.getDefaultValue ? dataService.getDefaultValue(k) : (['members', 'transactions', 'activities', 'points', 'units', 'users', 'announcements'].includes(k) ? [] : {})); 
         });
@@ -2016,7 +2024,6 @@ const ClubVencedoresSystem = () => {
         setMemberHomeworkStatus(allData.memberHomeworkStatus || []);
 
         window.__lastDataInit = Date.now(); // Reset lockout timer
-        setDataLoaded(true); // Enable auto-save now that we have loaded data
         prevDataRef.current = { ...allData }; // Initialize baseline for differential saving
         console.log('✅ Data loaded successfully!');
 
@@ -2042,11 +2049,28 @@ const ClubVencedoresSystem = () => {
         // ----------------------------
       } catch (error) {
         console.error('❌ Error loading data:', error);
+      } finally {
+        // ALWAYS set dataLoaded to true to avoid stuck loading screens, 
+        // even if some data failed. Defaults will keep the UI stable.
+        setDataLoaded(true);
       }
     };
 
     fetchData();
   }, [isAuthenticated, portalMember]);
+
+  // SAFETY TIMEOUT: If the app is stuck in the loading screen for more than 10s, force it to continue.
+  useEffect(() => {
+    if (isAuthenticated || portalMember) {
+      const timer = setTimeout(() => {
+        if (!dataLoaded) {
+          console.warn('🕒 Sincronización tardó demasiado: Forzando entrada al panel.');
+          setDataLoaded(true);
+        }
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [dataLoaded, isAuthenticated, portalMember]);
 
   // UNIT SANITATION: Automatically clear orphaned unitIds (Phantom Units)
   // This was moved into fetchData for better reliability.
