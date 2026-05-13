@@ -1496,35 +1496,27 @@ const ClubVencedoresSystem = () => {
         
         // Load all in parallel
         const results = await Promise.all(keys.map(k => dataService.readData(k)));
-        keys.forEach((k, i) => { data[k] = results[i]; });
+        keys.forEach((k, i) => { 
+          data[k] = results[i] !== null ? results[i] : (dataService.getDefaultValue ? dataService.getDefaultValue(k) : (['members', 'transactions', 'activities', 'points', 'units', 'users', 'announcements'].includes(k) ? [] : {})); 
+        });
       } else {
         // Electron fallback
         data = await window.electronAPI.readData();
       }
 
-      // Fallback to LocalStorage if critical data is empty in Cloud
-      if (!data.members || data.members.length === 0 || !data.activities || data.activities.length === 0) {
-        console.log('⚠️ critical data is empty or failed, trying localStorage fallback...');
+      // Remove LocalStorage fallback for Web as it causes cross-club data contamination in multi-tenancy.
+      // Firebase Firestore is now the absolute source of truth.
+      if (window.electronAPI && (!data.members || data.members.length === 0)) {
+        console.log('⚠️ Electron: critical data empty, trying local file fallback...');
         const STORAGE_KEYS = {
           members: 'clubvencedores_members',
           transactions: 'clubvencedores_transactions',
-          activities: 'clubvencedores_activities',
-          points: 'clubvencedores_points',
-          units: 'clubvencedores_units',
-          users: 'clubvencedores_users',
-          inventory: 'clubvencedores_inventory',
-          masterGuideData: 'clubvencedores_masterGuideData',
-          homeworks: 'clubvencedores_homeworks',
-          memberHomeworkStatus: 'clubvencedores_memberHomeworkStatus'
+          activities: 'clubvencedores_activities'
         };
         Object.keys(STORAGE_KEYS).forEach(k => {
           const local = localStorage.getItem(STORAGE_KEYS[k]);
           if (local && (!data[k] || data[k].length === 0)) {
-            try {
-              data[k] = JSON.parse(local);
-            } catch (e) {
-              console.error(`Error parsing local ${k}:`, e);
-            }
+            try { data[k] = JSON.parse(local); } catch (e) {}
           }
         });
       }
@@ -1823,18 +1815,14 @@ const ClubVencedoresSystem = () => {
         // En la web, si NO estamos autenticados (como admin o miembro), solo permitimos cargar la lista de usuarios
         // para que el login pueda funcionar con perfiles creados en otros equipos.
         if (!isAuthenticated && !portalMember && !window.electronAPI) {
-          console.log('📡 Sincronizando usuarios y miembros para inicio de sesión...');
-          const [cloudUsers, cloudMembers] = await Promise.all([
-            dataService.readData('users'),
-            dataService.readData('members')
-          ]);
+          console.log('📡 Sincronizando usuarios para inicio de sesión...');
+          const cloudUsers = await dataService.readData('users');
           
           if (cloudUsers && Array.isArray(cloudUsers) && cloudUsers.length > 0) {
             setUsers(cloudUsers);
           }
-          if (cloudMembers && Array.isArray(cloudMembers) && cloudMembers.length > 0) {
-            setMembers(cloudMembers);
-          }
+          // Note: We no longer pre-fetch members here to avoid multi-club contamination.
+          // Members are fetched after a successful login (admin or portal).
           return;
         }
 
@@ -2295,7 +2283,14 @@ const ClubVencedoresSystem = () => {
       };
 
       // Find changed keys
+      const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
+      const isMaster = currentUser && masterEmails.includes(currentUser.email);
+
       const changedKeys = Object.keys(currentData).filter(key => {
+        // SECURITY: Non-master admins should NEVER auto-save the users list 
+        // to prevent permission errors and accidental lockouts.
+        if (key === 'users' && !isMaster) return false;
+
         // Deep compare for complex objects/arrays
         const prev = prevDataRef.current[key];
         const curr = currentData[key];
@@ -10890,6 +10885,15 @@ const ClubVencedoresSystem = () => {
             const adminClubId = u.clubId || 'vencedores';
             setClubId(adminClubId);
             setCurrentUser({ ...u, clubId: adminClubId });
+            
+            // CLEAR STATES IMMEDIATELY TO PREVENT CONTAMINATION
+            setMembers([]);
+            setTransactions([]);
+            setActivities([]);
+            setPoints([]);
+            setUnits([]);
+            setAnnouncements([]);
+            
             setIsAuthenticated(true);
           } else {
             // Firebase Auth standard login fallback
