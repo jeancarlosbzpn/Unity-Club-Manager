@@ -1507,6 +1507,25 @@ const ClubVencedoresSystem = () => {
         keys.forEach((k, i) => { 
           data[k] = results[i] !== null ? results[i] : (dataService.getDefaultValue ? dataService.getDefaultValue(k) : (['members', 'transactions', 'activities', 'points', 'units', 'users', 'announcements'].includes(k) ? [] : {})); 
         });
+
+        // SAFETY: Coerce known array fields to arrays in case Firestore returned an object
+        const mustBeArrays = [
+          'members', 'transactions', 'activities', 'points', 'units', 'users', 'announcements',
+          'fixedPaymentConcepts', 'fixedPayments', 'financeCategories', 'inventoryCategories',
+          'uniformItems', 'uniformCategories', 'qualifications', 'classRequirements',
+          'evaluationGroups', 'requirementSections', 'reminders', 'disciplineRecords',
+          'attendanceRecords', 'homeworks', 'memberHomeworkStatus', 'firstAidItems',
+          'tents', 'tentAssignments', 'uniformInspections', 'memberUniforms', 'lockedSaturdays',
+          'skippedSaturdays', 'campDetails', 'inventory', 'unit_messages'
+        ];
+        mustBeArrays.forEach(k => {
+          if (data[k] && !Array.isArray(data[k])) {
+            console.warn(`⚠️ Coercing '${k}' from object to array (${Object.keys(data[k]).length} keys)`);
+            data[k] = Object.values(data[k]);
+          } else if (!data[k]) {
+            data[k] = [];
+          }
+        });
       } else {
         // Electron fallback
         data = await window.electronAPI.readData();

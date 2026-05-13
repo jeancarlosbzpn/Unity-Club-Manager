@@ -109,7 +109,12 @@ export const dataService = {
             querySnapshot.docs.forEach(d => { map[d.id] = d.data(); });
             return map;
           } else {
-            return querySnapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+            return querySnapshot.docs.map(d => {
+              const docData = d.data();
+              // Unwrap primitive values that were wrapped for Firestore storage
+              if (docData._isPrimitive === true) return docData._primitiveValue;
+              return { ...docData, id: d.id };
+            });
           }
         }
       }
@@ -176,15 +181,27 @@ export const dataService = {
         }
 
         if (isArray) {
-          const incomingIds = data.map(item => String(item.id || item.username || Date.now()));
+          const incomingIds = data.map(item => 
+            (item !== null && typeof item === 'object') 
+              ? String(item.id || item.username || JSON.stringify(item))
+              : String(item)
+          );
           if (currentSnap) {
             currentSnap.docs.forEach(docSnap => {
               if (!incomingIds.includes(String(docSnap.id))) operations.push({ type: 'delete', ref: docSnap.ref });
             });
           }
-          data.forEach(item => {
-            const id = String(item.id || item.username || Date.now() + Math.random());
-            operations.push({ type: 'set', ref: doc(db, colName, id), data: sanitizeData(item) });
+          data.forEach((item, idx) => {
+            let docData, id;
+            if (item === null || typeof item !== 'object') {
+              // Primitive value (string, number) — wrap for Firestore compatibility
+              id = String(item ?? idx);
+              docData = { _primitiveValue: item, _isPrimitive: true };
+            } else {
+              id = String(item.id || item.username || Date.now() + Math.random());
+              docData = sanitizeData(item);
+            }
+            operations.push({ type: 'set', ref: doc(db, colName, id), data: docData });
           });
         } else {
           // KEYED OBJECT (Map)
