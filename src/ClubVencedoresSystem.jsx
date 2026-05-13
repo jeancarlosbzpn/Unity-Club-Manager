@@ -10675,7 +10675,13 @@ const ClubVencedoresSystem = () => {
         setSyncStatus('saving');
         const updatedUsers = users.filter(u => u.username !== username);
         
-        await dataService.writeData('users', updatedUsers, { force: true });
+        const result = await dataService.writeData('users', updatedUsers, { force: true });
+        
+        if (!result.success) {
+          alert(`❌ Error al eliminar: ${result.error === 'permission-denied' ? 'No tienes permisos para esta acción.' : result.error}`);
+          setSyncStatus('error');
+          return;
+        }
         
         setUsers(updatedUsers);
         setSyncStatus('saved');
@@ -10684,7 +10690,7 @@ const ClubVencedoresSystem = () => {
       } catch (error) {
         console.error("Error deleting user:", error);
         setSyncStatus('error');
-        alert('⚠️ Error al eliminar el usuario en la nube: ' + (error.message || 'Error de conexión'));
+        alert('⚠️ Error inesperado al eliminar el usuario: ' + (error.message || 'Error de conexión'));
       }
     }
   };
