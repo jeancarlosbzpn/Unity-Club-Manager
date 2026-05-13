@@ -377,6 +377,7 @@ const ClubVencedoresSystem = () => {
               setCurrentUser(null);
               setIsAuthenticated(false);
             } else {
+              setClubId(parsedUser.clubId || 'vencedores');
               setCurrentUser(parsedUser);
               setIsAuthenticated(true);
             }
@@ -10215,7 +10216,13 @@ const ClubVencedoresSystem = () => {
   };
 
   // Logout function
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+    
     setIsAuthenticated(false);
     setCurrentUser(null);
     setPortalMember(null);
