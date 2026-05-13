@@ -66,8 +66,7 @@ const ALL_COLLECTION_KEYS = [
   'homeworks', 'memberHomeworkStatus',
   'inventory', 'inventoryCategories', 'firstAidItems', 'tents', 'tentAssignments',
   'uniformItems', 'uniformCategories', 'uniformInspections', 'memberUniforms',
-  'reminders', 'campDetails', 'memberProgress', 'unit_messages',
-  'clubSettings', 'duesConfig', 'cuotaAmount', 'masterGuideData'
+  'reminders', 'campDetails', 'memberProgress', 'unit_messages'
 ];
 
 export const dataService = {
@@ -138,10 +137,7 @@ export const dataService = {
       return await window.electronAPI.writeData(fullData);
     }
 
-    const now = Date.now();
-    if (now - (window.__lastDataInit || 0) < 500 && !options.force) {
-      return { success: false, error: 'init_lockout' };
-    }
+    // Lockout removed - relying on dataLoaded state in the component for safety
 
     if (ALL_COLLECTION_KEYS.includes(key)) {
       // Users always go to global registry
@@ -153,10 +149,18 @@ export const dataService = {
       const isObject = !isArray && data !== null && typeof data === 'object';
 
       if (isArray || isObject) {
-        // Wipe Protection
-        const colRef = collection(db, colName);
-        const currentSnap = await getDocs(colRef);
-        const cloudCount = currentSnap.size;
+        // Wipe Protection (Skip for 'users' to avoid global permission errors)
+        let cloudCount = 0;
+        if (key !== 'users') {
+          try {
+            const colRef = collection(db, colName);
+            const currentSnap = await getDocs(colRef);
+            cloudCount = currentSnap.size;
+          } catch (e) {
+            console.warn(`⚠️ Wipe protection check failed for '${key}':`, e);
+          }
+        }
+        
         const localCount = isArray ? data.length : Object.keys(data).length;
 
         if (cloudCount > 5) {
@@ -199,7 +203,12 @@ export const dataService = {
             if (op.type === 'delete') batch.delete(op.ref);
             else batch.set(op.ref, op.data);
           });
-          await batch.commit();
+          try {
+            await batch.commit();
+          } catch (err) {
+            console.error(`❌ Batch commit failed for '${key}':`, err);
+            return { success: false, error: err.message };
+          }
         }
 
         // Update Metadata and Master Doc backup
