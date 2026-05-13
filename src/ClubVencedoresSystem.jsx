@@ -1,6 +1,6 @@
 // VERSION ESTABILIZADA - RESTAURACIÓN COMPLETA (BASE f083133)
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit, Edit2, Save, X, User, UserPlus, Users, Menu, ChevronLeft, Home, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, RefreshCcw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud, LogOut, CalendarCheck, ShieldCheck, Info, Send } from 'lucide-react';
+import { Search, Plus, Edit, Edit2, Save, X, User, UserPlus, Users, Menu, ChevronLeft, Home, Building, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, RefreshCcw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud, LogOut, CalendarCheck, ShieldCheck, Info, Send } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import ReactQuill, { Quill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -428,6 +428,7 @@ const ClubVencedoresSystem = () => {
 
   // Users database (starts empty, filled from Cloud/Local storage)
   const [users, setUsers] = useState([]);
+  const [clubs, setClubs] = useState([]);
 
   // NEW: Identity Sync Effect - Link Firebase Auth user to internal profile roles/positions
   // Positioned here AFTER 'users' and 'currentUser' state are defined
@@ -2041,6 +2042,10 @@ const ClubVencedoresSystem = () => {
         setAnnouncements(allData.announcements || []);
         setHomeworks(allData.homeworks || []);
         setMemberHomeworkStatus(allData.memberHomeworkStatus || []);
+        
+        // Fetch Clubs Global Registry
+        const globalClubs = await dataService.readData('clubs');
+        if (globalClubs) setClubs(globalClubs);
 
         window.__lastDataInit = Date.now(); // Reset lockout timer
         prevDataRef.current = { ...allData }; // Initialize baseline for differential saving
@@ -10556,6 +10561,46 @@ const ClubVencedoresSystem = () => {
     }
   };
 
+  const handleSaveClub = async (clubData) => {
+    try {
+      setSyncStatus('saving');
+      let updatedClubs;
+      const existing = clubs.find(c => c.id === clubData.id);
+      
+      if (existing) {
+        updatedClubs = clubs.map(c => c.id === clubData.id ? clubData : c);
+      } else {
+        updatedClubs = [...clubs, clubData];
+      }
+      
+      await dataService.writeData('clubs', updatedClubs, { force: true });
+      setClubs(updatedClubs);
+      setSyncStatus('saved');
+      setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+      return true;
+    } catch (error) {
+      console.error("Error saving club:", error);
+      setSyncStatus('error');
+      alert("Error al guardar el club: " + error.message);
+      return false;
+    }
+  };
+
+  const handleDeleteClub = async (clubId) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el club '${clubId}'? Los usuarios asociados perderán su acceso.`)) return;
+    try {
+      setSyncStatus('saving');
+      const updatedClubs = clubs.filter(c => c.id !== clubId);
+      await dataService.writeData('clubs', updatedClubs, { force: true });
+      setClubs(updatedClubs);
+      setSyncStatus('saved');
+      setTimeout(() => setSyncStatus(prev => prev === 'saved' ? 'idle' : prev), 3000);
+    } catch (error) {
+      console.error("Error deleting club:", error);
+      setSyncStatus('error');
+    }
+  };
+
   const handleEditUser = (user) => {
     setNewUserFormData({
       name: user.name,
@@ -11626,13 +11671,22 @@ const ClubVencedoresSystem = () => {
 
             <div className="space-y-2">
               {currentUser?.role === 'administrator' && (
-                <button
-                  onClick={() => setActiveModule('user-management')}
-                  className="w-full bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 border border-white/30"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  Gestionar Usuarios
-                </button>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setActiveModule('user-management')}
+                    className="w-full bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-2 border border-white/30"
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                    Gestionar Usuarios
+                  </button>
+                  <button
+                    onClick={() => setActiveModule('club-management')}
+                    className="w-full bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-[10px] font-medium transition-colors flex items-center justify-center gap-2 border border-dashed border-white/20"
+                  >
+                    <Building className="w-3 h-3" />
+                    Gestionar Clubes
+                  </button>
+                </div>
               )}
 
               <button
@@ -11892,17 +11946,23 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            ID del Club <span className="text-red-500">*</span>
+                            Seleccionar Club <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="text"
+                          <select
                             name="clubId"
                             value={newUserFormData.clubId}
                             onChange={handleNewUserInputChange}
-                            placeholder="ej: vencedores, orion"
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.clubId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
-                          />
-                          <p className="text-[10px] text-gray-500 mt-1 italic">Usa 'vencedores' para tu club actual.</p>
+                          >
+                            <option value="">Seleccione un club...</option>
+                            {clubs.map(c => (
+                              <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                            ))}
+                            {clubs.length === 0 && <option value="vencedores">Vencedores (Default)</option>}
+                          </select>
+                          <p className="text-[10px] text-gray-500 mt-1 italic">
+                            Si el club no aparece, créalo primero en "Gestionar Clubes".
+                          </p>
                         </div>
 
                         <div className="md:col-span-2">
@@ -12147,6 +12207,85 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {activeModule === 'club-management' && currentUser?.role === 'administrator' && (
+              <div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <Building className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                        Gestión de Clubes
+                      </h2>
+                      <p className="text-gray-600 dark:text-gray-300 mt-1">Crea y administra los clubes en la plataforma</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-indigo-600">{clubs.length}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Clubes Registrados</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                  <div className="mb-8 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl">
+                    <h4 className="font-bold text-indigo-900 dark:text-indigo-200 mb-4 flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      Agregar Nuevo Club
+                    </h4>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.target);
+                      const clubId = formData.get('clubId').toLowerCase().trim();
+                      const clubName = formData.get('clubName').trim();
+                      if (!clubId || !clubName) return alert('Todos los campos son obligatorios');
+                      if (clubs.find(c => c.id === clubId)) return alert('Este ID de club ya existe');
+                      
+                      handleSaveClub({ id: clubId, name: clubName, createdAt: new Date().toISOString() });
+                      e.target.reset();
+                    }} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">ID Único (ej: orion)</label>
+                        <input name="clubId" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="ID del club" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo</label>
+                        <input name="clubName" required className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Nombre del Club" />
+                      </div>
+                      <button type="submit" className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors">
+                        Registrar Club
+                      </button>
+                    </form>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {clubs.map(club => (
+                      <div key={club.id} className="p-4 border rounded-xl dark:border-gray-700 hover:border-indigo-300 transition-all group relative">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
+                            <Building className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <div>
+                            <h5 className="font-bold text-gray-800 dark:text-white">{club.name}</h5>
+                            <p className="text-[10px] text-gray-400 uppercase font-mono">ID: {club.id}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteClub(club.id)}
+                          className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {clubs.length === 0 && (
+                      <div className="col-span-full py-12 text-center text-gray-400 italic">
+                        No hay clubes registrados. Agrega el primero arriba.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

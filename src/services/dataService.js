@@ -79,11 +79,9 @@ export const dataService = {
     }
     
     try {
-      // Special case for 'users': they live in the global registry 'clubvencedores_users'
-      const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
-      // Users don't use master doc backup in the same way as other collections, 
-      // and we must avoid cross-club permission errors.
-      const masterDocCollection = (key === 'users') ? null : getMasterDocPath();
+      // Special case for global registries
+      const colName = (key === 'users') ? 'clubvencedores_users' : (key === 'clubs') ? 'clubvencedores_clubs' : getPrefix() + key;
+      const masterDocCollection = (key === 'users' || key === 'clubs') ? null : getMasterDocPath();
       
       // 1. Try Collection First
       if (ALL_COLLECTION_KEYS.includes(key)) {
@@ -144,20 +142,20 @@ export const dataService = {
 
     // Lockout removed - relying on dataLoaded state in the component for safety
 
-    if (ALL_COLLECTION_KEYS.includes(key)) {
-      // Users always go to global registry
-      const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
-      const masterDocCollection = (key === 'users') ? null : getMasterDocPath();
+    if (ALL_COLLECTION_KEYS.includes(key) || key === 'clubs') {
+      // Global registries (users and clubs)
+      const colName = (key === 'users') ? 'clubvencedores_users' : (key === 'clubs') ? 'clubvencedores_clubs' : getPrefix() + key;
+      const masterDocCollection = (key === 'users' || key === 'clubs') ? null : getMasterDocPath();
       
       const operations = [];
       const isArray = Array.isArray(data);
       const isObject = !isArray && data !== null && typeof data === 'object';
 
       if (isArray || isObject) {
-        // Wipe Protection (Skip for 'users' to avoid global permission errors)
+        // Wipe Protection (Skip for global registries to avoid permission/access issues)
         let currentSnap = null;
         let cloudCount = 0;
-        if (key !== 'users') {
+        if (key !== 'users' && key !== 'clubs') {
           try {
             const colRef = collection(db, colName);
             currentSnap = await getDocs(colRef);
@@ -267,8 +265,8 @@ export const dataService = {
 
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {};
-    const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
-    const masterDocCollection = (key === 'users') ? null : getMasterDocPath();
+    const colName = (key === 'users') ? 'clubvencedores_users' : (key === 'clubs') ? 'clubvencedores_clubs' : getPrefix() + key;
+    const masterDocCollection = (key === 'users' || key === 'clubs') ? null : getMasterDocPath();
 
     if (ALL_COLLECTION_KEYS.includes(key)) {
       const colRef = collection(db, colName);
