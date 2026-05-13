@@ -9,7 +9,7 @@ import 'quill-mention/dist/quill.mention.css';
 import ClubLogo from './components/ClubLogo';
 import { saveCollectionToFirestore, loadCollectionFromFirestore, uploadImageToStorage, storage, ref, uploadString, getDownloadURL, auth } from './firebase-config';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { dataService } from './services/dataService';
+import { dataService, setClubId } from './services/dataService';
 import Login from './components/Login';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -418,6 +418,7 @@ const ClubVencedoresSystem = () => {
     instructorClass: '',
     instructorClasses: [],
     role: 'user',
+    clubId: 'vencedores',
     allowedModules: [],
     modulePermissions: {} // New: { moduleId: 'edit' | 'read' | 'none' }
   });
@@ -445,6 +446,14 @@ const ClubVencedoresSystem = () => {
       // 2. APPLY PROFILE DATA IF FOUND
       let updatedUser = { ...currentUser };
       let changed = false;
+
+      // Handle Club ID sync
+      const userClubId = profile?.clubId || (isMaster ? 'vencedores' : null);
+      if (userClubId && userClubId !== currentUser.clubId) {
+        updatedUser.clubId = userClubId;
+        setClubId(userClubId); // Update global data context
+        changed = true;
+      }
 
       if (profile) {
         // Only update if data is actually different to avoid infinite loops
@@ -491,11 +500,11 @@ const ClubVencedoresSystem = () => {
       }
 
       if (changed) {
-        console.log('🔗 Identity synced with Cloud profile');
+        console.log(`🔗 Identity synced with Cloud profile (Club: ${updatedUser.clubId || 'default'})`);
         setCurrentUser(updatedUser);
       }
     }
-  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.positions, currentUser?.instructorClass, currentUser?.instructorClasses, currentUser?.role]);
+  }, [users, isAuthenticated, dataLoaded, currentUser?.email, currentUser?.name, currentUser?.position, currentUser?.positions, currentUser?.instructorClass, currentUser?.instructorClasses, currentUser?.role, currentUser?.clubId]);
 
   // Admin credentials (reference to main admin)
   const [adminUser, setAdminUser] = useState(users[0]);
@@ -10207,14 +10216,13 @@ const ClubVencedoresSystem = () => {
 
   // Logout function
   const handleLogout = () => {
-    import('./firebase-config').then(({ auth }) => {
-      auth.signOut();
-    });
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setPortalMember(null);
+    setDataLoaded(false);
+    setClubId('vencedores'); // Reset to default
     localStorage.removeItem('clubvencedores_current_user');
-    setActiveModule('dashboard');
-    setShowAccountSettings(false);
+    window.location.reload(); // Hard reset for clean state
   };
 
   // Account settings functions
@@ -10441,6 +10449,7 @@ const ClubVencedoresSystem = () => {
           instructorClass: newUserFormData.instructorClasses?.[0] || newUserFormData.instructorClass || '',
           instructorClasses: newUserFormData.instructorClasses || (newUserFormData.instructorClass ? [newUserFormData.instructorClass] : []),
           role: editingUser.role || 'user',
+          clubId: newUserFormData.clubId || 'vencedores',
           allowedModules: newUserFormData.allowedModules || [],
           modulePermissions: newUserFormData.modulePermissions || {}
         };
@@ -10463,6 +10472,7 @@ const ClubVencedoresSystem = () => {
           instructorClass: newUserFormData.instructorClasses?.[0] || newUserFormData.instructorClass || '',
           instructorClasses: newUserFormData.instructorClasses || (newUserFormData.instructorClass ? [newUserFormData.instructorClass] : []),
           role: 'user',
+          clubId: newUserFormData.clubId || 'vencedores',
           allowedModules: newUserFormData.allowedModules || [],
           modulePermissions: newUserFormData.modulePermissions || {}
         };
@@ -10512,6 +10522,7 @@ const ClubVencedoresSystem = () => {
       instructorClass: user.instructorClass || '',
       instructorClasses: user.instructorClasses || (user.instructorClass ? [user.instructorClass] : []),
       role: user.role,
+      clubId: user.clubId || 'vencedores',
       allowedModules: user.allowedModules || [],
       modulePermissions: user.modulePermissions || {}
     });
@@ -10863,11 +10874,22 @@ const ClubVencedoresSystem = () => {
       <Login
         onLoginSuccess={(u) => {
           if (u && u.role === 'member') {
-            setPortalMember(u);
+            const memberClubId = u.clubId || 'vencedores';
+            setClubId(memberClubId);
+            setPortalMember({ ...u, clubId: memberClubId });
+            setCurrentUser(null);
+            setIsAuthenticated(false);
+          } else if (u) {
+            const adminClubId = u.clubId || 'vencedores';
+            setClubId(adminClubId);
+            setCurrentUser({ ...u, clubId: adminClubId });
+            setIsAuthenticated(true);
           } else {
-            if (u) setCurrentUser(u);
+            // Firebase Auth standard login fallback
+            setCurrentUser(auth.currentUser);
             setIsAuthenticated(true);
           }
+          setDataLoaded(false); // Trigger data reload with new club context
         }}
         users={users}
         members={members}
@@ -11812,6 +11834,21 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.username ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
                           />
                           {newUserErrors.username && <p className="text-red-500 text-sm mt-1">{newUserErrors.username}</p>}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            ID del Club <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="clubId"
+                            value={newUserFormData.clubId}
+                            onChange={handleNewUserInputChange}
+                            placeholder="ej: vencedores, orion"
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${newUserErrors.clubId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} `}
+                          />
+                          <p className="text-[10px] text-gray-500 mt-1 italic">Usa 'vencedores' para tu club actual.</p>
                         </div>
 
                         <div className="md:col-span-2">

@@ -2,6 +2,31 @@ import { db, saveCollectionToFirestore, loadCollectionFromFirestore, doc, setDoc
 
 const isElectron = typeof window !== 'undefined' && window.electronAPI !== undefined;
 
+// Multi-tenancy support
+let currentClubId = 'vencedores'; // Default for backward compatibility
+
+/**
+ * Updates the current club context for all data operations.
+ */
+export const setClubId = (id) => {
+  if (id) {
+    currentClubId = id;
+    console.log(`🏢 DataService: Club context set to '${id}'`);
+  }
+};
+
+const getPrefix = () => {
+  // Special case for users: we keep a global registry for authentication, 
+  // but we prefix it to distinguish from other apps if needed.
+  // For now, we keep using 'clubvencedores_' for the users collection 
+  // to maintain compatibility with the master login.
+  return currentClubId === 'vencedores' ? 'clubvencedores_' : `club_${currentClubId}_`;
+};
+
+const getMasterDocPath = () => {
+  return currentClubId === 'vencedores' ? 'club_vencedores_data' : `club_${currentClubId}_data`;
+};
+
 /**
  * Internal utility to clean data before Firebase.
  */
@@ -54,8 +79,9 @@ export const dataService = {
     }
     
     try {
-      const STORAGE_PREFIX = 'clubvencedores_';
-      const colName = STORAGE_PREFIX + key;
+      // Special case for 'users': they live in the global registry 'clubvencedores_users'
+      const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
+      const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
       
       // 1. Try Collection First
       if (ALL_COLLECTION_KEYS.includes(key)) {
@@ -63,11 +89,9 @@ export const dataService = {
         const querySnapshot = await getDocs(colRef);
         
         if (!querySnapshot.empty) {
-          console.log(`✅ Colección '${key}' encontrada (${querySnapshot.size} docs).`);
-          // Check if this was stored as an Object or Array
-          // If docs have numeric-like or specific IDs, we'll see.
-          // For safety, we check metadata or structure.
-          const masterRef = doc(db, 'club_vencedores_data', key);
+          console.log(`✅ Colección '${colName}' encontrada (${querySnapshot.size} docs).`);
+          
+          const masterRef = doc(db, masterDocCollection, key);
           const masterSnap = await getDoc(masterRef);
           const isMap = masterSnap.exists() && masterSnap.data().isMap === true;
 
@@ -82,7 +106,7 @@ export const dataService = {
       }
 
       // 2. Fallback to Master Doc
-      const docRef = doc(db, 'club_vencedores_data', key);
+      const docRef = doc(db, masterDocCollection, key);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         return docSnap.data().data;
@@ -90,7 +114,7 @@ export const dataService = {
       
       return null;
     } catch (err) {
-      console.error(`Error leyendo ${key}:`, err);
+      console.error(`Error leyendo ${key} (Club: ${currentClubId}):`, err);
       return null;
     }
   },
@@ -103,14 +127,15 @@ export const dataService = {
     }
 
     const now = Date.now();
-    // The 2s lockout is redundant because ClubVencedoresSystem already uses 'dataLoaded'
-    // to prevent saving before initialization. Removing it to allow immediate interaction.
-    if (now - window.__lastDataInit < 500 && !options.force) {
+    if (now - (window.__lastDataInit || 0) < 500 && !options.force) {
       return { success: false, error: 'init_lockout' };
     }
 
     if (ALL_COLLECTION_KEYS.includes(key)) {
-      const colName = 'clubvencedores_' + key;
+      // Users always go to global registry
+      const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
+      const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
+      
       const operations = [];
       const isArray = Array.isArray(data);
       const isObject = !isArray && data !== null && typeof data === 'object';
@@ -124,11 +149,11 @@ export const dataService = {
 
         if (cloudCount > 5) {
           if (localCount === 0) {
-            console.error(`🛑 WIPE PROTECTION: Attempted to save empty list to '${key}' when cloud has ${cloudCount} items.`);
+            console.error(`🛑 WIPE PROTECTION: Attempted to save empty list to '${colName}' when cloud has ${cloudCount} items.`);
             return { success: false, error: 'wipe_protection' };
           }
           if (localCount < cloudCount * 0.7) {
-            console.error(`🛑 WIPE PROTECTION: Attempted to save ${localCount} items to '${key}' when cloud has ${cloudCount} (too many deletions).`);
+            console.error(`🛑 WIPE PROTECTION: Attempted to save ${localCount} items to '${colName}' when cloud has ${cloudCount} (too many deletions).`);
             return { success: false, error: 'wipe_protection' };
           }
         }
@@ -167,7 +192,7 @@ export const dataService = {
 
         // Update Metadata and Master Doc backup
         try {
-          await setDoc(doc(db, 'club_vencedores_data', key), { 
+          await setDoc(doc(db, masterDocCollection, key), { 
             isCollection: true, 
             isMap: isObject,
             updatedAt: new Date().toISOString(),
@@ -188,19 +213,18 @@ export const dataService = {
 
   subscribeToKey: (key, callback) => {
     if (isElectron) return () => {};
+    const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
+    const masterDocCollection = (key === 'users') ? 'club_vencedores_data' : getMasterDocPath();
+
     if (ALL_COLLECTION_KEYS.includes(key)) {
-      const colRef = collection(db, 'clubvencedores_' + key);
+      const colRef = collection(db, colName);
       return onSnapshot(colRef, (snapshot) => {
-        // Optimistic updates: include pending writes for instant feedback
-        // This is tricky for Maps vs Arrays... 
-        // For now, most real-time stuff are arrays.
         const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
         callback(data);
       });
     }
-    const docRef = doc(db, 'club_vencedores_data', key);
+    const docRef = doc(db, masterDocCollection, key);
     return onSnapshot(docRef, (snapshot) => {
-      // Optimistic updates: include pending writes for instant feedback
       if (snapshot.exists()) callback(snapshot.data().data);
     });
   },
@@ -227,7 +251,7 @@ export const dataService = {
   saveSingle: async (key, item) => {
     if (isElectron) return { success: false };
     try {
-      const colName = 'clubvencedores_' + key;
+      const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
       const id = String(item.id || Date.now() + Math.random());
       await setDoc(doc(db, colName, id), sanitizeData(item));
       return { success: true };
@@ -240,7 +264,7 @@ export const dataService = {
   deleteItem: async (key, id) => {
     if (isElectron) return { success: false };
     try {
-      const colName = 'clubvencedores_' + key;
+      const colName = (key === 'users') ? 'clubvencedores_users' : getPrefix() + key;
       await deleteDoc(doc(db, colName, String(id)));
       return { success: true };
     } catch (err) {
