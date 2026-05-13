@@ -83,6 +83,8 @@ export const dataService = {
       const colName = (key === 'users') ? 'clubvencedores_users' : (key === 'clubs') ? 'clubvencedores_clubs' : getPrefix() + key;
       const masterDocCollection = (key === 'users' || key === 'clubs') ? null : getMasterDocPath();
       
+      if (key === 'users') console.log(`🔍 DataService: Reading users from collection '${colName}'`);
+      
       // 1. Try Collection First
       if (ALL_COLLECTION_KEYS.includes(key)) {
         const colRef = collection(db, colName);
@@ -212,6 +214,11 @@ export const dataService = {
           incomingKeys.forEach(keyId => {
             operations.push({ type: 'set', ref: doc(db, colName, keyId), data: sanitizeData(data[keyId]) });
           });
+        }
+
+        if (key === 'users') {
+          console.log(`💾 DataService: Writing ${localCount} users to collection '${colName}'`);
+          console.log(`📋 User IDs to be saved:`, incomingIds);
         }
 
         // Batch execution

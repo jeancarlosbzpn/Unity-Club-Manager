@@ -10672,9 +10672,17 @@ const ClubVencedoresSystem = () => {
 
     if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
       try {
-        setSyncStatus('saving');
+        console.log(`🗑️ Attempting to delete user: "${username}"`);
+        console.log(`📊 Users before filter: ${users.length}`);
         const updatedUsers = users.filter(u => u.username !== username);
+        console.log(`📊 Users after filter: ${updatedUsers.length}`);
         
+        if (users.length === updatedUsers.length) {
+          console.warn(`⚠️ User "${username}" not found in current users list!`);
+          alert(`Error: No se encontró al usuario "${username}" en la lista local.`);
+          setSyncStatus('idle');
+          return;
+        }
         const result = await dataService.writeData('users', updatedUsers, { force: true });
         
         if (!result.success) {
