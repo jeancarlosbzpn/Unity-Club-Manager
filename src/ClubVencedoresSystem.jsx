@@ -8212,16 +8212,16 @@ const ClubVencedoresSystem = () => {
     // Sort reminders: Scheduled (future notice) last, then by date/time
     const sortedReminders = [...reminders].sort((a, b) => {
       const now = new Date();
-      const notifyA = new Date(`${a.date}T${a.notificationTime || a.time} `);
-      const notifyB = new Date(`${b.date}T${b.time} `);
+      const notifyA = new Date(`${a.date}T${a.notificationTime || a.time || '00:00'}`);
+      const notifyB = new Date(`${b.date}T${b.notificationTime || b.time || '00:00'}`);
 
       const isVisibleA = now >= notifyA;
       const isVisibleB = now >= notifyB;
 
       if (isVisibleA !== isVisibleB) return isVisibleA ? -1 : 1;
 
-      const dateA = new Date(`${a.date}T${a.time} `);
-      const dateB = new Date(`${b.date}T${b.time} `);
+      const dateA = new Date(`${a.date}T${a.time || '00:00'}`);
+      const dateB = new Date(`${b.date}T${b.time || '00:00'}`);
       return dateA - dateB;
     });
 
@@ -8266,7 +8266,7 @@ const ClubVencedoresSystem = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedReminders.map((reminder) => {
-              const dateObj = new Date(`${reminder.date}T${reminder.time} `);
+              const dateObj = new Date(`${reminder.date}T${reminder.time || '00:00'}`);
               const isPast = dateObj < new Date();
               const isCompleted = reminder.isCompleted;
 
@@ -8338,7 +8338,7 @@ const ClubVencedoresSystem = () => {
 
                       {(() => {
                         const now = new Date();
-                        const notifyDate = new Date(`${reminder.date}T${reminder.notificationTime || reminder.time} `);
+                        const notifyDate = new Date(`${reminder.date}T${reminder.notificationTime || reminder.time || '00:00'}`);
                         if (now < notifyDate) {
                           return (
                             <div className="mt-2 text-[10px] text-amber-600 dark:text-amber-400 font-medium italic flex items-center gap-1">
@@ -9916,8 +9916,8 @@ const ClubVencedoresSystem = () => {
   const sortedActivities = [...activities].sort((a, b) => {
     const timeA = a.time || '00:00';
     const timeB = b.time || '00:00';
-    const dateA = new Date(`${a.date}T${timeA} `);
-    const dateB = new Date(`${b.date}T${timeB} `);
+    const dateA = new Date(`${a.date}T${timeA}`);
+    const dateB = new Date(`${b.date}T${timeB}`);
     return dateA - dateB;
   });
 
@@ -9927,11 +9927,13 @@ const ClubVencedoresSystem = () => {
 
   // Get upcoming activities
   const upcomingActivities = activities.filter(activity => {
-    const activityDate = new Date(`${activity.date}T${activity.time} `);
+    const activityDate = new Date(`${activity.date}T${activity.time || '00:00'}`);
     return activityDate >= new Date();
   }).sort((a, b) => {
-    const dateA = new Date(`${a.date}T${a.time} `);
-    const dateB = new Date(`${b.date}T${b.time} `);
+    const timeA = a.time || '00:00';
+    const timeB = b.time || '00:00';
+    const dateA = new Date(`${a.date}T${timeA}`);
+    const dateB = new Date(`${b.date}T${timeB}`);
     return dateA - dateB;
   });
 
