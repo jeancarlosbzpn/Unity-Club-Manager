@@ -2353,6 +2353,16 @@ const ClubVencedoresSystem = () => {
         // Deep compare for complex objects/arrays
         const prev = prevDataRef.current[key];
         const curr = currentData[key];
+
+        // CRITICAL SAFETY: Prevent auto-sync from wiping critical arrays if they somehow become empty
+        // This stops stale caches or network failures from erasing the database.
+        const criticalArrays = ['units', 'members', 'transactions', 'activities'];
+        if (criticalArrays.includes(key) && Array.isArray(curr) && curr.length === 0) {
+          // Only allow saving an empty critical array if the user explicitly clicked a delete/clear button
+          // Since auto-sync runs in the background, it should NEVER wipe these out.
+          return false;
+        }
+
         return JSON.stringify(prev) !== JSON.stringify(curr);
       });
 
