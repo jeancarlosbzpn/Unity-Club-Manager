@@ -2065,10 +2065,18 @@ const ClubVencedoresSystem = () => {
           });
 
           if (phantomsFound) {
-            console.log(`🧹 LIMPIEZA INICIAL: ${cleanedMembers.filter(m => !m.unitId).length} miembros con unidades fantasma liberados.`);
+            const orphaned = cleanedMembers.filter(m => !m.unitId || m.unitId === '');
+            console.log(`🧹 LIMPIEZA INICIAL: ${orphaned.length} miembros con unidades fantasma liberados.`);
             setMembers(cleanedMembers);
-            // Force save the cleanup to cloud immediately
-            dataService.writeData('members', cleanedMembers, { force: true });
+            // Save each orphaned member individually to bypass wipe-protection
+            for (const m of cleanedMembers) {
+              const original = allData.members.find(orig => orig.id === m.id);
+              if (original && (original.unitId !== m.unitId || original.unitRole !== m.unitRole)) {
+                dataService.saveSingle('members', m).catch(err =>
+                  console.warn(`⚠️ No se pudo limpiar unitId de ${m.firstName}:`, err)
+                );
+              }
+            }
           }
         }
         // ----------------------------
@@ -17656,8 +17664,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       );
                                       setMembers(updatedMembers);
                                       e.target.value = '';
+                                      // Use saveSingle to update only this member's Firestore doc
+                                      // (avoids wipe-protection that blocks full-array writes)
                                       try {
-                                        await dataService.writeData('members', updatedMembers, { force: true });
+                                        const assignedMember = updatedMembers.find(m => m.id === memberId);
+                                        if (assignedMember) await dataService.saveSingle('members', assignedMember);
                                       } catch (err) {
                                         console.error('Error saving member unit assignment:', err);
                                       }
@@ -17725,12 +17736,13 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       </span>
                                       <button
                                         onClick={async () => {
+                                          const cleanedMember = { ...member, unitId: '', unitRole: '' };
                                           const updatedMembers = members.map(m =>
-                                            m.id === member.id ? { ...m, unitId: '', unitRole: '' } : m
+                                            m.id === member.id ? cleanedMember : m
                                           );
                                           setMembers(updatedMembers);
 
-                                          // If removing captain or secretary, update unit
+                                          // If removing captain or secretary, update unit too
                                           let updatedUnits = units;
                                           if (unit.captainId === member.id || unit.secretaryId === member.id) {
                                             updatedUnits = units.map(u => {
@@ -17746,9 +17758,10 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                             setUnits(updatedUnits);
                                           }
 
-                                          // Persist to Firebase
+                                          // Use saveSingle to update ONLY this member's doc directly
+                                          // (avoids wipe-protection that blocks full-array writes)
                                           try {
-                                            await dataService.writeData('members', updatedMembers, { force: true });
+                                            await dataService.saveSingle('members', cleanedMember);
                                             if (updatedUnits !== units) {
                                               await dataService.writeData('units', updatedUnits, { force: true });
                                             }
