@@ -28,7 +28,11 @@ const Login = ({ onLoginSuccess, users = [], members = [] }) => {
         // If members weren't pre-fetched by the app, fetch them dynamically now
         if (!searchMembers || searchMembers.length === 0) {
           try {
-            if (!auth.currentUser) await signInAnonymously(auth);
+            try {
+              if (!auth.currentUser) await signInAnonymously(auth);
+            } catch (authErr) {
+              console.warn('Could not elevate session, attempting fetch anyway:', authErr);
+            }
             const { dataService } = await import('../services/dataService');
             searchMembers = await dataService.readData('members') || [];
           } catch (fetchErr) {
