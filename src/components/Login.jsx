@@ -23,7 +23,21 @@ const Login = ({ onLoginSuccess, users = [], members = [] }) => {
           throw new Error('Por favor ingresa tu código de acceso');
         }
 
-        const member = members.find(m => 
+        let searchMembers = members;
+
+        // If members weren't pre-fetched by the app, fetch them dynamically now
+        if (!searchMembers || searchMembers.length === 0) {
+          try {
+            if (!auth.currentUser) await signInAnonymously(auth);
+            const { dataService } = await import('../services/dataService');
+            searchMembers = await dataService.readData('members') || [];
+          } catch (fetchErr) {
+            console.error('Error fetching members for login:', fetchErr);
+            throw new Error('Error conectando con el servidor para validar el código.');
+          }
+        }
+
+        const member = searchMembers.find(m => 
           (m.portalAccessCode === codeToTry) || 
           (m.id && m.id.slice(-6).toUpperCase() === codeToTry)
         );
@@ -33,7 +47,7 @@ const Login = ({ onLoginSuccess, users = [], members = [] }) => {
           
           // Elevate session with anonymous login to fulfill Firebase security requirements for reading master docs
           try {
-            await signInAnonymously(auth);
+            if (!auth.currentUser) await signInAnonymously(auth);
             console.log('🛡️ Sesión de Firebase elevada para portal de miembro');
           } catch (authErr) {
             console.warn('⚠️ No se pudo elevar la sesión (Anónima), el portal podría tener acceso limitado:', authErr);
