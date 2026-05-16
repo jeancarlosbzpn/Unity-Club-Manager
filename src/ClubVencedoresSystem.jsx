@@ -17442,14 +17442,14 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   )}
 
                   {/* Units List */}
-                  {units.length === 0 ? (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+                  {units.length === 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center mb-6">
                       <Grid className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400 text-lg">No unidades creadas aún</p>
-                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Click "Agregar Nueva Unidad" para crear tu primera unidad</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-lg">No hay unidades regulares creadas aún</p>
+                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Usa "Agregar Nueva Unidad" para crear unidades.</p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {/* Virtual Directiva Unit */}
                       {(() => {
                         const directivosInDirectiva = members.filter(m => !m.unitId && isMemberDirectivoGlobal(m));
@@ -17731,7 +17731,6 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         );
                       })}
                     </div>
-                  )}
                 </div>
               )
             }
