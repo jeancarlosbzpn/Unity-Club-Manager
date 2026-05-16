@@ -7319,7 +7319,7 @@ const ClubVencedoresSystem = () => {
     // Filter members (only regular members, not directive)
     let displayedMembers = members.filter(m => !m.position || m.position === '');
     if (attendanceFilterUnit !== 'all') {
-      displayedMembers = displayedMembers.filter(m => m.unitId === attendanceFilterUnit);
+      displayedMembers = displayedMembers.filter(m => String(m.unitId) === String(attendanceFilterUnit));
     }
     displayedMembers.sort((a, b) => a.firstName.localeCompare(b.firstName));
 
@@ -17532,7 +17532,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       })()}
 
                       {units.map((unit) => {
-                        const unitMembers = members.filter(m => m.unitId === unit.id);
+                        const unitMembers = members.filter(m => String(m.unitId) === String(unit.id));
                         const captain = members.find(m => m.id === unit.captainId);
                         const secretary = members.find(m => m.id === unit.secretaryId);
 
@@ -17882,7 +17882,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                           </h4>
                           <div className="space-y-2">
                             {units.map(unit => {
-                              const unitMembers = regularMembers.filter(m => m.unitId === unit.id);
+                              const unitMembers = regularMembers.filter(m => String(m.unitId) === String(unit.id));
                               if (unitMembers.length === 0) return null;
 
                               let totalUnitScore = 0;
@@ -18000,7 +18000,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     // Calculate Max Grade for this member's UNIT
                                     let maxGradeForUnit = 0;
                                     if (member.unitId) {
-                                      const unitMembers = regularMembers.filter(m => m.unitId === member.unitId);
+                                      const unitMembers = regularMembers.filter(m => String(m.unitId) === String(member.unitId));
                                       if (unitMembers.length > 0) {
                                         const grades = unitMembers.map(m => {
                                           const q = qualifications.find(q => q.memberId === m.id && q.year === selectedQualificationYear);
@@ -19310,7 +19310,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     units.forEach(u => {
                       groupedMembers[u.id] = {
                         unitName: u.name,
-                        members: allScores.filter(ms => ms.member.unitId === u.id).sort((a, b) => b.totalMonth - a.totalMonth)
+                        members: allScores.filter(ms => String(ms.member.unitId) === String(u.id)).sort((a, b) => b.totalMonth - a.totalMonth)
                       };
                     });
 
@@ -19931,7 +19931,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         // 2. Group members by Unit
                                         const membersByUnit = {};
                                         sortedUnits.forEach(unit => {
-                                          membersByUnit[unit.id] = regularMembers.filter(m => m.unitId === unit.id);
+                                          membersByUnit[unit.id] = regularMembers.filter(m => String(m.unitId) === String(unit.id));
                                         });
                                         // Members without unit
                                         const membersNoUnit = regularMembers.filter(m => !m.unitId);
@@ -25011,7 +25011,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               const grade = memberWithGrade ? memberWithGrade.grade : 0;
 
                               // Unit Max
-                              const unitMembers = allMembersWithGrades.filter(am => am.unitId === m.unitId);
+                              const unitMembers = allMembersWithGrades.filter(am => String(am.unitId) === String(m.unitId));
                               const unitGrades = unitMembers.map(um => um.grade).filter(g => g > 0);
                               const maxGradeUnit = unitGrades.length > 0 ? Math.max(...unitGrades) : 0;
 
