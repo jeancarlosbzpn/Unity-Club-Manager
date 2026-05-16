@@ -17626,7 +17626,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asignar Miembros:</label>
                                 <select
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const memberId = e.target.value;
                                     if (memberId) {
                                       const updatedMembers = members.map(m =>
@@ -17634,6 +17634,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       );
                                       setMembers(updatedMembers);
                                       e.target.value = '';
+                                      try {
+                                        await dataService.writeData('members', updatedMembers, { force: true });
+                                      } catch (err) {
+                                        console.error('Error saving member unit assignment:', err);
+                                      }
                                     }
                                   }}
                                   className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -17697,15 +17702,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         )}
                                       </span>
                                       <button
-                                        onClick={() => {
+                                        onClick={async () => {
                                           const updatedMembers = members.map(m =>
                                             m.id === member.id ? { ...m, unitId: '', unitRole: '' } : m
                                           );
                                           setMembers(updatedMembers);
 
                                           // If removing captain or secretary, update unit
+                                          let updatedUnits = units;
                                           if (unit.captainId === member.id || unit.secretaryId === member.id) {
-                                            const updatedUnits = units.map(u => {
+                                            updatedUnits = units.map(u => {
                                               if (u.id === unit.id) {
                                                 return {
                                                   ...u,
@@ -17716,6 +17722,16 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                               return u;
                                             });
                                             setUnits(updatedUnits);
+                                          }
+
+                                          // Persist to Firebase
+                                          try {
+                                            await dataService.writeData('members', updatedMembers, { force: true });
+                                            if (updatedUnits !== units) {
+                                              await dataService.writeData('units', updatedUnits, { force: true });
+                                            }
+                                          } catch (err) {
+                                            console.error('Error removing member from unit:', err);
                                           }
                                         }}
                                         className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
