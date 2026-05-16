@@ -17452,7 +17452,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {/* Virtual Directiva Unit */}
                       {(() => {
-                        const directivosInDirectiva = members.filter(m => !m.unitId && isMemberDirectivoGlobal(m));
+                        const directivosInDirectiva = members.filter(m => (!m.unitId || !units.find(u => String(u.id) === String(m.unitId))) && isMemberDirectivoGlobal(m));
                         const getLeader = (roleKey) => {
                           const clubs = ['guiasMayores', 'conquistadores', 'aventureros'];
                           for (const club of clubs) {
@@ -19330,7 +19330,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     const topUnitScorers = unitPerformance.filter(u => u.average === maxUnitScore && u.average > 0);
 
                     // Add members without unit
-                    const noUnitMembers = memberScores.filter(ms => !ms.member.unitId);
+                    const noUnitMembers = memberScores.filter(ms => !ms.member.unitId || !units.find(u => String(u.id) === String(ms.member.unitId)));
                     if (noUnitMembers.length > 0) {
                       groupedMembers['no-unit'] = {
                         unitName: 'Sin Unidad',
@@ -25537,7 +25537,7 @@ const MemberPortal = ({
 
     // Fallback to virtual Directiva unit if staff
     if (isMemberDirectivoGlobal(member)) {
-      const directivosInDirectiva = members.filter(m => !m.unitId && isMemberDirectivoGlobal(m));
+      const directivosInDirectiva = members.filter(m => (!m.unitId || !units.find(u => String(u.id) === String(m.unitId))) && isMemberDirectivoGlobal(m));
       const getLeader = (roleKey) => {
         const clubs = ['guiasMayores', 'conquistadores', 'aventureros'];
         for (const club of clubs) {
@@ -26109,19 +26109,37 @@ const MemberPortal = ({
 
 
   // Filter unit members (Privacy: same unit only)
-  const unitMembers = members
-    .filter(m => (String(m.unitId) === String(member.unitId) || (myUnit && String(m.unitId) === String(myUnit.id))))
-    .sort((a, b) => {
-      const getRoleRank = (role) => {
-        if (role === 'Captain') return 1;
-        if (role === 'Secretary') return 2;
-        return 3;
-      };
-      const rankA = getRoleRank(a.unitRole);
-      const rankB = getRoleRank(b.unitRole);
-      if (rankA !== rankB) return rankA - rankB;
-      return a.firstName.localeCompare(b.firstName);
-    });
+  const unitMembers = (() => {
+    if (!myUnit) return [];
+    if (myUnit.isDirectiva) {
+      // Directiva: all staff with no valid regular unit assignment
+      return members
+        .filter(m => isMemberDirectivoGlobal(m) && (!m.unitId || !units.find(u => String(u.id) === String(m.unitId))))
+        .sort((a, b) => {
+          const getRoleRank = (m) => {
+            const pos = (m.position || '').toLowerCase();
+            if (pos.includes('director') && !pos.includes('sub')) return 1;
+            if (pos.includes('subdirector')) return 2;
+            return 3;
+          };
+          return getRoleRank(a) - getRoleRank(b) || a.firstName.localeCompare(b.firstName);
+        });
+    }
+    // Regular unit: only members whose unitId matches an existing unit
+    return members
+      .filter(m => units.find(u => String(u.id) === String(m.unitId)) && String(m.unitId) === String(myUnit.id))
+      .sort((a, b) => {
+        const getRoleRank = (role) => {
+          if (role === 'Captain') return 1;
+          if (role === 'Secretary') return 2;
+          return 3;
+        };
+        const rankA = getRoleRank(a.unitRole);
+        const rankB = getRoleRank(b.unitRole);
+        if (rankA !== rankB) return rankA - rankB;
+        return a.firstName.localeCompare(b.firstName);
+      });
+  })();
 
   // Filter club directivos with strict hierarchy sorting
   const clubDirectivos = members.filter(m => {
