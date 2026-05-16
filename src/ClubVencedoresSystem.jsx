@@ -17385,8 +17385,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                       updatedUnits = [...units, newUnit];
                                       setUnits(updatedUnits);
 
-                                      // Assign roles to members
-                                      updatedMembersList = members.map(m => {
+                                      // FIRST: Purge all orphaned unitIds (those not matching any existing valid unit)
+                                      // This prevents ghost members from auto-filling the new unit
+                                      const validUnitIds = updatedUnits.map(u => String(u.id));
+                                      const baseMembers = members.map(m => {
+                                        if (m.unitId && m.unitId !== '' && !validUnitIds.includes(String(m.unitId))) {
+                                          return { ...m, unitId: '', unitRole: '' };
+                                        }
+                                        return m;
+                                      });
+
+                                      // THEN: Assign roles to selected members only
+                                      updatedMembersList = baseMembers.map(m => {
                                         if (m.id === unitFormData.captainId) {
                                           return { ...m, unitId: newUnit.id, unitRole: 'Captain' };
                                         }
