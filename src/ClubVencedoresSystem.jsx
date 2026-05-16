@@ -19380,12 +19380,24 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                     const maxUnitScore = unitPerformance.length > 0 ? Math.max(...unitPerformance.map(u => u.average)) : 0;
                     const topUnitScorers = unitPerformance.filter(u => u.average === maxUnitScore && u.average > 0);
 
-                    // Add members without unit
+                    // Members with no valid unit: split into Directiva vs Sin Unidad
                     const noUnitMembers = memberScores.filter(ms => !ms.member.unitId || !units.find(u => String(u.id) === String(ms.member.unitId)));
-                    if (noUnitMembers.length > 0) {
+                    
+                    // Directivos without a regular unit → show under "Directiva"
+                    const directivaNoUnitMembers = noUnitMembers.filter(ms => isMemberDirectivoGlobal(ms.member));
+                    // Non-directivos without a unit → show under "Sin Unidad"
+                    const sinUnidadMembers = noUnitMembers.filter(ms => !isMemberDirectivoGlobal(ms.member));
+
+                    if (directivaNoUnitMembers.length > 0) {
+                      groupedMembers['directiva'] = {
+                        unitName: 'Directiva',
+                        members: directivaNoUnitMembers.sort((a, b) => b.totalMonth - a.totalMonth)
+                      };
+                    }
+                    if (sinUnidadMembers.length > 0) {
                       groupedMembers['no-unit'] = {
                         unitName: 'Sin Unidad',
-                        members: noUnitMembers.sort((a, b) => b.totalMonth - a.totalMonth)
+                        members: sinUnidadMembers.sort((a, b) => b.totalMonth - a.totalMonth)
                       };
                     }
 
@@ -19983,7 +19995,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         sortedUnits.forEach(unit => {
                                           membersByUnit[unit.id] = regularMembers.filter(m => String(m.unitId) === String(unit.id));
                                         });
-                                        const membersNoUnit = regularMembers.filter(m => !m.unitId || !units.find(u => String(u.id) === String(m.unitId)));
+                                        const allNoUnit = regularMembers.filter(m => !m.unitId || !units.find(u => String(u.id) === String(m.unitId)));
+                                        const membersNoUnit = allNoUnit.filter(m => !isMemberDirectivoGlobal(m));
+                                        const membersDirectiva = allNoUnit.filter(m => isMemberDirectivoGlobal(m));
 
                                         // 3. Render function for a list of members
                                         // State for attendance type selector (passed down or managed here if componentized, but here we are in a massive component)
@@ -20440,7 +20454,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                               renderMemberTable(unit.name, membersByUnit[unit.id] || [], unit)
                                             )}
                                             {/* Members without unit */}
-                                            {renderMemberTable('Sin Unidad', membersNoUnit)}
+                                            {membersDirectiva.length > 0 && renderMemberTable('Directiva', membersDirectiva)}
+                                            {membersNoUnit.length > 0 && renderMemberTable('Sin Unidad', membersNoUnit)}
                                           </>
                                         );
                                       })()}
