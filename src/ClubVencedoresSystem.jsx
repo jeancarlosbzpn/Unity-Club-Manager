@@ -17640,8 +17640,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 >
                                   <option value="">Seleccionar miembro para añadir...</option>
                                   {members.filter(m => {
-                                    // Must not have a unit assigned
-                                    if (m.unitId && m.unitId !== '') return false;
+                                    // Must not have a valid unit assigned
+                                    if (m.unitId && m.unitId !== '' && units.find(u => String(u.id) === String(m.unitId))) return false;
                                     // Must not have a directive position
                                     if (m.position && m.position !== '') return false;
 
@@ -19933,8 +19933,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         sortedUnits.forEach(unit => {
                                           membersByUnit[unit.id] = regularMembers.filter(m => String(m.unitId) === String(unit.id));
                                         });
-                                        // Members without unit
-                                        const membersNoUnit = regularMembers.filter(m => !m.unitId);
+                                        const membersNoUnit = regularMembers.filter(m => !m.unitId || !units.find(u => String(u.id) === String(m.unitId)));
 
                                         // 3. Render function for a list of members
                                         // State for attendance type selector (passed down or managed here if componentized, but here we are in a massive component)
