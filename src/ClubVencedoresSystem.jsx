@@ -12774,7 +12774,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                     let expiryStatus = 'ok'; // ok, warning, expired
                                     if (item.expiryDate) {
                                       const today = new Date();
-                                      const expiry = new Date(item.expiryDate);
+                                      const expiry = new Date(item.expiryDate + 'T12:00:00');
                                       const diffTime = expiry - today;
                                       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -12803,7 +12803,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                                 'text-green-600 dark:text-green-400'
                                               }`}>
                                               {expiryStatus === 'expired' && <AlertTriangle className="w-3 h-3" />}
-                                              {new Date(item.expiryDate).toLocaleDateString()}
+                                              {new Date(item.expiryDate + 'T12:00:00').toLocaleDateString()}
                                             </span>
                                           ) : (
                                             <span className="text-gray-400">-</span>
@@ -19781,7 +19781,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               const isLockedPM = isLockedFull || lockedSaturdays.includes(selectedSaturday + '_PM');
                               const isLockedFriday = isMonthLocked || lockedSaturdays.includes(selectedSaturday + '_FRI');
 
-                              const selectedDate = new Date(selectedSaturday);
+                              // Parse as LOCAL time (appending T00:00:00 prevents UTC parsing that causes off-by-one-day in UTC-4)
+                              const selectedDate = new Date(selectedSaturday + 'T00:00:00');
 
                               return (
                                 <>
@@ -22179,7 +22180,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               </button>
                               <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                                 <Wallet className="w-7 h-7 text-green-600" />
-                                Cuotas: {new Date(selectedCuotaDate).toLocaleDateString()}
+                                Cuotas: {new Date(selectedCuotaDate + 'T12:00:00').toLocaleDateString()}
                               </h2>
                             </div>
                             <p className="text-gray-600 dark:text-gray-300 ml-9">Gstión de pagos semanales de miembros</p>
@@ -22999,7 +23000,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   <div>
                                     <p className="font-medium text-gray-900 dark:text-white">{activity.title}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      {new Date(activity.date).toLocaleDateString()}
+                                      {new Date(activity.date + 'T12:00:00').toLocaleDateString()}
                                     </p>
                                   </div>
                                 </div>
@@ -27144,7 +27145,7 @@ const MemberPortal = ({
                           {selectedAnnouncement.title}
                         </h3>
                         <p className="text-[10px] font-bold text-gray-400 mt-1">
-                          {new Date(selectedAnnouncement.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          {new Date(selectedAnnouncement.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </p>
                       </div>
                       <button
