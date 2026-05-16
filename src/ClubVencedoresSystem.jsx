@@ -1512,12 +1512,11 @@ const ClubVencedoresSystem = () => {
         // SAFETY: Coerce known array fields to arrays in case Firestore returned an object
         const mustBeArrays = [
           'members', 'transactions', 'activities', 'points', 'units', 'users', 'announcements',
-          'fixedPaymentConcepts', 'fixedPayments', 'financeCategories', 'inventoryCategories',
+          'fixedPaymentConcepts', 'financeCategories', 'inventoryCategories',
           'uniformItems', 'uniformCategories', 'qualifications', 'classRequirements',
           'evaluationGroups', 'requirementSections', 'reminders', 'disciplineRecords',
           'attendanceRecords', 'homeworks', 'memberHomeworkStatus', 'firstAidItems',
-          'tents', 'tentAssignments', 'uniformInspections', 'memberUniforms', 'lockedSaturdays',
-          'skippedSaturdays', 'campDetails', 'inventory', 'unit_messages'
+          'tents', 'lockedSaturdays', 'skippedSaturdays', 'inventory', 'unit_messages'
         ];
         mustBeArrays.forEach(k => {
           if (data[k] && !Array.isArray(data[k])) {
