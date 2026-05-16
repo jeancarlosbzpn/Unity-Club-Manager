@@ -2052,19 +2052,20 @@ const ClubVencedoresSystem = () => {
         console.log('✅ Data loaded successfully!');
 
         // --- PHANTOM UNIT CLEANUP ---
-        if (allData.members && allData.units && allData.units.length > 0) {
-          const validIds = allData.units.map(u => String(u.id));
+        // Runs ALWAYS — even when units is empty (that's when ALL members are orphaned)
+        if (allData.members) {
+          const validIds = (allData.units || []).map(u => String(u.id));
           let phantomsFound = false;
           const cleanedMembers = allData.members.map(m => {
-            if (m.unitId && !validIds.includes(String(m.unitId))) {
+            if (m.unitId && m.unitId !== '' && !validIds.includes(String(m.unitId))) {
               phantomsFound = true;
-              return { ...m, unitId: null };
+              return { ...m, unitId: '', unitRole: '' };
             }
             return m;
           });
 
           if (phantomsFound) {
-            console.log("🧹 LIMPIEZA INICIAL: Miembros en unidades fantasma detectados y liberados.");
+            console.log(`🧹 LIMPIEZA INICIAL: ${cleanedMembers.filter(m => !m.unitId).length} miembros con unidades fantasma liberados.`);
             setMembers(cleanedMembers);
             // Force save the cleanup to cloud immediately
             dataService.writeData('members', cleanedMembers, { force: true });
@@ -2302,10 +2303,12 @@ const ClubVencedoresSystem = () => {
       role: currentUser?.role 
     });
     
-    if (isAuthenticated && dataLoaded && currentUser?.role === 'administrator') {
-      const timer = setTimeout(() => syncPortalData(false), 5000);
-      return () => clearTimeout(timer);
-    }
+  // Auto-sync disabled: it reads stale member/unit data from Firebase and overwrites
+  // the local state, causing phantom unit assignments. Use manual sync button instead.
+  // if (isAuthenticated && dataLoaded && currentUser?.role === 'administrator') {
+  //   const timer = setTimeout(() => syncPortalData(false), 5000);
+  //   return () => clearTimeout(timer);
+  // }
   }, [isAuthenticated, dataLoaded, currentUser]);
 
   // Track previous state for differential saving
@@ -17606,14 +17609,23 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   Editar
                                 </button>
                                 <button
-                                  onClick={() => {
+                                  onClick={async () => {
                                     if (window.confirm(`¿Eliminar unidad "${unit.name}" ? Los miembros serán asignados como 'sin unidad'.`)) {
-                                      setUnits(units.filter(u => u.id !== unit.id));
-                                      // Remove unit assignment from members
+                                      const updatedUnits = units.filter(u => u.id !== unit.id);
+                                      setUnits(updatedUnits);
+                                      // Clear unit assignment from ALL members who belonged to this unit
                                       const updatedMembers = members.map(m =>
                                         m.unitId === unit.id ? { ...m, unitId: '', unitRole: '' } : m
                                       );
                                       setMembers(updatedMembers);
+                                      // Persist both to Firebase immediately
+                                      try {
+                                        await dataService.writeData('units', updatedUnits, { force: true });
+                                        await dataService.writeData('members', updatedMembers, { force: true });
+                                      } catch (err) {
+                                        console.error('Error deleting unit:', err);
+                                        alert('Error guardando cambios: ' + err.message);
+                                      }
                                     }
                                   }}
                                   className="px-3 py-2 text-sm border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded font-medium"
