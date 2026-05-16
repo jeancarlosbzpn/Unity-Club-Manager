@@ -19948,7 +19948,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                         // I will add them to the main hook section in the next step.
 
                                         const renderMemberTable = (unitName, unitMembers, unitData = null) => {
-                                          if (unitMembers.length === 0) return null;
+                                          // if (unitMembers.length === 0) return null;
 
                                           // Sort members within unit: Captain -> Secretary -> Alphabetical
                                           const sortedUnitMembers = [...unitMembers].sort((a, b) => {
