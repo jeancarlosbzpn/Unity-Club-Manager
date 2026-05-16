@@ -17360,65 +17360,64 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
 
                                   try {
                                     setSyncStatus('saving');
-                                    let updatedUnits = [];
-                                    let updatedMembersList = [];
-
+                                    
                                     if (editingUnit) {
-                                      // Ensure clubType is an array when saving
                                       const finalClubType = Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType];
-                                      updatedUnits = units.map(u => u.id === editingUnit.id ? { ...editingUnit, ...unitFormData, clubType: finalClubType } : u);
-                                      setUnits(updatedUnits);
+                                      const updatedUnit = { ...editingUnit, ...unitFormData, clubType: finalClubType };
+                                      
+                                      setUnits(units.map(u => u.id === editingUnit.id ? updatedUnit : u));
 
-                                      // Update members with new roles
-                                      updatedMembersList = members.map(m => {
+                                      const changedMembers = [];
+                                      const updatedMembersList = members.map(m => {
+                                        let updatedM = m;
                                         if (m.id === unitFormData.captainId) {
-                                          return { ...m, unitId: editingUnit.id, unitRole: 'Captain' };
-                                        }
-                                        if (m.id === unitFormData.secretaryId) {
-                                          return { ...m, unitId: editingUnit.id, unitRole: 'Secretary' };
-                                        }
-                                        if (m.unitId === editingUnit.id && m.unitRole &&
+                                          updatedM = { ...m, unitId: editingUnit.id, unitRole: 'Captain' };
+                                        } else if (m.id === unitFormData.secretaryId) {
+                                          updatedM = { ...m, unitId: editingUnit.id, unitRole: 'Secretary' };
+                                        } else if (m.unitId === editingUnit.id && m.unitRole &&
                                           m.id !== unitFormData.captainId && m.id !== unitFormData.secretaryId) {
-                                          return { ...m, unitRole: '' };
+                                          updatedM = { ...m, unitRole: '' };
                                         }
-                                        return m;
+                                        if (updatedM !== m) changedMembers.push(updatedM);
+                                        return updatedM;
                                       });
                                       setMembers(updatedMembersList);
+
+                                      // Save unit and changed members individually (bypasses wipe protection)
+                                      await dataService.saveSingle('units', updatedUnit);
+                                      for (const cm of changedMembers) {
+                                        await dataService.saveSingle('members', cm);
+                                      }
+
                                     } else {
+                                      // Fix: spread unitFormData FIRST, then override id with a real timestamp
+                                      const newUnitId = Date.now().toString();
                                       const newUnit = {
-                                        id: Date.now().toString(),
                                         ...unitFormData,
+                                        id: newUnitId,
                                         clubType: Array.isArray(unitFormData.clubType) ? unitFormData.clubType : [unitFormData.clubType]
                                       };
-                                      updatedUnits = [...units, newUnit];
-                                      setUnits(updatedUnits);
+                                      setUnits([...units, newUnit]);
 
-                                      // FIRST: Purge all orphaned unitIds (those not matching any existing valid unit)
-                                      // This prevents ghost members from auto-filling the new unit
-                                      const validUnitIds = updatedUnits.map(u => String(u.id));
-                                      const baseMembers = members.map(m => {
-                                        if (m.unitId && m.unitId !== '' && !validUnitIds.includes(String(m.unitId))) {
-                                          return { ...m, unitId: '', unitRole: '' };
-                                        }
-                                        return m;
-                                      });
-
-                                      // THEN: Assign roles to selected members only
-                                      updatedMembersList = baseMembers.map(m => {
+                                      const changedMembers = [];
+                                      const updatedMembersList = members.map(m => {
+                                        let updatedM = m;
                                         if (m.id === unitFormData.captainId) {
-                                          return { ...m, unitId: newUnit.id, unitRole: 'Captain' };
+                                          updatedM = { ...m, unitId: newUnitId, unitRole: 'Captain' };
+                                        } else if (m.id === unitFormData.secretaryId) {
+                                          updatedM = { ...m, unitId: newUnitId, unitRole: 'Secretary' };
                                         }
-                                        if (m.id === unitFormData.secretaryId) {
-                                          return { ...m, unitId: newUnit.id, unitRole: 'Secretary' };
-                                        }
-                                        return m;
+                                        if (updatedM !== m) changedMembers.push(updatedM);
+                                        return updatedM;
                                       });
                                       setMembers(updatedMembersList);
-                                    }
 
-                                    // Push to cloud immediately to avoid race conditions
-                                    await dataService.writeData('units', updatedUnits, { force: true });
-                                    await dataService.writeData('members', updatedMembersList, { force: true });
+                                      // Save unit and changed members individually (bypasses wipe protection)
+                                      await dataService.saveSingle('units', newUnit);
+                                      for (const cm of changedMembers) {
+                                        await dataService.saveSingle('members', cm);
+                                      }
+                                    }
                                     
                                     setSyncStatus('saved');
                                     setShowUnitForm(false);
