@@ -25453,6 +25453,7 @@ const MemberPortal = ({
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
   const [showUniformModal, setShowUniformModal] = useState(false);
   const [showFinanceModal, setShowFinanceModal] = useState(false);
+  const [showFaltasModal, setShowFaltasModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
@@ -25773,6 +25774,14 @@ const MemberPortal = ({
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
   const displayMonthPoints = monthPoints + monthMerits;
+
+  const myFaltasList = meritEntries
+    .filter(e => {
+      if (isThisMember(e.memberId)) return true;
+      if (e.memberIds && e.memberIds.some(id => isThisMember(id))) return true;
+      return false;
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // --- GALARDONES (Awards) ---
   const { myAwards, unitWinsCount } = (() => {
@@ -26559,6 +26568,21 @@ const MemberPortal = ({
 
         {/* ── Detailed Stats Grid ── */}
         <div className="grid grid-cols-2 gap-4">
+          {/* Faltas / Disciplina */}
+          <div 
+            onClick={() => setShowFaltasModal(true)}
+            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-red-200"
+          >
+            <div className="w-10 h-10 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4 group-hover:bg-red-500/20 transition-colors">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+            </div>
+            <div className="text-2xl font-black tracking-tighter text-gray-900">{myFaltasList.length}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Faltas</div>
+            <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-red-600 flex items-center gap-1 transition-colors group-active:text-red-800">
+              Ver Historial <ChevronRight className="w-3 h-3" />
+            </div>
+          </div>
+
           {/* Points this month */}
           {!(member.isExemptFromPoints || member.exemptFromScoring) && (
             <div 
@@ -26658,6 +26682,57 @@ const MemberPortal = ({
               )}
             </div>
           </section>
+        )}
+
+        {/* Modal de Faltas */}
+        {showFaltasModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-lg bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight text-gray-900">Historial de Faltas</h3>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Tus reportes disciplinarios</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowFaltasModal(false)} className="p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {myFaltasList.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                    <CheckCircle className="w-12 h-12 text-green-300 mx-auto mb-3" />
+                    <p className="text-sm font-bold text-gray-400">¡Excelente comportamiento!</p>
+                    <p className="text-xs text-gray-400 mt-1">No tienes faltas registradas.</p>
+                  </div>
+                ) : (
+                  myFaltasList.map(falta => (
+                    <div key={falta.id} className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                            {falta.type || 'Falta'}
+                          </span>
+                          <span className="text-xs font-bold text-gray-400">
+                            {new Date(falta.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <span className="text-sm font-black text-red-600 bg-red-50 px-2 py-1 rounded-lg">
+                          {falta.points ? `${falta.points} pts` : ''}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">{falta.description}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {showUniformModal && (
