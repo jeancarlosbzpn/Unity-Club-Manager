@@ -2420,6 +2420,7 @@ const ClubVencedoresSystem = () => {
     const masterEmails = ['jeancarlosbzpn@gmail.com', 'soybaex@gmail.com'];
     if (masterEmails.includes(currentUser.email)) return 'write';
     if (currentUser.role === 'administrator') return 'write';
+    if (currentUser.role === 'director') return 'write';
     if (currentUser.username === 'soybaex') return 'write';
 
     // 2. GRANULAR PERMISSIONS: Check new modulePermissions object first
@@ -10613,11 +10614,19 @@ const ClubVencedoresSystem = () => {
           positions: ['Director'],
           role: 'director',
           clubId: clubData.id,
-          allowedModules: ['dashboard', 'announcements', 'attendance', 'activities', 'directive', 'members', 'homeworks', 'finances', 'inventory', 'uniforms'],
+          allowedModules: [
+            'dashboard', 'announcements', 'discipline', 'activities', 'ranking', 
+            'master_guide', 'birthdays', 'homeworks', 'directive', 'members', 
+            'classes', 'units', 'medical', 'parents', 'qualifications', 'finances', 
+            'cuotas', 'inventory', 'camps', 'uniformity', 'reports', 'idcards', 
+            'points', 'attendance', 'reminders', 'settings'
+          ],
           modulePermissions: {
-            dashboard: 'edit', announcements: 'edit', attendance: 'edit', activities: 'edit',
-            directive: 'edit', members: 'edit', homeworks: 'edit', finances: 'edit',
-            inventory: 'edit', uniforms: 'edit'
+            dashboard: 'edit', announcements: 'edit', discipline: 'edit', activities: 'edit', ranking: 'edit',
+            master_guide: 'edit', birthdays: 'edit', homeworks: 'edit', directive: 'edit', members: 'edit',
+            classes: 'edit', units: 'edit', medical: 'edit', parents: 'edit', qualifications: 'edit', finances: 'edit',
+            cuotas: 'edit', inventory: 'edit', camps: 'edit', uniformity: 'edit', reports: 'edit', idcards: 'edit',
+            points: 'edit', attendance: 'edit', reminders: 'edit', settings: 'edit'
           }
         };
         
