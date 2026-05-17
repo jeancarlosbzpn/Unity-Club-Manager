@@ -25732,8 +25732,8 @@ const MemberPortal = ({
     })
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
-  // UNIFIED POINTS: Merits + Legacy Points
-  const displayTotalPoints = myScore + totalPoints;
+  // UNIFIED POINTS: Base Points minus Faltas (stored as positive numbers in DB)
+  const displayTotalPoints = totalPoints - Math.abs(myScore);
 
   // CURRENT MONTH POINTS CALCULATION
   const currentMonthStr = (() => {
@@ -25773,7 +25773,7 @@ const MemberPortal = ({
     })
     .reduce((sum, e) => sum + (Number(e.points) || 0), 0);
 
-  const displayMonthPoints = monthPoints + monthMerits;
+  const displayMonthPoints = monthPoints - Math.abs(monthMerits);
 
   const myFaltasList = meritEntries
     .filter(e => {
