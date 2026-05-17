@@ -26566,6 +26566,34 @@ const MemberPortal = ({
           </div>
         </section>
 
+        {/* ── Desglose de Puntos Globales ── */}
+        {!(member.isExemptFromPoints || member.exemptFromScoring) && (
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex items-center justify-between">
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Puntos Base</span>
+              <span className="text-xl font-black text-gray-900">{totalPoints}</span>
+            </div>
+            
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100">
+              <span className="text-gray-400 font-black text-lg">-</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">Faltas</span>
+              <span className="text-xl font-black text-red-600">{Math.abs(myScore)}</span>
+            </div>
+
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100">
+              <span className="text-gray-400 font-black text-lg">=</span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Total Neto</span>
+              <span className="text-2xl font-black text-emerald-600">{displayTotalPoints}</span>
+            </div>
+          </div>
+        )}
+
         {/* ── Detailed Stats Grid ── */}
         <div className="grid grid-cols-2 gap-4">
           {/* Faltas / Disciplina */}
