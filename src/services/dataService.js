@@ -84,7 +84,7 @@ export const dataService = {
       const masterDocCollection = (key === 'users' || key === 'clubs') ? null : getMasterDocPath();
       
       // 1. Try Collection First
-      if (ALL_COLLECTION_KEYS.includes(key)) {
+      if (ALL_COLLECTION_KEYS.includes(key) || key === 'clubs') {
         const colRef = collection(db, colName);
         const querySnapshot = await getDocs(colRef);
         
