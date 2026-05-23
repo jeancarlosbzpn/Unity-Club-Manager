@@ -2815,6 +2815,62 @@ const ClubVencedoresSystem = () => {
     setShowAnnouncementForm(false);
   };
 
+  const handleSaveSaturdayMeeting = async () => {
+    if (!saturdayMeetingFormData.date) {
+      alert('Por favor ingresa una fecha para la reunión');
+      return;
+    }
+
+    let updatedMeetings = [...saturdayMeetings];
+    const existingIndex = updatedMeetings.findIndex(m => m.date === saturdayMeetingFormData.date);
+
+    const meetingData = {
+      ...saturdayMeetingFormData,
+      id: saturdayMeetingFormData.id || Date.now().toString(),
+      updatedAt: Date.now()
+    };
+
+    if (existingIndex !== -1) {
+      updatedMeetings[existingIndex] = meetingData;
+    } else {
+      updatedMeetings.push(meetingData);
+    }
+
+    // Sort by date descending
+    updatedMeetings.sort((a, b) => b.date.localeCompare(a.date));
+
+    setSaturdayMeetings(updatedMeetings);
+
+    try {
+      setSyncStatus('saving');
+      await dataService.writeData('saturdayMeetings', updatedMeetings);
+      setSyncStatus('saved');
+      setTimeout(() => setSyncStatus('idle'), 2000);
+    } catch (err) {
+      console.error("Error saving Saturday meeting:", err);
+      setSyncStatus('error');
+    }
+
+    setShowSaturdayMeetingForm(false);
+  };
+
+  const handleDeleteSaturdayMeeting = async (id) => {
+    if (window.confirm('¿Estás seguro de eliminar este registro de reunión?')) {
+      const updatedMeetings = saturdayMeetings.filter(m => String(m.id) !== String(id));
+      setSaturdayMeetings(updatedMeetings);
+
+      try {
+        setSyncStatus('saving');
+        await dataService.writeData('saturdayMeetings', updatedMeetings);
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus('idle'), 2000);
+      } catch (err) {
+        console.error("Error deleting Saturday meeting:", err);
+        setSyncStatus('error');
+      }
+    }
+  };
+
   // Birthday Checker Effect
   useEffect(() => {
     if (members.length > 0) {
@@ -14644,81 +14700,232 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             {activeModule === 'homeworks' && (
               renderHomeworksModule()
             )}
-            {activeModule === 'announcements' && (
+            {activeModule === 'announcements' && (() => {
+              const previousMeeting = saturdayMeetings[0];
+              return (
                 <div className="space-y-6 animate-in fade-in duration-500">
+                  {/* Modern Header Card */}
                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border-l-4 border-red-600">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
                         <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                           <MessageSquare className="w-7 h-7 text-red-600 dark:text-red-500" />
                           Módulo de Anuncios
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400 mt-1">Crea y gestiona avisos importantes para el portal de miembros</p>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">Crea comunicados generales y configura el portal informativo del sábado</p>
                       </div>
-                      <button
-                        onClick={handleAddAnnouncement}
-                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-red-200 dark:shadow-none transition-all transform hover:scale-105"
-                      >
-                        <Plus className="w-5 h-5 font-black" />
-                        Nuevo Anuncio
-                      </button>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                          <button
+                            onClick={() => setAnnouncementTab('general')}
+                            className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${
+                              announcementTab === 'general'
+                                ? 'bg-white dark:bg-gray-600 text-red-600 shadow-sm'
+                                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                            }`}
+                          >
+                            📬 Comunicados
+                          </button>
+                          <button
+                            onClick={() => setAnnouncementTab('saturday')}
+                            className={`px-4 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${
+                              announcementTab === 'saturday'
+                                ? 'bg-white dark:bg-gray-600 text-red-600 shadow-sm'
+                                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                            }`}
+                          >
+                            🗓️ Reunión Sábado
+                          </button>
+                        </div>
+                        
+                        {announcementTab === 'general' ? (
+                          <button
+                            onClick={handleAddAnnouncement}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-red-200 dark:shadow-none transition-all transform hover:scale-105"
+                          >
+                            <Plus className="w-5 h-5 font-black" />
+                            Nuevo Anuncio
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSaturdayMeetingFormData({
+                                id: '',
+                                date: getLocalISODate(),
+                                uniformity: '',
+                                civismo: '',
+                                coritos: [],
+                                devocional: ''
+                              });
+                              setCoritosSearchTerm('');
+                              setShowSaturdayMeetingForm(true);
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-red-200 dark:shadow-none transition-all transform hover:scale-105"
+                          >
+                            <Plus className="w-5 h-5 font-black" />
+                            Configurar Sábado
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {announcements.length === 0 ? (
-                      <div className="col-span-full py-20 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 shadow-sm">
-                        <MessageSquare className="w-20 h-20 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Silencio Informativo</h3>
-                        <p className="text-gray-400 dark:text-gray-500 mt-2">No se han publicado anuncios todavía.</p>
-                        <button onClick={handleAddAnnouncement} className="mt-6 px-8 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-red-50 hover:text-red-600 transition-all border border-gray-200 dark:border-gray-600">
-                          Publicar primer aviso
-                        </button>
-                      </div>
-                    ) : (
-                      announcements.map(announcement => (
-                        <div key={announcement.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col h-full border-t-0">
-                          <div className={`h-2 shadow-sm ${
-                            announcement.type === 'Alert' ? 'bg-gradient-to-r from-red-500 to-orange-500' : 
-                            announcement.type === 'Event' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 
-                            'bg-gradient-to-r from-gray-400 to-gray-500'
-                          }`} />
-                          <div className="p-6 flex-1 flex flex-col">
-                            <div className="flex justify-between items-start mb-4">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                announcement.type === 'Alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 
-                                announcement.type === 'Event' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
-                                'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                              }`}>
-                                {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Informativo'}
-                              </span>
-                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleEditAnnouncement(announcement)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-colors" title="Editar"><Edit2 className="w-4 h-4" /></button>
-                                <button onClick={() => handleDeleteAnnouncement(announcement.id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-colors" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                  {/* Tab Contents */}
+                  {announcementTab === 'general' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {announcements.length === 0 ? (
+                        <div className="col-span-full py-20 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 shadow-sm">
+                          <MessageSquare className="w-20 h-20 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
+                          <h3 className="text-xl font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Silencio Informativo</h3>
+                          <p className="text-gray-400 dark:text-gray-500 mt-2">No se han publicado anuncios todavía.</p>
+                          <button onClick={handleAddAnnouncement} className="mt-6 px-8 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-red-50 hover:text-red-600 transition-all border border-gray-200 dark:border-gray-600">
+                            Publicar primer aviso
+                          </button>
+                        </div>
+                      ) : (
+                        announcements.map(announcement => (
+                          <div key={announcement.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col h-full border-t-0">
+                            <div className={`h-2 shadow-sm ${
+                              announcement.type === 'Alert' ? 'bg-gradient-to-r from-red-500 to-orange-500' : 
+                              announcement.type === 'Event' ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 
+                              'bg-gradient-to-r from-gray-400 to-gray-500'
+                            }`} />
+                            <div className="p-6 flex-1 flex flex-col">
+                              <div className="flex justify-between items-start mb-4">
+                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  announcement.type === 'Alert' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 
+                                  announcement.type === 'Event' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
+                                  'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                }`}>
+                                  {announcement.type === 'Alert' ? 'Urgente' : announcement.type === 'Event' ? 'Evento' : 'Informativo'}
+                                </span>
+                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => handleEditAnnouncement(announcement)} className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-colors" title="Editar"><Edit2 className="w-4 h-4" /></button>
+                                  <button onClick={() => handleDeleteAnnouncement(announcement.id)} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-colors" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                                </div>
                               </div>
-                            </div>
-                            <h3 className="text-lg font-black text-gray-800 dark:text-white mb-3 line-clamp-2 leading-tight uppercase tracking-tight">{announcement.title}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-4 mb-6 leading-relaxed flex-1 whitespace-pre-wrap">{announcement.content}</p>
-                            
-                            <div className="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700 mt-auto">
-                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {new Date(announcement.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-md">
-                                <Target className="w-3.5 h-3.5" />
-                                {announcement.target === 'Unit' ? (units.find(u => u.id === announcement.unitId)?.name || 'Unidad') : announcement.target}
+                              <h3 className="text-lg font-black text-gray-800 dark:text-white mb-3 line-clamp-2 leading-tight uppercase tracking-tight">{announcement.title}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-4 mb-6 leading-relaxed flex-1 whitespace-pre-wrap">{announcement.content}</p>
+                              
+                              <div className="flex justify-between items-center pt-4 border-t border-gray-50 dark:border-gray-700 mt-auto">
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  {new Date(announcement.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-md">
+                                  <Target className="w-3.5 h-3.5" />
+                                  {announcement.target === 'Unit' ? (units.find(u => u.id === announcement.unitId)?.name || 'Unidad') : announcement.target}
+                                </div>
                               </div>
                             </div>
                           </div>
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {saturdayMeetings.length === 0 ? (
+                        <div className="col-span-full py-20 text-center bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 shadow-sm">
+                          <Calendar className="w-20 h-20 text-gray-200 dark:text-gray-700 mx-auto mb-4" />
+                          <h3 className="text-xl font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">Sin Registros</h3>
+                          <p className="text-gray-400 dark:text-gray-500 mt-2">No se han configurado reuniones de sábado todavía.</p>
+                          <button
+                            onClick={() => {
+                              setSaturdayMeetingFormData({
+                                id: '',
+                                date: getLocalISODate(),
+                                uniformity: '',
+                                civismo: '',
+                                coritos: [],
+                                devocional: ''
+                              });
+                              setCoritosSearchTerm('');
+                              setShowSaturdayMeetingForm(true);
+                            }}
+                            className="mt-6 px-8 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold rounded-lg hover:bg-red-50 hover:text-red-600 transition-all border border-gray-200 dark:border-gray-600"
+                          >
+                            Registrar primera reunión
+                          </button>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ) : (
+                        saturdayMeetings.map(meeting => {
+                          const formattedDate = new Date(meeting.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                          return (
+                            <div key={meeting.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+                              <div className="h-2 bg-gradient-to-r from-violet-500 to-indigo-500 shadow-sm" />
+                              <div className="p-6 flex-1 flex flex-col justify-between">
+                                <div>
+                                  <div className="flex justify-between items-start mb-4">
+                                    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                      Reunión
+                                    </span>
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button
+                                        onClick={() => {
+                                          setSaturdayMeetingFormData(meeting);
+                                          setCoritosSearchTerm('');
+                                          setShowSaturdayMeetingForm(true);
+                                        }}
+                                        className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-colors"
+                                        title="Editar"
+                                      >
+                                        <Edit2 className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSaturdayMeeting(meeting.id)}
+                                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-colors"
+                                        title="Eliminar"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <h3 className="text-sm font-black text-gray-800 dark:text-white mb-4 leading-tight uppercase tracking-tight flex items-center gap-1.5">
+                                    <Calendar className="w-4 h-4 text-violet-500" />
+                                    {formattedDate}
+                                  </h3>
+                                  
+                                  <div className="space-y-3 pt-2 border-t border-gray-50 dark:border-gray-700">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-[9px]">Uniforme:</span>
+                                      <span className="font-black text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-gray-600">{meeting.uniformity || '-'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-[9px]">Civismo:</span>
+                                      <span className="font-black text-gray-800 dark:text-white bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-lg border border-gray-100 dark:border-gray-600">{units.find(u => String(u.id) === String(meeting.civismo))?.name || meeting.civismo || '-'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-[9px]">Devocional:</span>
+                                      <span className="font-black text-gray-800 dark:text-white truncate max-w-[150px]">{members.find(m => String(m.id) === String(meeting.devocional)) ? `${members.find(m => String(m.id) === String(meeting.devocional)).firstName} ${members.find(m => String(m.id) === String(meeting.devocional)).lastName}` : meeting.devocional || '-'}</span>
+                                    </div>
+                                    <div className="flex items-start justify-between text-xs pt-1">
+                                      <span className="font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest text-[9px] mt-0.5">Coritos:</span>
+                                      <span className="font-bold text-gray-600 dark:text-gray-300 text-right truncate max-w-[150px]" title={
+                                        Array.isArray(meeting.coritos) ? meeting.coritos.map(id => {
+                                          const found = members.find(m => String(m.id) === String(id));
+                                          return found ? `${found.firstName} ${found.lastName}` : id;
+                                        }).join(', ') : ''
+                                      }>
+                                        {Array.isArray(meeting.coritos) && meeting.coritos.length > 0 ? (
+                                          meeting.coritos.map(id => {
+                                            const found = members.find(m => String(m.id) === String(id));
+                                            return found ? found.firstName : id;
+                                          }).join(', ')
+                                        ) : '-'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
 
-
-
-                {showAnnouncementForm && (
+                  {/* Standard Announcement Form Modal */}
+                  {showAnnouncementForm && (
                     <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
                       <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-white/20 transform animate-in zoom-in-95 duration-300">
                         <div className="px-8 py-6 bg-red-600 flex items-center justify-between text-white border-b border-red-700 shadow-lg relative">
@@ -14730,16 +14937,11 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             <p className="text-xs text-red-100 font-bold uppercase tracking-widest mt-1">Suministra información clave al club</p>
                           </div>
                           <button onClick={() => setShowAnnouncementForm(false)} className="hover:bg-white/20 p-2 rounded-full transition-all relative z-10"><X className="w-6 h-6 font-black" /></button>
-                          {/* Decorative pattern for header */}
-                          <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -mr-16 -mt-16 blur-3xl opacity-50"></div>
-                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-black rounded-full -ml-16 -mb-16 blur-2xl opacity-30"></div>
-                          </div>
                         </div>
                         
                         <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gray-50/30 dark:bg-gray-800/50">
                           <div className="group">
-                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 group-focus-within:text-red-500 transition-colors">Título del Anuncio</label>
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Título del Anuncio</label>
                             <input
                               type="text"
                               value={announcementFormData.title}
@@ -14767,7 +14969,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <select
                                 value={announcementFormData.target}
                                 onChange={(e) => setAnnouncementFormData({...announcementFormData, target: e.target.value, unitId: e.target.value === 'Unit' ? (units[0]?.id || '') : ''})}
-                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-red-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer"
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-red-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer text-sm"
                               >
                                 <option value="Global">🌎 Todo el Club</option>
                                 <option value="Aventureros">🦁 Aventureros</option>
@@ -14827,7 +15029,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                               <select
                                 value={announcementFormData.unitId}
                                 onChange={(e) => setAnnouncementFormData({...announcementFormData, unitId: e.target.value})}
-                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-2xl focus:border-indigo-500 outline-none dark:text-white font-bold shadow-sm"
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-indigo-100 dark:border-indigo-900/30 rounded-2xl focus:border-indigo-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer text-sm"
                               >
                                 {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                               </select>
@@ -14853,9 +15055,180 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                       </div>
                     </div>
                   )}
+
+                  {/* Saturday Meeting Config Form Modal */}
+                  {showSaturdayMeetingForm && (
+                    <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+                      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden border border-white/20 transform animate-in zoom-in-95 duration-300">
+                        <div className="px-8 py-6 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between text-white border-b border-indigo-700 shadow-lg relative">
+                          <div className="relative z-10">
+                            <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2">
+                              <Calendar className="w-7 h-7" />
+                              {saturdayMeetingFormData.id ? 'Editar Reunión del Sábado' : 'Configurar Reunión del Sábado'}
+                            </h3>
+                            <p className="text-xs text-indigo-100 font-bold uppercase tracking-widest mt-1">Establece los roles de la reunión semanal</p>
+                          </div>
+                          <button onClick={() => setShowSaturdayMeetingForm(false)} className="hover:bg-white/20 p-2 rounded-full transition-all relative z-10"><X className="w-6 h-6 font-black" /></button>
+                        </div>
+                        
+                        <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gray-50/30 dark:bg-gray-800/50">
+                          {/* Date selector */}
+                          <div className="group">
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Fecha del Sábado</label>
+                            <input
+                              type="date"
+                              value={saturdayMeetingFormData.date}
+                              onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, date: e.target.value })}
+                              className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none transition-all dark:text-white font-bold text-sm shadow-sm"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Uniformity */}
+                            <div className="group">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span>Uniformidad</span>
+                                {previousMeeting && (
+                                  <span className="text-[9px] text-violet-600 font-bold bg-violet-50 px-1.5 py-0.5 rounded-md">Último: {previousMeeting.uniformity}</span>
+                                )}
+                              </label>
+                              <select
+                                value={saturdayMeetingFormData.uniformity}
+                                onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, uniformity: e.target.value })}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer text-sm"
+                              >
+                                <option value="">Seleccionar uniforme...</option>
+                                <option value="Tipo A">👔 Tipo A (Gala)</option>
+                                <option value="Tipo B">👕 Tipo B (Campamento)</option>
+                                <option value="Tipo C">👚 Tipo C (Polo Club)</option>
+                                <option value="Tipo D">🎽 Tipo D (Especial)</option>
+                                <option value="Deportivo">👟 Deportivo (Físico)</option>
+                                <option value="Formal">👞 Ropa Formal / Libre</option>
+                              </select>
+                            </div>
+
+                            {/* Civismo */}
+                            <div className="group">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span>Civismo (Unidad)</span>
+                                {previousMeeting && (
+                                  <span className="text-[9px] text-violet-600 font-bold bg-violet-50 px-1.5 py-0.5 rounded-md">Último: {
+                                    units.find(u => String(u.id) === String(previousMeeting.civismo))?.name || previousMeeting.civismo
+                                  }</span>
+                                )}
+                              </label>
+                              <select
+                                value={saturdayMeetingFormData.civismo}
+                                onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, civismo: e.target.value })}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer text-sm"
+                              >
+                                <option value="">Seleccionar unidad...</option>
+                                {units.map(u => (
+                                  <option key={u.id} value={u.id}>🛡️ {u.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Devocional */}
+                          <div className="group">
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                              <span>Devocional (Directivos/Staff)</span>
+                              {previousMeeting && (
+                                <span className="text-[9px] text-violet-600 font-bold bg-violet-50 px-1.5 py-0.5 rounded-md">Último: {
+                                  members.find(m => String(m.id) === String(previousMeeting.devocional))
+                                    ? `${members.find(m => String(m.id) === String(previousMeeting.devocional)).firstName}`
+                                    : previousMeeting.devocional
+                                }</span>
+                              )}
+                            </label>
+                            <select
+                              value={saturdayMeetingFormData.devocional}
+                              onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, devocional: e.target.value })}
+                              className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none dark:text-white font-bold shadow-sm cursor-pointer text-sm"
+                            >
+                              <option value="">Seleccionar encargado...</option>
+                              {members
+                                .filter(m => m.position && m.position.toLowerCase() !== 'member' && m.position.toLowerCase() !== 'miembro')
+                                .sort((a,b) => (a.firstName||'').localeCompare(b.firstName||''))
+                                .map(m => (
+                                  <option key={m.id} value={m.id}>👤 {m.firstName} {m.lastName} ({m.position})</option>
+                                ))}
+                            </select>
+                          </div>
+
+                          {/* Coritos Selector */}
+                          <div className="group">
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                              <span>Miembros para Coritos</span>
+                              {previousMeeting && previousMeeting.coritos && (
+                                <button
+                                  type="button"
+                                  onClick={() => setSaturdayMeetingFormData(prev => ({ ...prev, coritos: previousMeeting.coritos }))}
+                                  className="text-[9px] text-violet-600 font-black uppercase tracking-widest hover:underline"
+                                >
+                                  ✨ Copiar anteriores
+                                </button>
+                              )}
+                            </label>
+                            <input
+                              type="text"
+                              value={coritosSearchTerm}
+                              onChange={(e) => setCoritosSearchTerm(e.target.value)}
+                              placeholder="Buscar miembros..."
+                              className="w-full px-4 py-2 border-2 border-gray-100 dark:border-gray-600 rounded-xl mb-2 text-sm dark:bg-gray-700 outline-none focus:border-violet-500"
+                            />
+                            <div className="border-2 border-gray-100 dark:border-gray-600 rounded-2xl p-3 dark:bg-gray-700 max-h-40 overflow-y-auto space-y-1.5 custom-scrollbar pr-2">
+                              {members
+                                .filter(m => {
+                                  const fullName = `${m.firstName || ''} ${m.lastName || ''}`.toLowerCase();
+                                  return fullName.includes(coritosSearchTerm.toLowerCase());
+                                })
+                                .sort((a,b) => (a.firstName||'').localeCompare(b.firstName||''))
+                                .map(m => {
+                                  const isChecked = (saturdayMeetingFormData.coritos || []).includes(m.id);
+                                  return (
+                                    <label key={m.id} className="flex items-center gap-3 p-1.5 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-xl cursor-pointer transition-colors">
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={(e) => {
+                                          const current = saturdayMeetingFormData.coritos || [];
+                                          setSaturdayMeetingFormData(prev => ({
+                                            ...prev,
+                                            coritos: e.target.checked
+                                              ? [...current, m.id]
+                                              : current.filter(id => id !== m.id)
+                                          }));
+                                        }}
+                                        className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                                      />
+                                      <div className="flex flex-col">
+                                        <span className="text-xs font-bold text-gray-800 dark:text-white leading-none">{m.firstName} {m.lastName}</span>
+                                        <span className="text-[8px] text-gray-400 font-bold tracking-wider mt-0.5">{m.position || 'Miembro'}</span>
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                            </div>
+                            <div className="mt-2 text-right">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-violet-500">
+                                {(saturdayMeetingFormData.coritos || []).length} seleccionados
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-8 bg-gray-50 dark:bg-gray-900/20 flex flex-col md:flex-row justify-end gap-4 border-t border-gray-100 dark:border-gray-700/50">
+                          <button onClick={() => setShowSaturdayMeetingForm(false)} className="px-8 py-3 text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest text-[10px] hover:bg-gray-200 dark:hover:bg-gray-700 rounded-2xl transition-all">Descartar</button>
+                          <button onClick={handleSaveSaturdayMeeting} className="px-12 py-3 bg-violet-600 hover:bg-violet-700 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-violet-200 dark:shadow-none transition-all transform active:scale-95">Guardar Configuración</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )
-            }
+              );
+            })()}
 
             {
               activeModule === 'members' && !showForm && (
