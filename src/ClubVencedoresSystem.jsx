@@ -970,7 +970,9 @@ const ClubVencedoresSystem = () => {
     uniformity: '',
     civismo: '', // unitId
     coritos: [], // array of memberIds
-    devocional: '' // memberId
+    devocional: '', // memberId
+    time: '',
+    comments: ''
   });
   const [coritosSearchTerm, setCoritosSearchTerm] = useState('');
 
@@ -14755,7 +14757,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 uniformity: '',
                                 civismo: '',
                                 coritos: [],
-                                devocional: ''
+                                devocional: '',
+                                time: '',
+                                comments: ''
                               });
                               setCoritosSearchTerm('');
                               setShowSaturdayMeetingForm(true);
@@ -14837,7 +14841,9 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 uniformity: '',
                                 civismo: '',
                                 coritos: [],
-                                devocional: ''
+                                devocional: '',
+                                time: '',
+                                comments: ''
                               });
                               setCoritosSearchTerm('');
                               setShowSaturdayMeetingForm(true);
@@ -15072,15 +15078,33 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                         </div>
                         
                         <div className="p-8 space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar bg-gray-50/30 dark:bg-gray-800/50">
-                          {/* Date selector */}
-                          <div className="group">
-                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Fecha del Sábado</label>
-                            <input
-                              type="date"
-                              value={saturdayMeetingFormData.date}
-                              onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, date: e.target.value })}
-                              className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none transition-all dark:text-white font-bold text-sm shadow-sm"
-                            />
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Date selector */}
+                            <div className="group">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">Fecha del Sábado</label>
+                              <input
+                                type="date"
+                                value={saturdayMeetingFormData.date}
+                                onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, date: e.target.value })}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none transition-all dark:text-white font-bold text-sm shadow-sm"
+                              />
+                            </div>
+
+                            {/* Time selector */}
+                            <div className="group">
+                              <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span>Hora de la Reunión</span>
+                                {previousMeeting && previousMeeting.time && (
+                                  <span className="text-[9px] text-violet-600 font-bold bg-violet-50 px-1.5 py-0.5 rounded-md">Último: {previousMeeting.time}</span>
+                                )}
+                              </label>
+                              <input
+                                type="time"
+                                value={saturdayMeetingFormData.time || ''}
+                                onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, time: e.target.value })}
+                                className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none transition-all dark:text-white font-bold text-sm shadow-sm"
+                              />
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -15238,6 +15262,23 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                 {(saturdayMeetingFormData.coritos || []).length} seleccionados
                               </span>
                             </div>
+                          </div>
+
+                          {/* Comentarios */}
+                          <div className="group">
+                            <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                              <span>Comentarios / Observaciones</span>
+                              {previousMeeting && previousMeeting.comments && (
+                                <span className="text-[9px] text-violet-600 font-bold bg-violet-50 px-1.5 py-0.5 rounded-md">Último comentario guardado</span>
+                              )}
+                            </label>
+                            <textarea
+                              value={saturdayMeetingFormData.comments || ''}
+                              onChange={(e) => setSaturdayMeetingFormData({ ...saturdayMeetingFormData, comments: e.target.value })}
+                              placeholder="Ej. Llevar Biblia, traer merienda para la unidad, etc..."
+                              rows={3}
+                              className="w-full px-5 py-3 bg-white dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-2xl focus:border-violet-500 outline-none transition-all dark:text-white font-bold text-sm shadow-sm placeholder:text-gray-300 dark:placeholder:text-gray-500"
+                            />
                           </div>
                         </div>
                         
@@ -27052,6 +27093,122 @@ const MemberPortal = ({
           </div>
         </section>
 
+        {/* Saturday Meeting Information Card (Premium full-width layout) */}
+        {latestMeeting && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 delay-100">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-600 animate-pulse" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Reunión del Sábado</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {latestMeeting.time && (
+                  <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {latestMeeting.time}
+                  </span>
+                )}
+                <span className="text-[10px] font-black text-violet-600 bg-violet-50 border border-violet-100/50 px-2.5 py-0.5 rounded-full uppercase tracking-tight">
+                  {new Date(latestMeeting.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-violet-50/70 to-indigo-50/30 border border-violet-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all hover:border-violet-200">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Uniformidad */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-xl bg-violet-100 text-violet-600">
+                      <Shirt className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Uniformidad</span>
+                  </div>
+                  <span className="text-sm font-black text-gray-900 break-words leading-tight">{latestMeeting.uniformity || '-'}</span>
+                </div>
+
+                {/* Civismo */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Civismo</span>
+                  </div>
+                  <span className="text-sm font-black text-gray-900 break-words leading-tight">{getUnitName(latestMeeting.civismo) || '-'}</span>
+                </div>
+
+                {/* Devocional */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-xl bg-amber-100 text-amber-600">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Devocional</span>
+                  </div>
+                  <div className="text-sm font-black text-gray-900 break-words leading-tight">
+                    {latestMeeting.devocional ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(() => {
+                          const found = members.find(m => String(m.id) === String(latestMeeting.devocional));
+                          const name = found ? `${found.firstName} ${found.lastName}` : latestMeeting.devocional;
+                          return (
+                            <span className="px-2 py-0.5 bg-amber-50 border border-amber-100 text-amber-700 rounded-lg text-xs font-bold">
+                              {name}
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </div>
+                </div>
+
+                {/* Coritos (Large full-width wrapper to hold all names nicely without overflow) */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between col-span-full">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-2 rounded-xl bg-rose-100 text-rose-600">
+                      <Music className="w-4 h-4" />
+                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Encargados de Coritos</span>
+                  </div>
+                  <div className="mt-1">
+                    {latestMeeting.coritos && (Array.isArray(latestMeeting.coritos) ? latestMeeting.coritos.length > 0 : latestMeeting.coritos) ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {(Array.isArray(latestMeeting.coritos) ? latestMeeting.coritos : [latestMeeting.coritos]).map((cId, idx) => {
+                          const found = members.find(m => String(m.id) === String(cId));
+                          const name = found ? `${found.firstName} ${found.lastName}` : cId;
+                          return (
+                            <span key={idx} className="px-2.5 py-1 bg-rose-50 border border-rose-100 text-rose-700 rounded-xl text-xs font-black uppercase tracking-tight flex items-center gap-1 shadow-sm">
+                              👤 {name}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-sm font-black text-gray-400">-</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comments Box (Only if configured) */}
+                {latestMeeting.comments && (
+                  <div className="bg-violet-50/50 border border-violet-100/80 rounded-2xl p-4 flex gap-3 items-start col-span-full mt-2 shadow-inner">
+                    <MessageCircle className="w-5 h-5 text-violet-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-500 block mb-1">Notas / Observaciones</span>
+                      <p className="text-xs font-bold text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        {latestMeeting.comments}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ── Desglose de Puntos Globales ── */}
         {!(member.isExemptFromPoints || member.exemptFromScoring) && (
           <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex items-center justify-between">
@@ -27776,78 +27933,7 @@ const MemberPortal = ({
             )}
           </section>
 
-          {/* Saturday Meeting Information Card (Premium design) */}
-          <section className="space-y-4 col-span-1 md:col-span-2">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-violet-600 animate-pulse" />
-                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Reunión del Sábado</h3>
-              </div>
-              {latestMeeting && (
-                <span className="text-[10px] font-bold text-violet-500 bg-violet-50 border border-violet-100/50 px-2 py-0.5 rounded-full">
-                  {new Date(latestMeeting.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
-                </span>
-              )}
-            </div>
-
-            {latestMeeting ? (
-              <div className="bg-gradient-to-br from-violet-50/70 to-indigo-50/30 border border-violet-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all hover:border-violet-200">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {/* Uniformidad */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-2 rounded-xl bg-violet-100 text-violet-600">
-                        <Shirt className="w-4 h-4" />
-                      </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Uniformidad</span>
-                    </div>
-                    <span className="text-sm font-black text-gray-900 truncate">{latestMeeting.uniformity || '-'}</span>
-                  </div>
-
-                  {/* Civismo */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-2 rounded-xl bg-emerald-100 text-emerald-600">
-                        <Award className="w-4 h-4" />
-                      </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Civismo</span>
-                    </div>
-                    <span className="text-sm font-black text-gray-900 truncate">{getUnitName(latestMeeting.civismo) || '-'}</span>
-                  </div>
-
-                  {/* Coritos */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-2 rounded-xl bg-rose-100 text-rose-600">
-                        <Music className="w-4 h-4" />
-                      </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Coritos</span>
-                    </div>
-                    <span className="text-sm font-black text-gray-900 truncate" title={getMemberName(latestMeeting.coritos)}>
-                      {getMemberName(latestMeeting.coritos) || '-'}
-                    </span>
-                  </div>
-
-                  {/* Devocional */}
-                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="p-2 rounded-xl bg-amber-100 text-amber-600">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Devocional</span>
-                    </div>
-                    <span className="text-sm font-black text-gray-900 truncate" title={getMemberName(latestMeeting.devocional)}>
-                      {getMemberName(latestMeeting.devocional) || '-'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-50 border border-gray-100 rounded-3xl p-8 text-center border-dashed border-gray-200">
-                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No hay informaciones de reunión registradas aún</p>
-              </div>
-            )}
-          </section>
+          {/* Saturday Meeting Information Card (Removed from here, now displayed at top under attendance) */}
 
           {/* 2. Upcoming Activities (Trigger Modal) */}
           <section className="space-y-4">
