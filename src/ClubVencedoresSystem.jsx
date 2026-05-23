@@ -1,6 +1,6 @@
 // VERSION ESTABILIZADA - RESTAURACIÓN COMPLETA (BASE f083133)
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Edit, Edit2, Save, X, User, UserPlus, Users, Menu, ChevronLeft, Home, Building, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, RefreshCcw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud, LogOut, CalendarCheck, ShieldCheck, Info, Send } from 'lucide-react';
+import { Search, Plus, Edit, Edit2, Save, X, User, UserPlus, Users, Menu, ChevronLeft, Home, Building, DollarSign, Calendar, Clock, Award, BookOpen, BarChart3, Settings, TrendingUp, TrendingDown, Wallet, FileText, ChevronUp, ChevronDown, ChevronRight, Grid, List, Trash2, Heart, AlertCircle, Phone, Package, CheckCircle, AlertTriangle, MapPin, Printer, IdCard, Trophy, Flag, ArrowLeft, CheckSquare, Tent, Image as ImageIcon, Upload, Shirt, Ruler, Scissors, Gift, Cake, Crown, ClipboardList, PlusCircle, MessageCircle, MessageSquare, Moon, Sun, Check, Globe, Sparkles, RefreshCw, RefreshCcw, Target, Bell, Droplets, CreditCard, Bus, Utensils, Thermometer, Archive, ShoppingCart, ArrowDown, Star, GripVertical, CheckSquare as CheckSquare2, ClipboardCheck, Lock, Unlock, Medal, Shield, Compass, PlusSquare, ExternalLink, Eye, Cloud, LogOut, CalendarCheck, ShieldCheck, Info, Send, Music } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import ReactQuill, { Quill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
@@ -959,6 +959,20 @@ const ClubVencedoresSystem = () => {
     target: 'Global', // 'Global', 'Aventureros', 'Conquistadores', 'Guias Mayores', 'Unit'
     unitId: ''
   });
+  const [announcementTab, setAnnouncementTab] = useState('general'); // 'general' or 'saturday'
+
+  // Saturday Meetings State
+  const [saturdayMeetings, setSaturdayMeetings] = useState([]);
+  const [showSaturdayMeetingForm, setShowSaturdayMeetingForm] = useState(false);
+  const [saturdayMeetingFormData, setSaturdayMeetingFormData] = useState({
+    id: '',
+    date: getLocalISODate(),
+    uniformity: '',
+    civismo: '', // unitId
+    coritos: [], // array of memberIds
+    devocional: '' // memberId
+  });
+  const [coritosSearchTerm, setCoritosSearchTerm] = useState('');
 
   // CLASSES MODULE STATE
   const [activeClassTab, setActiveClassTab] = useState('summary'); // 'summary', 'requirements', 'evaluations', 'matrix'
@@ -1489,7 +1503,7 @@ const ClubVencedoresSystem = () => {
           'uniformInspections', 'memberUniforms', 'uniformItems', 'uniformCategories', 
           'clubSettings', 'duesConfig', 'qualifications', 
           'attendanceRecords', 'firstAidItems', 'disciplineRecords', 'announcements',
-          'homeworks', 'memberHomeworkStatus',
+          'homeworks', 'memberHomeworkStatus', 'saturdayMeetings',
           // Previously missing — caused these modules to wipe data on every refresh:
           'campDetails', 'classRequirements', 'evaluationGroups', 'memberProgress',
           'requirementSections', 'reminders', 'fixedPaymentConcepts', 'fixedPayments'
@@ -1516,7 +1530,8 @@ const ClubVencedoresSystem = () => {
           'uniformItems', 'uniformCategories', 'qualifications', 'classRequirements',
           'evaluationGroups', 'requirementSections', 'reminders', 'disciplineRecords',
           'attendanceRecords', 'homeworks', 'memberHomeworkStatus', 'firstAidItems',
-          'tents', 'lockedSaturdays', 'skippedSaturdays', 'inventory', 'unit_messages'
+          'tents', 'lockedSaturdays', 'skippedSaturdays', 'inventory', 'unit_messages',
+          'saturdayMeetings'
         ];
         mustBeArrays.forEach(k => {
           if (data[k] && !Array.isArray(data[k])) {
@@ -1606,6 +1621,7 @@ const ClubVencedoresSystem = () => {
         tents: tents || [],
         tentAssignments: tentAssignments || {},
         announcements: announcements || [],
+        saturdayMeetings: saturdayMeetings || [],
         exportDate: new Date().toISOString(),
         version: '1.0'
       };
@@ -1739,6 +1755,7 @@ const ClubVencedoresSystem = () => {
           if (importedData.financeCategories) setFinanceCategories(importedData.financeCategories);
           if (importedData.tents) setTents(importedData.tents);
           if (importedData.tentAssignments) setTentAssignments(importedData.tentAssignments);
+          if (importedData.saturdayMeetings) setSaturdayMeetings(importedData.saturdayMeetings);
 
           console.log('✅ Data imported successfully');
           alert('✅ Data imported successfully!');
@@ -2041,6 +2058,7 @@ const ClubVencedoresSystem = () => {
         setAnnouncements(allData.announcements || []);
         setHomeworks(allData.homeworks || []);
         setMemberHomeworkStatus(allData.memberHomeworkStatus || []);
+        setSaturdayMeetings(allData.saturdayMeetings || []);
         
         // Fetch Clubs Global Registry
         const globalClubs = await dataService.readData('clubs');
@@ -11126,6 +11144,7 @@ const ClubVencedoresSystem = () => {
         if (allData.activities) setActivities(allData.activities);
         if (allData.masterGuideData) setMasterGuideData(allData.masterGuideData);
         if (allData.memberProgress) setMemberProgress(allData.memberProgress);
+        if (allData.saturdayMeetings) setSaturdayMeetings(allData.saturdayMeetings);
         
         setSyncStatus('idle');
         return true;
@@ -11157,6 +11176,7 @@ const ClubVencedoresSystem = () => {
         onRefresh={handleDataRefresh}
         isSyncing={syncStatus === 'syncing'}
         announcements={announcements}
+        saturdayMeetings={saturdayMeetings}
         units={units}
         members={members}
         points={points}
@@ -25434,6 +25454,7 @@ const MemberPortal = ({
   onRefresh,
   isSyncing = false,
   announcements = [], 
+  saturdayMeetings = [],
   units = [], 
   members = [],
   points = [],
@@ -25465,6 +25486,28 @@ const MemberPortal = ({
   const [showFaltasModal, setShowFaltasModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+
+  // ── Saturday Meeting Calculations ──
+  const latestMeeting = React.useMemo(() => {
+    if (!saturdayMeetings || saturdayMeetings.length === 0) return null;
+    // Sort by date descending to get the most recent entry
+    return [...saturdayMeetings].sort((a, b) => b.date.localeCompare(a.date))[0];
+  }, [saturdayMeetings]);
+
+  const getMemberName = (idOrIds) => {
+    if (!idOrIds) return '';
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+    return ids.map(id => {
+      const found = members.find(m => String(m.id) === String(id));
+      return found ? `${found.firstName} ${found.lastName}` : id;
+    }).join(', ');
+  };
+
+  const getUnitName = (idOrName) => {
+    if (!idOrName) return '';
+    const found = units.find(u => String(u.id) === String(idOrName));
+    return found ? found.name : idOrName;
+  };
 
   const announcementsRef = useRef(null);
 
@@ -27295,6 +27338,79 @@ const MemberPortal = ({
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+          </section>
+
+          {/* Saturday Meeting Information Card (Premium design) */}
+          <section className="space-y-4 col-span-1 md:col-span-2">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-600 animate-pulse" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Reunión del Sábado</h3>
+              </div>
+              {latestMeeting && (
+                <span className="text-[10px] font-bold text-violet-500 bg-violet-50 border border-violet-100/50 px-2 py-0.5 rounded-full">
+                  {new Date(latestMeeting.date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}
+                </span>
+              )}
+            </div>
+
+            {latestMeeting ? (
+              <div className="bg-gradient-to-br from-violet-50/70 to-indigo-50/30 border border-violet-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all hover:border-violet-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Uniformidad */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-xl bg-violet-100 text-violet-600">
+                        <Shirt className="w-4 h-4" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Uniformidad</span>
+                    </div>
+                    <span className="text-sm font-black text-gray-900 truncate">{latestMeeting.uniformity || '-'}</span>
+                  </div>
+
+                  {/* Civismo */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-xl bg-emerald-100 text-emerald-600">
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Civismo</span>
+                    </div>
+                    <span className="text-sm font-black text-gray-900 truncate">{getUnitName(latestMeeting.civismo) || '-'}</span>
+                  </div>
+
+                  {/* Coritos */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-xl bg-rose-100 text-rose-600">
+                        <Music className="w-4 h-4" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Coritos</span>
+                    </div>
+                    <span className="text-sm font-black text-gray-900 truncate" title={getMemberName(latestMeeting.coritos)}>
+                      {getMemberName(latestMeeting.coritos) || '-'}
+                    </span>
+                  </div>
+
+                  {/* Devocional */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-violet-100/40 flex flex-col justify-between">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-xl bg-amber-100 text-amber-600">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Devocional</span>
+                    </div>
+                    <span className="text-sm font-black text-gray-900 truncate" title={getMemberName(latestMeeting.devocional)}>
+                      {getMemberName(latestMeeting.devocional) || '-'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-100 rounded-3xl p-8 text-center border-dashed border-gray-200">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No hay informaciones de reunión registradas aún</p>
               </div>
             )}
           </section>
