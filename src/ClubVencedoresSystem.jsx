@@ -15149,11 +15149,33 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                             >
                               <option value="">Seleccionar encargado...</option>
                               {members
-                                .filter(m => m.position && m.position.toLowerCase() !== 'member' && m.position.toLowerCase() !== 'miembro')
+                                .filter(m => {
+                                  if (!m) return false;
+                                  const pos = (m.position || '').toLowerCase().trim();
+                                  const isStandard = pos === 'member' || pos === 'miembro' || pos === 'ninguno' || pos === 'ninguna' || pos === '';
+                                  const hasDirectiveRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+                                  return (!isStandard) || hasDirectiveRoles;
+                                })
                                 .sort((a,b) => (a.firstName||'').localeCompare(b.firstName||''))
-                                .map(m => (
-                                  <option key={m.id} value={m.id}>👤 {m.firstName} {m.lastName} ({m.position})</option>
-                                ))}
+                                .map(m => {
+                                  let displayPos = m.position;
+                                  const posLower = (m.position || '').toLowerCase().trim();
+                                  if (posLower === '' || posLower === 'member' || posLower === 'miembro' || posLower === 'ninguno' || posLower === 'ninguna') {
+                                    if (m.directiveRoles) {
+                                      for (const clubKey of Object.keys(m.directiveRoles)) {
+                                        const roles = m.directiveRoles[clubKey] || [];
+                                        if (roles.length > 0) {
+                                          displayPos = roles[0].position || 'Directivo';
+                                          break;
+                                        }
+                                      }
+                                    }
+                                  }
+                                  if (!displayPos || displayPos === 'Ninguno' || displayPos === 'Ninguna') displayPos = 'Directivo';
+                                  return (
+                                    <option key={m.id} value={m.id}>👤 {m.firstName} {m.lastName} ({displayPos})</option>
+                                  );
+                                })}
                             </select>
                           </div>
 
@@ -26098,49 +26120,88 @@ const MemberPortal = ({
   let clubTotal = 0;
   let clubPresent = 0;
 
-  // 1. ADD Legacy Attendance (from points)
+  const startCountingDate = '2025-02-01';
+
+  const isAttendancePresent = (status) => {
+    if (!status) return false;
+    const s = String(status).toUpperCase().trim();
+    return s === 'P' || s === 'L';
+  };
+
+  const isAttendanceValid = (status) => {
+    if (!status) return false;
+    const s = String(status).toUpperCase().trim();
+    return s === 'P' || s === 'L' || s === 'A' || s === 'E';
+  };
+
+  // 1. ADD Attendance from points collection
   myPointsRecords.forEach(monthRecord => {
-    if (monthRecord.saturdays) {
-      Object.values(monthRecord.saturdays).forEach(day => {
+    if (monthRecord.saturdays && typeof monthRecord.saturdays === 'object') {
+      Object.entries(monthRecord.saturdays).forEach(([dateKey, day]) => {
+        if (!day) return;
+        
+        // Skip count if before start date
+        if (dateKey < startCountingDate) return;
+
         // Friday Culto
-        if (day.attendanceFriday) {
+        if (isAttendanceValid(day.attendanceFriday)) {
           fridayTotal++;
-          if (isPresent(day.attendanceFriday)) fridayPresent++;
+          if (isAttendancePresent(day.attendanceFriday)) fridayPresent++;
         }
         // Sat AM Culto
-        if (day.attendanceSatAM) {
+        if (isAttendanceValid(day.attendanceSatAM)) {
           satAMTotal++;
-          if (isPresent(day.attendanceSatAM)) satAMPresent++;
+          if (isAttendancePresent(day.attendanceSatAM)) satAMPresent++;
         }
 
         // CLUB: Sat PM
         const statusPM = day.attendanceSatPM || day.attendance;
-        if (statusPM) {
+        if (isAttendanceValid(statusPM)) {
           clubTotal++;
-          if (isPresent(statusPM)) clubPresent++;
+          if (isAttendancePresent(statusPM)) clubPresent++;
         }
       });
     }
   });
 
-  // 2. ADD New Attendance (from attendanceRecords)
-  const myDirectAttendance = attendanceRecords.filter(r => isThisMember(r.memberId));
-  myDirectAttendance.forEach(record => {
-    if (record.status) {
-      if (record.type === 'culto') {
-        const date = record.date ? new Date(record.date) : null;
+  // 2. ADD Attendance from attendanceRecords collection (supporting both individual & group schemas)
+  attendanceRecords.forEach(record => {
+    if (!record) return;
+    
+    let status = null;
+    let type = record.type || 'club';
+    let dateStr = record.date;
+    
+    if (dateStr && dateStr < startCountingDate) return;
+    
+    // Check if it's a group record (has a records map)
+    if (record.records && typeof record.records === 'object') {
+      // Find if our member is in the keys
+      const matchedKey = Object.keys(record.records).find(mId => isThisMember(mId));
+      if (matchedKey) {
+        status = record.records[matchedKey];
+      }
+    } 
+    // Fallback: Check if it's an individual record (has a memberId direct property)
+    else if (record.memberId && isThisMember(record.memberId)) {
+      status = record.status;
+    }
+    
+    if (isAttendanceValid(status)) {
+      if (type === 'culto') {
+        const date = dateStr ? new Date(dateStr + 'T12:00:00') : null;
         const dayOfWeek = date ? date.getDay() : -1;
         
         if (dayOfWeek === 6) { // Saturday
           satAMTotal++;
-          if (isPresent(record.status)) satAMPresent++;
+          if (isAttendancePresent(status)) satAMPresent++;
         } else {
           fridayTotal++;
-          if (isPresent(record.status)) fridayPresent++;
+          if (isAttendancePresent(status)) fridayPresent++;
         }
       } else {
         clubTotal++;
-        if (isPresent(record.status)) clubPresent++;
+        if (isAttendancePresent(status)) clubPresent++;
       }
     }
   });
