@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import { X, Download, PartyPopper, Gift, Sparkles, Star } from 'lucide-react';
 
