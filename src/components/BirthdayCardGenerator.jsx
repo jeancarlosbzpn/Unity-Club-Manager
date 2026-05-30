@@ -199,7 +199,6 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
                                             src={member.photo}
                                             alt={member.firstName}
                                             className="w-full h-full object-cover animate-in fade-in duration-300"
-                                            crossOrigin="anonymous"
                                             onError={() => {
                                                 console.warn(`⚠️ Error al cargar la foto de ${member.firstName}, activando inicial de respaldo.`);
                                                 setPhotoError(true);
