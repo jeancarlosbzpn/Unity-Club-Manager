@@ -11568,6 +11568,7 @@ const ClubVencedoresSystem = () => {
         biblicalConnectionResponses={biblicalConnectionResponses}
         onJoinBiblicalSession={handleJoinBiblicalSession}
         onSubmitBiblicalAnswers={handleSubmitBiblicalAnswers}
+        onDisqualifyBiblicalMember={handleDisqualifyBiblicalMember}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
           const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
@@ -26241,7 +26242,8 @@ const MemberPortal = ({
   biblicalConnectionSessions = [],
   biblicalConnectionResponses = [],
   onJoinBiblicalSession,
-  onSubmitBiblicalAnswers
+  onSubmitBiblicalAnswers,
+  onDisqualifyBiblicalMember
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -28559,8 +28561,8 @@ const MemberPortal = ({
                   responses={biblicalConnectionResponses}
                   member={member}
                   onJoinSession={onJoinBiblicalSession}
-                  onSubmitAnswers={onSubmitAnswers => onSubmitBiblicalAnswers(onSubmitAnswers)}
-                  onDisqualifyMember={handleDisqualifyBiblicalMember}
+                  onSubmitAnswers={(sessId, modId, modIdx, ans, qs) => onSubmitBiblicalAnswers(sessId, modId, modIdx, ans, qs)}
+                  onDisqualifyMember={onDisqualifyBiblicalMember}
                 />
               </div>
             </div>
