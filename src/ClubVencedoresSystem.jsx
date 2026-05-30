@@ -3067,12 +3067,11 @@ const ClubVencedoresSystem = () => {
 
   const handleDeleteAnnouncement = async (id) => {
     if (window.confirm('¿Estás seguro de eliminar este anuncio?')) {
-      const updatedAnnouncements = announcements.filter(a => String(a.id) !== String(id));
-      setAnnouncements(updatedAnnouncements);
+      setAnnouncements(prev => prev.filter(a => String(a.id) !== String(id)));
       
       try {
         setSyncStatus('saving');
-        await dataService.writeData('announcements', updatedAnnouncements);
+        await dataService.deleteItem('announcements', id);
         setSyncStatus('saved');
         setTimeout(() => setSyncStatus('idle'), 2000);
       } catch (err) {
@@ -3082,42 +3081,46 @@ const ClubVencedoresSystem = () => {
     }
   };
 
-  const handleSaveAnnouncement = () => {
+  const handleSaveAnnouncement = async () => {
     if (!announcementFormData.title.trim()) {
       alert('Por favor ingresa un título para el anuncio');
       return;
     }
 
+    let targetAnnouncement = null;
+
     if (editingAnnouncement) {
+      targetAnnouncement = {
+        ...editingAnnouncement,
+        ...announcementFormData,
+        updatedAt: new Date().toISOString()
+      };
       setAnnouncements(prev => prev.map(a => 
-        a.id === editingAnnouncement.id ? { ...a, ...announcementFormData } : a
+        a.id === editingAnnouncement.id ? targetAnnouncement : a
       ));
     } else {
-      const newAnnouncement = {
+      targetAnnouncement = {
         ...announcementFormData,
         id: Date.now().toString(),
         createdAt: new Date().toISOString()
       };
-      setAnnouncements(prev => [newAnnouncement, ...prev]);
+      setAnnouncements(prev => [targetAnnouncement, ...prev]);
     }
     
-    // Explicitly save to cloud
+    // Explicitly save atome document to cloud
     try {
-      const currentAnnouncements = [...announcements];
-      if (editingAnnouncement) {
-        const idx = currentAnnouncements.findIndex(a => a.id === editingAnnouncement.id);
-        if (idx !== -1) currentAnnouncements[idx] = { ...currentAnnouncements[idx], ...announcementFormData };
+      setSyncStatus('saving');
+      const res = await dataService.saveSingle('announcements', targetAnnouncement);
+      if (res.success) {
+        setSyncStatus('saved');
+        setTimeout(() => setSyncStatus('idle'), 2000);
       } else {
-        const newAnnouncement = {
-          ...announcementFormData,
-          id: Date.now().toString(),
-          createdAt: new Date().toISOString()
-        };
-        currentAnnouncements.unshift(newAnnouncement);
+        setSyncStatus('error');
+        console.error("Error saving announcement in cloud:", res.error);
       }
-      dataService.writeData('announcements', currentAnnouncements);
     } catch (e) {
       console.error("Error saving announcement:", e);
+      setSyncStatus('error');
     }
 
     setShowAnnouncementForm(false);
