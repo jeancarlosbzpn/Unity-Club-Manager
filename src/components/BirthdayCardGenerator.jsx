@@ -64,14 +64,19 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
     // Pre-load and convert photo to Base64 to bypass CORS constraints entirely on html2canvas
     useEffect(() => {
         if (member.photo && member.photo.startsWith('http')) {
-            console.log(`📡 Pre-cargando foto en Base64 de ${member.firstName} para evitar CORS...`);
-            fetch(member.photo, { mode: 'cors' })
-                .then(res => res.blob())
+            console.log(`📡 Pre-cargando foto de ${member.firstName} a través de Proxy CORS...`);
+            const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(member.photo)}`;
+            
+            fetch(proxiedUrl)
+                .then(res => {
+                    if (!res.ok) throw new Error("Fallo al descargar del proxy CORS");
+                    return res.blob();
+                })
                 .then(blob => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         setPhotoBase64(reader.result);
-                        console.log(`✅ Foto de ${member.firstName} convertida a Base64 con éxito!`);
+                        console.log(`✅ Foto de ${member.firstName} convertida a Base64 local con éxito!`);
                     };
                     reader.readAsDataURL(blob);
                 })
