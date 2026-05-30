@@ -59,6 +59,27 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
     const cardRef = useRef(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [photoError, setPhotoError] = useState(false);
+    const [photoBase64, setPhotoBase64] = useState(null);
+
+    // Pre-load and convert photo to Base64 to bypass CORS constraints entirely on html2canvas
+    useEffect(() => {
+        if (member.photo && member.photo.startsWith('http')) {
+            console.log(`📡 Pre-cargando foto en Base64 de ${member.firstName} para evitar CORS...`);
+            fetch(member.photo, { mode: 'cors' })
+                .then(res => res.blob())
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setPhotoBase64(reader.result);
+                        console.log(`✅ Foto de ${member.firstName} convertida a Base64 con éxito!`);
+                    };
+                    reader.readAsDataURL(blob);
+                })
+                .catch(err => {
+                    console.warn("⚠️ No se pudo pre-cargar la foto en Base64 debido a CORS. Usando fallback en vivo.", err);
+                });
+        }
+    }, [member.photo]);
 
     // Generate random verse only once on mount
     const randomVerse = useMemo(() => {
@@ -97,8 +118,7 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
             link.download = `Feliz_Cumple_${member.firstName}_${member.lastName}.png`;
             link.click();
         } catch (error) {
-            console.error("Error generating birthday card:", error);
-            alert("Hubo un error al generar la imagen. Intenta de nuevo.");
+            console.error("Error generating image:", error);
         } finally {
             setIsGenerating(false);
         }
@@ -107,255 +127,182 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-
-                {/* Header */}
                 <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
                     <h3 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                         <Gift className="w-5 h-5 text-purple-600" />
                         Tarjeta de Cumpleaños
                     </h3>
-                    <button
-                        onClick={onClose}
-                        className="p-2 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors"
-                    >
+                    <button onClick={onClose} className="p-2 text-gray-500 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Content / Preview Area - Center Scaled */}
                 <div className="p-4 overflow-y-auto flex-1 flex flex-col items-center bg-gray-200 dark:bg-gray-900 justify-start min-h-0">
-
                     <p className="mb-2 text-xs text-gray-500 dark:text-gray-400 text-center font-bold">
                         Vista previa (se generará en alta calidad)
                     </p>
-
-                    {/* THE CARD ITSELF - Scaled down for preview, exports at full 800x1200 */}
-                    <div 
-                        style={{ 
-                            width: '800px', 
-                            height: '1200px', 
-                            transform: 'scale(0.45)', 
-                            transformOrigin: 'top center',
-                            margin: '0 auto -660px' // Negative margin to absorb scale height differences
-                        }}
-                        className="shrink-0 transition-transform duration-300"
-                    >
-                        <div
-                            ref={cardRef}
-                            className="w-full h-full relative flex flex-col shadow-2xl overflow-hidden rounded-[32px] border-4 border-[#FABD00]"
-                            style={{
-                                backgroundColor: '#003B70' // Club Blue
-                            }}
-                        >
-                        {/* Decorative Background - Triangle/Scarf Motif */}
-                        <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
-                            {/* Red Triangle (Scarf/Pañoleta style sort of) */}
-                            <div className="absolute top-[-150px] right-[-150px] w-[300px] h-[300px] bg-[#D92C27] rotate-45 transform shadow-lg"></div>
-                            {/* Yellow Strip */}
-                            <div className="absolute top-[-140px] right-[-140px] w-[280px] h-[280px] border-[10px] border-[#FABD00] rotate-45 transform opacity-80"></div>
-
-                            {/* Bottom Left Accent */}
-                            <div className="absolute bottom-[-50px] left-[-50px] w-[150px] h-[150px] bg-[#FABD00] rounded-full opacity-20 blur-xl"></div>
-                        </div>
-
-                        {/* Globe/World Icon Watermark (Subtle) */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-                            <svg viewBox="0 0 24 24" fill="white" className="w-[300px] h-[300px]">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
-                                <path d="M2 12h20 M12 2v20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" strokeWidth="2" fill="none" />
-                            </svg>
-                        </div>
-
-                        {/* Inner Border (Gold) */}
-                        <div className="absolute inset-6 border-4 border-[#FABD00] rounded-lg pointer-events-none opacity-50"></div>
-
-                        {/* Content Container */}
-                        <div className="relative z-10 flex-1 flex flex-col items-center p-16 text-center text-white h-full justify-between">
-
-                            {/* 1. Header Section */}
-                            <div className="flex flex-col items-center mt-2 shrink-0">
-                                {/* Icon Header */}
-                                <div className="flex items-center gap-6 mb-6">
-                                    <Star className="w-12 h-12 text-[#FABD00] fill-current" />
-                                    <div className="bg-[#FABD00] text-[#003B70] px-6 h-12 rounded-sm font-bold tracking-widest text-xl uppercase shadow-sm flex items-center justify-center leading-none">
-                                        <span data-adjust="badge-text">Conquistadores</span>
-                                    </div>
-                                    <Star className="w-12 h-12 text-[#FABD00] fill-current" />
-                                </div>
-
-                                <h1 className="text-6xl font-extrabold tracking-wide drop-shadow-lg leading-tight font-serif text-white mb-6">
-                                    ¡Felicidades!
-                                </h1>
+                    <div style={{ width: '800px', height: '1200px', transform: 'scale(0.45)', transformOrigin: 'top center', margin: '0 auto -660px' }} className="shrink-0 transition-transform duration-300">
+                        <div className="w-full h-full relative flex flex-col shadow-2xl overflow-hidden rounded-[32px] border-4 border-[#FABD00]" style={{ backgroundColor: '#003B70' }}>
+                            <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
+                                <div className="absolute top-[-150px] right-[-150px] w-[300px] h-[300px] bg-[#D92C27] rotate-45 transform shadow-lg"></div>
+                                <div className="absolute top-[-140px] right-[-140px] w-[280px] h-[280px] border-[10px] border-[#FABD00] rotate-45 transform opacity-80"></div>
+                                <div className="absolute bottom-[-50px] left-[-50px] w-[150px] h-[150px] bg-[#FABD00] rounded-full opacity-20 blur-xl"></div>
                             </div>
-
-                            {/* 2. Photo Section - Centered */}
-                            <div className="relative group shrink-0 my-6">
-                                {/* Ring behind photo */}
-                                <div className="absolute -inset-2 bg-[#FABD00] rounded-full opacity-80 shadow-[0_0_30px_#FABD00]"></div>
-
-                                <div className="relative w-64 h-64 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center">
-                                    {member.photo && !photoError ? (
-                                        <img
-                                            src={member.photo}
-                                            alt={member.firstName}
-                                            className="w-full h-full object-cover animate-in fade-in duration-300"
-                                            onError={() => {
-                                                console.warn(`⚠️ Error al cargar la foto de ${member.firstName}, activando inicial de respaldo.`);
-                                                setPhotoError(true);
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full bg-[#E5E7EB] flex items-center justify-center animate-in zoom-in duration-300">
-                                            <span className="text-[120px] font-black text-[#003B70] leading-none font-serif">{member.firstName ? member.firstName[0].toUpperCase() : 'C'}</span>
+                            <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                                <svg viewBox="0 0 24 24" fill="white" className="w-[300px] h-[300px]">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
+                                    <path d="M2 12h20 M12 2v20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" strokeWidth="2" fill="none" />
+                                </svg>
+                            </div>
+                            <div className="absolute inset-6 border-4 border-[#FABD00] rounded-lg pointer-events-none opacity-50"></div>
+                            <div className="relative z-10 flex-1 flex flex-col items-center p-16 text-center text-white h-full justify-between">
+                                <div className="flex flex-col items-center mt-2 shrink-0">
+                                    <div className="flex items-center gap-6 mb-6">
+                                        <Star className="w-12 h-12 text-[#FABD00] fill-current" />
+                                        <div className="bg-[#FABD00] text-[#003B70] px-6 h-12 rounded-sm font-bold tracking-widest text-xl uppercase shadow-sm flex items-center justify-center leading-none">
+                                            <span>Conquistadores</span>
                                         </div>
-                                    )}
+                                        <Star className="w-12 h-12 text-[#FABD00] fill-current" />
+                                    </div>
+                                    <h1 className="text-6xl font-extrabold tracking-wide drop-shadow-lg leading-tight font-serif text-white mb-6">
+                                        ¡Felicidades!
+                                    </h1>
                                 </div>
-
-                                {/* Badge */}
-                                <div className="absolute -bottom-3 left-0 right-0 mx-auto w-max bg-[#D92C27] text-white px-6 h-9 rounded-sm shadow-md border border-white/20 whitespace-nowrap flex items-center justify-center">
-                                    <span data-adjust="badge-text" className="text-xl font-bold uppercase tracking-widest leading-none">Cumpleañero/a</span>
-                                </div>
-                            </div>
-
-                            {/* 3. Name, Age, Date & Verse Section */}
-                            <div className="flex flex-col items-center justify-end w-full mb-12 gap-6 min-h-0 flex-1 relative z-20">
-
-                                {/* Member Name */}
-                                <div className="w-full shrink-0 mb-4">
-                                    <h2 className="text-5xl font-bold drop-shadow-md leading-tight break-words px-4 font-serif text-white">
-                                        {member.firstName}
-                                    </h2>
-                                    <h2 className="text-4xl font-bold drop-shadow-md text-[#FABD00] leading-tight break-words px-4 font-serif uppercase tracking-wide">
-                                        {member.lastName}
-                                    </h2>
-                                </div>
-
-                                {/* Age and Date Badge */}
-                                <div className="flex flex-col items-center gap-1 my-0">
-                                    {member.dateOfBirth && (
-                                        <>
-                                            <div className="bg-[#D92C27] text-white px-8 h-10 rounded-full shadow-md border border-white/20 flex items-center justify-center">
-                                                <span data-adjust="badge-text" className="text-2xl font-bold tracking-wider leading-none">
-                                                    {new Date().getFullYear() - new Date(member.dateOfBirth).getFullYear()} Años
-                                                </span>
+                                <div className="relative group shrink-0 my-6">
+                                    <div className="absolute -inset-2 bg-[#FABD00] rounded-full opacity-80 shadow-[0_0_30px_#FABD00]"></div>
+                                    <div className="relative w-64 h-64 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center">
+                                        {member.photo && !photoError ? (
+                                            <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover animate-in fade-in duration-300" onError={() => setPhotoError(true)} />
+                                        ) : (
+                                            <div className="w-full h-full bg-[#E5E7EB] flex items-center justify-center">
+                                                <span className="text-[120px] font-black text-[#003B70] leading-none font-serif">{member.firstName ? member.firstName[0].toUpperCase() : 'C'}</span>
                                             </div>
-                                            <p className="text-xl text-white/90 font-medium capitalize mt-2 tracking-wide">
-                                                {new Date(new Date().getFullYear(), new Date(member.dateOfBirth + 'T12:00:00').getMonth(), new Date(member.dateOfBirth + 'T12:00:00').getDate()).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                            </p>
-                                        </>
-                                    )}
+                                        )}
+                                    </div>
+                                    <div className="absolute -bottom-3 left-0 right-0 mx-auto w-max bg-[#D92C27] text-white px-6 h-9 rounded-sm shadow-md border border-white/20 whitespace-nowrap flex items-center justify-center">
+                                        <span className="text-xl font-bold uppercase tracking-widest leading-none">Cumpleañero/a</span>
+                                    </div>
                                 </div>
-
-                                {/* Bible Verse Card - Compact padding, responsive width */}
-                                <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl p-10 mx-4 w-auto border border-white/10 shadow-lg flex flex-col justify-center relative overflow-hidden group-hover:bg-white/15 transition-colors">
-                                    <div className="absolute -left-2 top-0 bottom-0 w-2 bg-[#FABD00]"></div>
-                                    <p className="text-2xl italic font-medium text-white/95 leading-relaxed font-serif relative z-10 px-2">
-                                        "{randomVerse.text}"
-                                    </p>
-                                    <p className="text-lg text-[#FABD00] font-bold mt-4 text-right uppercase tracking-wider relative z-10">
-                                        — {randomVerse.citation}
-                                    </p>
+                                <div className="flex flex-col items-center justify-end w-full mb-12 gap-6 min-h-0 flex-1 relative z-20">
+                                    <div className="w-full shrink-0 mb-4">
+                                        <h2 className="text-5xl font-bold drop-shadow-md leading-tight break-words px-4 font-serif text-white">{member.firstName}</h2>
+                                        <h2 className="text-4xl font-bold drop-shadow-md text-[#FABD00] leading-tight break-words px-4 font-serif uppercase tracking-wide">{member.lastName}</h2>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-1 my-0">
+                                        {member.dateOfBirth && (
+                                            <>
+                                                <div className="bg-[#D92C27] text-white px-8 h-10 rounded-full shadow-md border border-white/20 flex items-center justify-center">
+                                                    <span className="text-2xl font-bold tracking-wider leading-none">
+                                                        {new Date().getFullYear() - new Date(member.dateOfBirth).getFullYear()} Años
+                                                    </span>
+                                                </div>
+                                                <p className="text-xl text-white/90 font-medium capitalize mt-2 tracking-wide font-sans">
+                                                    {new Date(new Date().getFullYear(), new Date(member.dateOfBirth + 'T12:00:00').getMonth(), new Date(member.dateOfBirth + 'T12:00:00').getDate()).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl p-10 mx-4 w-auto border border-white/10 shadow-lg flex flex-col justify-center relative overflow-hidden">
+                                        <div className="absolute -left-2 top-0 bottom-0 w-2 bg-[#FABD00]"></div>
+                                        <p className="text-2xl italic font-medium text-white/95 leading-relaxed font-serif relative z-10 px-2 text-center">"{randomVerse.text}"</p>
+                                        <p className="text-lg text-[#FABD00] font-bold mt-4 text-right uppercase tracking-wider relative z-10">— {randomVerse.citation}</p>
+                                    </div>
                                 </div>
-
                             </div>
-
-                        </div>
-
-                        {/* Festive Elements Overlay (Confetti/Balloons) */}
-                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                            {/* Balloon 1 (Red) - Top Left */}
-                            <div className="absolute top-[5%] left-[5%] opacity-90 animate-pulse" style={{ animationDuration: '3s' }}>
-                                <svg width="100" height="130" viewBox="0 0 50 65">
-                                    {/* String */}
-                                    <path d="M25 50 Q 25 60 20 65" stroke="rgba(255,255,255,0.6)" strokeWidth="1" fill="none" />
-                                    {/* Balloon */}
-                                    <path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#D92C27" />
-                                    {/* Shine */}
-                                    <ellipse cx="15" cy="15" rx="5" ry="8" fill="white" opacity="0.3" transform="rotate(-30 15 15)" />
-                                </svg>
+                            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                                <div className="absolute top-[5%] left-[5%] opacity-90"><svg width="100" height="130" viewBox="0 0 50 65"><path d="M25 50 Q 25 60 20 65" stroke="rgba(255,255,255,0.6)" strokeWidth="1" fill="none" /><path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#D92C27" /><ellipse cx="15" cy="15" rx="5" ry="8" fill="white" opacity="0.3" transform="rotate(-30 15 15)" /></svg></div>
+                                <div className="absolute top-[8%] right-[8%] opacity-90"><svg width="90" height="120" viewBox="0 0 50 65"><path d="M25 50 Q 25 65 30 65" stroke="rgba(255,255,255,0.6)" strokeWidth="1" fill="none" /><path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#FABD00" /><ellipse cx="15" cy="15" rx="5" ry="8" fill="white" opacity="0.3" transform="rotate(-30 15 15)" /></svg></div>
+                                <div className="absolute top-[15%] left-[25%] w-3 h-3 bg-yellow-300 rotate-45"></div>
+                                <div className="absolute top-[10%] right-[30%] w-4 h-4 bg-red-400 rounded-full"></div>
+                                <div className="absolute top-[20%] left-[10%] w-4 h-2 bg-white rotate-12"></div>
+                                <div className="absolute top-[22%] right-[15%] w-3 h-3 bg-[#FABD00] rotate-45"></div>
+                                <div className="absolute top-[35%] left-[15%] w-4 h-4 bg-blue-300 rounded-full opacity-60"></div>
+                                <div className="absolute bottom-[30%] left-[8%] w-4 h-4 bg-[#D92C27] rounded-sm rotate-12"></div>
+                                <div className="absolute bottom-[25%] right-[12%] w-3 h-6 bg-[#FABD00] -rotate-12"></div>
+                                <PartyPopper className="absolute bottom-20 left-2 text-[#FABD00] w-16 h-16 opacity-40 rotate-12" />
+                                <PartyPopper className="absolute bottom-32 right-2 text-[#D92C27] w-16 h-16 opacity-40 -rotate-12" />
+                                <Star className="absolute top-12 left-1/2 text-white w-4 h-4 opacity-60 animate-pulse" />
                             </div>
-
-                            {/* Balloon 2 (Gold) - Top Right */}
-                            <div className="absolute top-[8%] right-[8%] opacity-90 animate-pulse" style={{ animationDuration: '4s' }}>
-                                <svg width="90" height="120" viewBox="0 0 50 65">
-                                    <path d="M25 50 Q 25 65 30 65" stroke="rgba(255,255,255,0.6)" strokeWidth="1" fill="none" />
-                                    <path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#FABD00" />
-                                    <ellipse cx="15" cy="15" rx="5" ry="8" fill="white" opacity="0.3" transform="rotate(-30 15 15)" />
-                                </svg>
+                            <div className="relative z-10 bg-[#002f5a] pt-6 pb-4 px-8 text-center shrink-0 border-t-4 border-[#FABD00]">
+                                <p className="text-xl font-bold text-white tracking-[0.2em] uppercase font-sans">Club de Conquistadores Vencedores</p>
                             </div>
-
-                            {/* Balloon 3 (Blue) - Mid Left Background */}
-                            <div className="absolute top-[25%] left-[-5%] opacity-20 transform rotate-12">
-                                <svg width="120" height="160" viewBox="0 0 50 65">
-                                    <path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#003B70" />
-                                </svg>
-                            </div>
-
-                            {/* EXPANDED CONFETTI */}
-                            {/* Top/Mid Section */}
-                            <div className="absolute top-[15%] left-[25%] w-3 h-3 bg-yellow-300 rotate-45 animate-bounce"></div>
-                            <div className="absolute top-[10%] right-[30%] w-4 h-4 bg-red-400 rounded-full"></div>
-                            <div className="absolute top-[20%] left-[10%] w-4 h-2 bg-white rotate-12"></div>
-                            <div className="absolute top-[22%] right-[15%] w-3 h-3 bg-[#FABD00] rotate-45"></div>
-                            <div className="absolute top-[5%] left-[50%] w-2 h-6 bg-red-300 rotate-12"></div>
-
-                            {/* Around Photo */}
-                            <div className="absolute top-[35%] left-[15%] w-4 h-4 bg-blue-300 rounded-full opacity-60"></div>
-                            <div className="absolute top-[38%] right-[20%] w-4 h-4 bg-yellow-200 rotate-12 opacity-80"></div>
-                            <div className="absolute top-[32%] left-[80%] w-3 h-3 bg-white rotate-45 opacity-60"></div>
-
-                            {/* Bottom Section */}
-                            <div className="absolute bottom-[30%] left-[8%] w-4 h-4 bg-[#D92C27] rounded-sm rotate-12"></div>
-                            <div className="absolute bottom-[25%] right-[12%] w-3 h-6 bg-[#FABD00] -rotate-12"></div>
-                            <div className="absolute bottom-[40%] right-[5%] w-4 h-4 bg-white rounded-full opacity-50"></div>
-                            <div className="absolute bottom-[15%] left-[20%] w-2 h-4 bg-blue-400 rotate-45"></div>
-                            <div className="absolute bottom-[40%] left-[5%] text-[#FABD00] opacity-40">
-                                <Sparkles className="w-12 h-12" />
-                            </div>
-
-                            {/* Sparkles/Fireworks/Poppers */}
-                            <PartyPopper className="absolute bottom-20 left-2 text-[#FABD00] w-16 h-16 opacity-40 rotate-12" />
-                            <PartyPopper className="absolute bottom-32 right-2 text-[#D92C27] w-16 h-16 opacity-40 -rotate-12" />
-                            <Star className="absolute top-12 left-1/2 text-white w-4 h-4 opacity-60 animate-pulse" />
-                            <Star className="absolute bottom-10 right-1/4 text-yellow-200 w-6 h-6 opacity-60" />
-                        </div>
-
-                        {/* Footer Branding */}
-                        <div className="relative z-10 bg-[#002f5a] pt-6 pb-4 px-8 text-center shrink-0 border-t-4 border-[#FABD00]">
-                            <p className="text-xl font-bold text-white tracking-[0.2em] uppercase">
-                                Club de Conquistadores Vencedores
-                            </p>
                         </div>
                     </div>
                 </div>
 
-            </div>
-
-                {/* Footer Actions */}
-                <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-end gap-3 shrink-0">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        Cancelar
-                    </button>
-
-                    <button
-                        onClick={handleDownload}
-                        disabled={isGenerating}
-                        className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 transform active:scale-95"
-                    >
-                        {isGenerating ? (
-                            <span className="animate-pulse">Generando...</span>
-                        ) : (
-                            <>
-                                <Download className="w-5 h-5" />
-                                Descargar Imagen
-                            </>
-                        )}
-                    </button>
+                <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px', height: '1200px', overflow: 'hidden' }}>
+                    <div ref={cardRef} className="w-full h-full relative flex flex-col overflow-hidden" style={{ width: '800px', height: '1200px', backgroundColor: '#003B70' }}>
+                        <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
+                            <div className="absolute top-[-150px] right-[-150px] w-[300px] h-[300px] bg-[#D92C27] rotate-45 transform shadow-lg"></div>
+                            <div className="absolute top-[-140px] right-[-140px] w-[280px] h-[280px] border-[10px] border-[#FABD00] rotate-45 transform opacity-80"></div>
+                            <div className="absolute bottom-[-50px] left-[-50px] w-[150px] h-[150px] bg-[#FABD00] rounded-full opacity-20 blur-xl"></div>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
+                            <svg viewBox="0 0 24 24" fill="white" className="w-[300px] h-[300px]"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" /><path d="M2 12h20 M12 2v20 M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" strokeWidth="2" fill="none" /></svg>
+                        </div>
+                        <div className="absolute inset-6 border-4 border-[#FABD00] rounded-lg pointer-events-none opacity-50"></div>
+                        <div className="relative z-10 flex-1 flex flex-col items-center p-16 text-center text-white h-full justify-between">
+                            <div className="flex flex-col items-center mt-2 shrink-0">
+                                <div className="flex items-center gap-6 mb-6">
+                                    <Star className="w-12 h-12 text-[#FABD00] fill-current" />
+                                    <div className="bg-[#FABD00] text-[#003B70] px-6 h-12 rounded-sm font-bold tracking-widest text-xl uppercase shadow-sm flex items-center justify-center leading-none"><span style={{ display: 'inline-block', transform: 'translateY(-1px)' }}>Conquistadores</span></div>
+                                    <Star className="w-12 h-12 text-[#FABD00] fill-current" />
+                                </div>
+                                <h1 className="text-6xl font-extrabold tracking-wide drop-shadow-lg leading-tight font-serif text-white mb-6">¡Felicidades!</h1>
+                            </div>
+                            <div className="relative group shrink-0 my-6">
+                                <div className="absolute -inset-2 bg-[#FABD00] rounded-full opacity-80 shadow-[0_0_30px_#FABD00]"></div>
+                                <div className="relative w-64 h-64 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center">
+                                    {photoBase64 ? <img src={photoBase64} alt={member.firstName} className="w-full h-full object-cover" /> : member.photo ? <img src={member.photo} alt={member.firstName} className="w-full h-full object-cover" crossOrigin="anonymous" /> : <div className="w-full h-full bg-[#E5E7EB] flex items-center justify-center"><span className="text-[120px] font-black text-[#003B70] leading-none font-serif">{member.firstName ? member.firstName[0].toUpperCase() : 'C'}</span></div>}
+                                </div>
+                                <div className="absolute -bottom-3 left-0 right-0 mx-auto w-max bg-[#D92C27] text-white px-6 h-9 rounded-sm shadow-md border border-white/20 whitespace-nowrap flex items-center justify-center"><span style={{ display: 'inline-block', transform: 'translateY(-1px)' }} className="text-xl font-bold uppercase tracking-widest leading-none">Cumpleañero/a</span></div>
+                            </div>
+                            <div className="flex flex-col items-center justify-end w-full mb-12 gap-6 min-h-0 flex-1 relative z-20">
+                                <div className="w-full shrink-0 mb-4">
+                                    <h2 className="text-5xl font-bold drop-shadow-md leading-tight break-words px-4 font-serif text-white">{member.firstName}</h2>
+                                    <h2 className="text-4xl font-bold drop-shadow-md text-[#FABD00] leading-tight break-words px-4 font-serif uppercase tracking-wide">{member.lastName}</h2>
+                                </div>
+                                <div className="flex flex-col items-center gap-1 my-0">
+                                    {member.dateOfBirth && (
+                                        <>
+                                            <div className="bg-[#D92C27] text-white px-8 h-10 rounded-full shadow-md border border-white/20 flex items-center justify-center"><span style={{ display: 'inline-block', transform: 'translateY(-1px)' }} className="text-2xl font-bold tracking-wider leading-none">{new Date().getFullYear() - new Date(member.dateOfBirth).getFullYear()} Años</span></div>
+                                            <p className="text-xl text-white/90 font-medium capitalize mt-2 tracking-wide font-sans">{new Date(new Date().getFullYear(), new Date(member.dateOfBirth + 'T12:00:00').getMonth(), new Date(member.dateOfBirth + 'T12:00:00').getDate()).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                        </>
+                                    )}
+                                </div>
+                                <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl p-10 mx-4 w-auto border border-white/10 shadow-lg flex flex-col justify-center relative overflow-hidden">
+                                    <div className="absolute -left-2 top-0 bottom-0 w-2 bg-[#FABD00]"></div>
+                                    <p className="text-2xl italic font-medium text-white/95 leading-relaxed font-serif relative z-10 px-2 text-center">"{randomVerse.text}"</p>
+                                    <p className="text-lg text-[#FABD00] font-bold mt-4 text-right uppercase tracking-wider relative z-10">— {randomVerse.citation}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                            <div className="absolute top-[5%] left-[5%] opacity-90"><svg width="100" height="130" viewBox="0 0 50 65"><path d="M25 50 Q 25 60 20 65" stroke="rgba(255,255,255,0.6)" strokeWidth="1" fill="none" /><path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#D92C27" /><ellipse cx="15" cy="15" rx="5" ry="8" fill="white" opacity="0.3" transform="rotate(-30 15 15)" /></svg></div>
+                            <div className="absolute top-[8%] right-[8%] opacity-90"><svg width="90" height="120" viewBox="0 0 50 65"><path d="M25 50 Q 25 65 30 65" stroke="rgba(255,255,255,0.6)" strokeWidth="1" fill="none" /><path d="M25 0 C 13 0 2 12 2 28 C 2 45 18 50 25 50 C 32 50 48 45 48 28 C 48 12 37 0 25 0 Z" fill="#FABD00" /><ellipse cx="15" cy="15" rx="5" ry="8" fill="white" opacity="0.3" transform="rotate(-30 15 15)" /></svg></div>
+                            <div className="absolute top-[15%] left-[25%] w-3 h-3 bg-yellow-300 rotate-45"></div>
+                            <div className="absolute top-[10%] right-[30%] w-4 h-4 bg-red-400 rounded-full"></div>
+                            <div className="absolute top-[20%] left-[10%] w-4 h-2 bg-white rotate-12"></div>
+                            <div className="absolute top-[22%] right-[15%] w-3 h-3 bg-[#FABD00] rotate-45"></div>
+                            <div className="absolute top-[35%] left-[15%] w-4 h-4 bg-blue-300 rounded-full opacity-60"></div>
+                            <div className="absolute bottom-[30%] left-[8%] w-4 h-4 bg-[#D92C27] rounded-sm rotate-12"></div>
+                            <div className="absolute bottom-[25%] right-[12%] w-3 h-6 bg-[#FABD00] -rotate-12"></div>
+                            <PartyPopper className="absolute bottom-20 left-2 text-[#FABD00] w-16 h-16 opacity-40 rotate-12" />
+                            <PartyPopper className="absolute bottom-32 right-2 text-[#D92C27] w-16 h-16 opacity-40 -rotate-12" />
+                            <Star className="absolute top-12 left-1/2 text-white w-4 h-4 opacity-60 animate-pulse" />
+                        </div>
+                        <div className="relative z-10 bg-[#002f5a] pt-6 pb-4 px-8 text-center shrink-0 border-t-4 border-[#FABD00]">
+                            <p className="text-xl font-bold text-white tracking-[0.2em] uppercase font-sans">Club de Conquistadores Vencedores</p>
+                        </div>
+                    </div>
                 </div>
 
+                <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-end gap-3 shrink-0">
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">Cancelar</button>
+                    <button onClick={handleDownload} disabled={isGenerating} className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 transform active:scale-95">
+                        {isGenerating ? <span className="animate-pulse">Generando...</span> : <><Download className="w-5 h-5" /> Descargar Imagen</>}
+                    </button>
+                </div>
             </div>
         </div>
     );
