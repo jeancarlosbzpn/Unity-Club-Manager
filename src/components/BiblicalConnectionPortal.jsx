@@ -69,6 +69,25 @@ const BiblicalConnectionPortal = ({
     setLocalAnswers({});
   }, [activeSession?.activeModuleIndex]);
 
+  // 3. Shuffle questions using Fisher-Yates when current module changes
+  const [shuffledQuestions, setShuffledQuestions] = useState([]);
+
+  useEffect(() => {
+    if (currentModule && currentModule.questions && currentModule.questions.length > 0) {
+      const questionsCopy = [...currentModule.questions];
+      
+      // Algoritmo Fisher-Yates
+      for (let i = questionsCopy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questionsCopy[i], questionsCopy[j]] = [questionsCopy[j], questionsCopy[i]];
+      }
+      
+      setShuffledQuestions(questionsCopy);
+    } else {
+      setShuffledQuestions([]);
+    }
+  }, [currentModule?.id]);
+
   const handleJoin = async () => {
     if (!activeSession) return;
     await onJoinSession(activeSession.id);
@@ -135,6 +154,39 @@ const BiblicalConnectionPortal = ({
 
   // Render Lobby, Live Quiz, Waiting Screen, or Results
   const renderContent = () => {
+    // Control de acceso: Validar si la sesión activa tiene participantes declarados y el miembro no está en la lista
+    if (activeSession && activeSession.participantIds && !activeSession.participantIds.map(String).includes(String(member.id))) {
+      return (
+        <div className="max-w-xl mx-auto py-12">
+          <div className="p-8 md:p-10 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-800 text-center shadow-xl shadow-slate-100/50 dark:shadow-none animate-in fade-in duration-300">
+            <div className="w-16 h-16 bg-red-500/10 dark:bg-red-400/5 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-8 h-8 animate-pulse" />
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-400 rounded-full inline-block mb-3">
+              ● Acceso No Registrado
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2 leading-tight">
+              No Participando
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+              ¡Hola! Tu perfil no ha sido incluido en la lista de participantes autorizados para esta competencia bíblica activa.
+            </p>
+            <p className="text-xs text-slate-400 leading-relaxed max-w-sm mx-auto mb-8 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+              Pide a tu director o instructor de clase que te añada a la lista de participantes desde la consola de administración del club.
+            </p>
+            <button
+              onClick={onRefreshData}
+              disabled={isSyncing}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-650 text-white font-bold rounded-2xl transition"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>Verificar si fui añadido</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     // ----------------------------------------------------
     // CASE A: SESSION IN PROGRESS AND MEMBER ACTIVE
     // ----------------------------------------------------
@@ -220,7 +272,7 @@ const BiblicalConnectionPortal = ({
 
             {/* Questions Container */}
             <div className="space-y-6">
-              {currentModule.questions.map((q, idx) => {
+              {shuffledQuestions.map((q, idx) => {
                 const answer = localAnswers[q.id];
                 
                 return (

@@ -41,6 +41,12 @@ const BiblicalConnectionAdmin = ({
   const [monitorSession, setMonitorSession] = useState(null);
   const [monitorTab, setMonitorTab] = useState('progress'); // 'progress' | 'grading' | 'ranking'
 
+  // Participant Selection States
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedSessionForActive, setSelectedSessionForActive] = useState(null);
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState([]);
+  const [unitFilter, setUnitFilter] = useState('all');
+
   // Filter list states
   const [listFilter, setListFilter] = useState('all'); // 'all' | 'active' | 'draft' | 'completed'
 
@@ -277,14 +283,39 @@ const BiblicalConnectionAdmin = ({
     setActiveTab('monitor');
   };
 
-  const handleStartSession = async (session) => {
-    if (confirm(`¿Deseas iniciar la sesión "${session.title}"? Los miembros podrán entrar desde su portal.`)) {
-      await onUpdateSessionStatus(session.id, { status: 'active', activeModuleIndex: 0 });
-      // Update local state if monitoring
-      if (monitorSession && monitorSession.id === session.id) {
-        setMonitorSession(prev => ({ ...prev, status: 'active', activeModuleIndex: 0 }));
-      }
+  const handleStartSession = (session) => {
+    setSelectedSessionForActive(session);
+    // Seleccionar por defecto a todos los miembros no exentos de puntuación
+    const initialParticipants = members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring).map(m => m.id);
+    setSelectedParticipantIds(initialParticipants);
+    setUnitFilter('all');
+    setShowParticipantsModal(true);
+  };
+
+  const handleConfirmStartSession = async () => {
+    if (selectedParticipantIds.length === 0) {
+      alert('Debes seleccionar al menos a un miembro participante para poder iniciar la competencia.');
+      return;
     }
+
+    await onUpdateSessionStatus(selectedSessionForActive.id, { 
+      status: 'active', 
+      activeModuleIndex: 0,
+      participantIds: selectedParticipantIds
+    });
+
+    // Update local state if monitoring
+    if (monitorSession && monitorSession.id === selectedSessionForActive.id) {
+      setMonitorSession(prev => ({ 
+        ...prev, 
+        status: 'active', 
+        activeModuleIndex: 0,
+        participantIds: selectedParticipantIds
+      }));
+    }
+
+    setShowParticipantsModal(false);
+    handleStartMonitor(selectedSessionForActive);
   };
 
   const handleNextModule = async () => {
@@ -367,15 +398,64 @@ const BiblicalConnectionAdmin = ({
   }
 
   // Live Leaderboard calculation
-  const liveLeaderboard = [...activeSessionResponses].sort((a, b) => {
-    const scoreA = a.score || 0;
-    const scoreB = b.score || 0;
-    if (scoreB !== scoreA) return scoreB - scoreA;
-    // Tie breaker: completed first
-    const timeA = a.completedAt ? new Date(a.completedAt).getTime() : Date.now();
-    const timeB = b.completedAt ? new Date(b.completedAt).getTime() : Date.now();
-    return timeA - timeB;
-  });
+  const liveLeaderboard = React.useMemo(() => {
+    if (!monitorSession) return [];
+
+    const participantIds = monitorSession.participantIds || [];
+    let leaderboardData = [];
+
+    if (participantIds.length > 0) {
+      leaderboardData = participantIds.map(pId => {
+        const existingResponse = activeSessionResponses.find(r => String(r.memberId) === String(pId));
+        const memberObj = members.find(m => String(m.id) === String(pId));
+
+        if (existingResponse) {
+          return {
+            ...existingResponse,
+            status: existingResponse.status || 'joined'
+          };
+        } else {
+          // Resolver el nombre de la unidad si tiene unitId
+          const uName = memberObj?.unitId || 'Sin Unidad';
+          
+          return {
+            id: `temp_${pId}`,
+            memberId: pId,
+            memberName: memberObj ? `${memberObj.firstName} ${memberObj.lastName}` : 'Miembro',
+            unitName: uName,
+            score: 0,
+            totalCorrect: 0,
+            totalManualCorrect: 0,
+            currentModuleIndex: -1,
+            status: 'not_joined',
+            timeSpent: 999999
+          };
+        }
+      });
+    } else {
+      leaderboardData = activeSessionResponses.map(r => ({
+        ...r,
+        status: r.status || 'joined'
+      }));
+    }
+
+    return leaderboardData.sort((a, b) => {
+      // 1. Mayor puntuación acumulada
+      const scoreA = a.score || 0;
+      const scoreB = b.score || 0;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+
+      // 2. Mayor número de aciertos (correctas automáticas + manuales)
+      const correctA = (a.totalCorrect || 0) + (a.totalManualCorrect || 0);
+      const correctB = (b.totalCorrect || 0) + (b.totalManualCorrect || 0);
+      if (correctB !== correctA) return correctB - correctA;
+
+      // 3. Menor tiempo empleado en responder
+      const timeSpentA = a.timeSpent || (a.completedAt && a.startedAt ? (new Date(a.completedAt).getTime() - new Date(a.startedAt).getTime()) / 1000 : 999999);
+      const timeSpentB = b.timeSpent || (b.completedAt && b.startedAt ? (new Date(b.completedAt).getTime() - new Date(b.startedAt).getTime()) / 1000 : 999999);
+      return timeSpentA - timeSpentB;
+    });
+  }, [monitorSession, activeSessionResponses, members]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-200">
@@ -1203,9 +1283,10 @@ const BiblicalConnectionAdmin = ({
                           <th className="py-3 px-4 text-center w-16">Puesto</th>
                           <th className="py-3 px-4">Miembro</th>
                           <th className="py-3 px-4">Unidad</th>
-                          <th className="py-3 px-4 text-center">Correctas Autogrado</th>
-                          <th className="py-3 px-4 text-center">Correctas Abiertas</th>
-                          <th className="py-3 px-4 text-right">Puntuación Total</th>
+                          <th className="py-3 px-4 text-center">Estado</th>
+                          <th className="py-3 px-4 text-center">Aciertos (Auto / Manual)</th>
+                          <th className="py-3 px-4 text-center">Tiempo Empleado</th>
+                          <th className="py-3 px-4 text-right">Puntuación</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1216,16 +1297,32 @@ const BiblicalConnectionAdmin = ({
                             'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300',    // Silver
                             'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/15 dark:text-amber-500' // Bronze
                           ];
+
+                          const isNotJoined = row.status === 'not_joined';
+                          const isFinished = row.status === 'completed';
+                          
+                          // Formatear tiempo empleado de forma amigable
+                          let timeText = '-';
+                          if (isFinished) {
+                            const secs = row.timeSpent && row.timeSpent !== 999999
+                              ? row.timeSpent
+                              : (row.completedAt && row.startedAt 
+                                  ? (new Date(row.completedAt).getTime() - new Date(row.startedAt).getTime()) / 1000 
+                                  : null);
+                            if (secs !== null) {
+                              timeText = secs < 60 ? `${Math.round(secs)}s` : `${Math.floor(secs / 60)}m ${Math.round(secs % 60)}s`;
+                            }
+                          }
                           
                           return (
                             <tr 
                               key={row.id} 
                               className={`border-b border-slate-100 dark:border-slate-850 transition ${
-                                index === 0 ? 'bg-amber-50/10 dark:bg-amber-950/5' : ''
-                              }`}
+                                index === 0 && !isNotJoined ? 'bg-amber-50/10 dark:bg-amber-950/5' : ''
+                              } ${isNotJoined ? 'opacity-50' : ''}`}
                             >
                               <td className="py-4 px-4 text-center">
-                                {isPodium ? (
+                                {isPodium && !isNotJoined ? (
                                   <span className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full font-black text-sm border ${podiumColors[index]}`}>
                                     {index + 1}
                                   </span>
@@ -1234,12 +1331,29 @@ const BiblicalConnectionAdmin = ({
                                 )}
                               </td>
                               <td className="py-4 px-4 font-bold flex items-center gap-2">
-                                {row.memberName}
-                                {index === 0 && <Award className="w-4 h-4 text-amber-500" />}
+                                <span className={isNotJoined ? 'text-slate-400 dark:text-slate-500 font-medium' : ''}>
+                                  {row.memberName}
+                                </span>
+                                {index === 0 && !isNotJoined && <Award className="w-4 h-4 text-amber-500" />}
                               </td>
                               <td className="py-4 px-4 text-sm text-slate-500 dark:text-slate-400">{row.unitName}</td>
-                              <td className="py-4 px-4 text-center text-sm font-semibold">{row.totalCorrect || 0}</td>
-                              <td className="py-4 px-4 text-center text-sm font-semibold">{row.totalManualCorrect || 0}</td>
+                              <td className="py-4 px-4 text-center">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full ${
+                                  isNotJoined
+                                    ? 'bg-slate-100 text-slate-400 dark:bg-slate-800'
+                                    : isFinished
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 animate-pulse'
+                                }`}>
+                                  {isNotJoined ? 'Esperando' : isFinished ? 'Listo' : 'Jugando'}
+                                </span>
+                              </td>
+                              <td className="py-4 px-4 text-center text-sm font-semibold">
+                                {isNotJoined ? '-' : `${row.totalCorrect || 0} / ${row.totalManualCorrect || 0}`}
+                              </td>
+                              <td className="py-4 px-4 text-center text-sm font-semibold font-mono text-slate-500">
+                                {timeText}
+                              </td>
                               <td className="py-4 px-4 text-right font-black text-amber-500 text-lg">
                                 {row.score || 0}
                               </td>
@@ -1257,6 +1371,142 @@ const BiblicalConnectionAdmin = ({
         </div>
       )}
 
+      {/* MODAL DE SELECCIÓN DE PARTICIPANTES */}
+      {showParticipantsModal && selectedSessionForActive && (
+        <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-850 rounded-t-[40px] sm:rounded-[30px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 max-h-[85vh] overflow-y-auto relative border border-slate-200 dark:border-slate-750">
+            <button 
+              onClick={() => setShowParticipantsModal(false)}
+              className="absolute top-6 right-6 p-2.5 bg-slate-105 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 rounded-xl text-slate-500 dark:text-slate-300 transition shadow-sm border border-slate-200/50"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Users className="w-5 h-5 text-amber-500" />
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fase de Preparación</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                Selección de Participantes
+              </h3>
+              <p className="text-sm text-slate-550 dark:text-slate-400 mt-1">
+                Elige a los miembros que competirán en la sesión: <span className="font-extrabold text-amber-500">"{selectedSessionForActive.title}"</span>
+              </p>
+            </div>
+
+            {/* CONTROLES RÁPIDOS */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800 items-center justify-between">
+              {/* Filtro por unidad */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filtrar por Unidad:</span>
+                <select
+                  value={unitFilter}
+                  onChange={(e) => setUnitFilter(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-amber-500 outline-none"
+                >
+                  <option value="all">Todas las Unidades</option>
+                  {Array.from(new Set(members.filter(m => m.unitId).map(m => m.unitId))).map(uId => (
+                    <option key={uId} value={uId}>{uId}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botones de acción rápida */}
+              <div className="flex gap-2 w-full sm:w-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allIds = members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring).map(m => m.id);
+                    setSelectedParticipantIds(allIds);
+                  }}
+                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
+                >
+                  Seleccionar Todos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedParticipantIds([])}
+                  className="px-3 py-2 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
+                >
+                  Deseleccionar Todos
+                </button>
+              </div>
+            </div>
+
+            {/* LISTA DE MIEMBROS */}
+            <div className="space-y-3 max-h-[40vh] overflow-y-auto mb-8 pr-2">
+              {members
+                .filter(m => !m.isExemptFromPoints && !m.exemptFromScoring)
+                .filter(m => unitFilter === 'all' || String(m.unitId) === String(unitFilter))
+                .map(m => {
+                  const isChecked = selectedParticipantIds.includes(m.id);
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => {
+                        setSelectedParticipantIds(prev =>
+                          isChecked 
+                            ? prev.filter(id => id !== m.id)
+                            : [...prev, m.id]
+                        );
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
+                        isChecked
+                          ? 'border-amber-500 bg-amber-50/5 dark:bg-amber-950/10'
+                          : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                          isChecked ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                        }`}>
+                          {m.firstName.charAt(0)}{m.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <span className="block font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                            {m.firstName} {m.lastName}
+                          </span>
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                            Unidad: {m.unitId || 'Sin Unidad'} • Clase: {m.pathfinderClass || m.currentClass || 'Ninguna'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                        isChecked 
+                          ? 'bg-amber-500 border-amber-500 text-white' 
+                          : 'border-slate-300 dark:border-slate-650'
+                      }`}>
+                        {isChecked && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* BOTONES DE CONFIRMACIÓN */}
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setShowParticipantsModal(false)}
+                className="flex-1 py-3 border border-slate-200 dark:border-slate-700 dark:hover:bg-slate-850 font-bold rounded-2xl text-sm text-slate-700 dark:text-slate-300 transition"
+              >
+                Cancelar
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleConfirmStartSession}
+                className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-extrabold rounded-2xl text-sm transition shadow-lg shadow-red-500/15 flex items-center justify-center gap-2"
+              >
+                <Play className="w-4 h-4 animate-pulse" />
+                <span>Confirmar e Iniciar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

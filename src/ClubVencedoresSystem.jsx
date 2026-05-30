@@ -2568,6 +2568,7 @@ const ClubVencedoresSystem = () => {
 
   const handleGradeManualResponse = async (responseId, questionId, isCorrect) => {
     try {
+      let targetRespItem = null;
       const updatedResponses = biblicalConnectionResponses.map(resp => {
         if (resp.id === responseId) {
           const answers = resp.answers || {};
@@ -2586,17 +2587,21 @@ const ClubVencedoresSystem = () => {
           const totalCorrect = resp.totalCorrect || 0;
           const totalManualCorrect = Object.entries(newAnswers).filter(([_, a]) => a.isCorrect === true && a.gradedAt).length;
           
-          return {
+          targetRespItem = {
             ...resp,
             answers: newAnswers,
             totalManualCorrect,
             score: totalCorrect + totalManualCorrect
           };
+          return targetRespItem;
         }
         return resp;
       });
-      setBiblicalConnectionResponses(updatedResponses);
-      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+
+      if (targetRespItem) {
+        setBiblicalConnectionResponses(prev => prev.map(r => r.id === responseId ? targetRespItem : r));
+        await dataService.saveSingle('biblicalConnectionResponses', targetRespItem);
+      }
       console.log('✅ Calificación manual aplicada.');
     } catch (e) {
       console.error('Error al calificar la respuesta manual:', e);
@@ -2627,9 +2632,12 @@ const ClubVencedoresSystem = () => {
         startedAt: new Date().toISOString()
       };
 
-      const updatedResponses = [...biblicalConnectionResponses, newResponse];
-      setBiblicalConnectionResponses(updatedResponses);
-      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+      setBiblicalConnectionResponses(prev => {
+        const exists = prev.some(r => r.id === responseId);
+        if (exists) return prev;
+        return [...prev, newResponse];
+      });
+      await dataService.saveSingle('biblicalConnectionResponses', newResponse);
       console.log('✅ Miembro se unió a la sesión de Conexión Bíblica.');
     } catch (e) {
       console.error('Error al unirse a la sesión de Conexión Bíblica:', e);
@@ -2682,24 +2690,27 @@ const ClubVencedoresSystem = () => {
       // Check if this was the last module in the session
       const session = biblicalConnectionSessions.find(s => s.id === sessionId);
       const isLastModule = session && moduleIdx === session.modules.length - 1;
+      const completedAtStr = isLastModule ? new Date().toISOString() : undefined;
+      
+      let timeSpentSecs = undefined;
+      if (isLastModule) {
+        const startedAtTime = currentResp.startedAt ? new Date(currentResp.startedAt).getTime() : Date.now();
+        timeSpentSecs = (new Date(completedAtStr).getTime() - startedAtTime) / 1000;
+      }
 
-      const updatedResponses = biblicalConnectionResponses.map(r => {
-        if (r.id === responseId) {
-          return {
-            ...r,
-            answers: newAnswers,
-            totalCorrect: newCorrect,
-            currentModuleIndex: moduleIdx,
-            status: isLastModule ? 'completed' : 'waiting_next',
-            score: newCorrect + (r.totalManualCorrect || 0),
-            completedAt: isLastModule ? new Date().toISOString() : undefined
-          };
-        }
-        return r;
-      });
+      const finalResponseItem = {
+        ...currentResp,
+        answers: newAnswers,
+        totalCorrect: newCorrect,
+        currentModuleIndex: moduleIdx,
+        status: isLastModule ? 'completed' : 'waiting_next',
+        score: newCorrect + (currentResp.totalManualCorrect || 0),
+        completedAt: completedAtStr,
+        timeSpent: timeSpentSecs
+      };
 
-      setBiblicalConnectionResponses(updatedResponses);
-      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+      setBiblicalConnectionResponses(prev => prev.map(r => r.id === responseId ? finalResponseItem : r));
+      await dataService.saveSingle('biblicalConnectionResponses', finalResponseItem);
       console.log('✅ Respuestas del módulo de Conexión Bíblica enviadas.');
     } catch (e) {
       console.error('Error al enviar las respuestas del módulo:', e);
