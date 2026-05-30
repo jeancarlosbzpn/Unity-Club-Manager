@@ -10,6 +10,7 @@ const BiblicalConnectionPortal = ({
   responses = [],
   onJoinSession,
   onSubmitAnswers,
+  onDisqualifyMember,
   onRefreshData,
   isSyncing = false
 }) => {
@@ -88,6 +89,46 @@ const BiblicalConnectionPortal = ({
     }
   }, [currentModule?.id]);
 
+  // 4. Anti-Cheat: Detect losing focus or changing tabs when actively playing
+  useEffect(() => {
+    const isPlaying = activeSession && memberResponse && memberResponse.status === 'playing' && currentModule;
+    if (!isPlaying) return;
+
+    let alreadyDisqualified = false;
+
+    const handleCheatDisqualify = async (eventDetails) => {
+      if (alreadyDisqualified) return;
+      alreadyDisqualified = true;
+
+      console.warn("⚠️ Anti-Cheat Activado: Infracción detectada.", eventDetails);
+      try {
+        if (onDisqualifyMember) {
+          await onDisqualifyMember(activeSession.id, "Salió de la pantalla de juego / Cambió de pestaña");
+        }
+      } catch (err) {
+        console.error("Error al registrar la descalificación:", err);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleCheatDisqualify("visibility_hidden");
+      }
+    };
+
+    const handleWindowBlur = () => {
+      handleCheatDisqualify("window_blur");
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, [activeSession?.id, memberResponse?.status, currentModule?.id, onDisqualifyMember]);
+
   const handleJoin = async () => {
     if (!activeSession) return;
     await onJoinSession(activeSession.id);
@@ -154,6 +195,48 @@ const BiblicalConnectionPortal = ({
 
   // Render Lobby, Live Quiz, Waiting Screen, or Results
   const renderContent = () => {
+    // 0. Control de seguridad: Validar si el participante fue descalificado (Anti-Cheat)
+    if (memberResponse && memberResponse.status === 'disqualified') {
+      return (
+        <div className="max-w-xl mx-auto py-12">
+          <div className="p-8 md:p-10 bg-red-500/10 dark:bg-red-950/15 border-2 border-red-500 rounded-3xl text-center shadow-xl shadow-red-500/5 dark:shadow-none animate-in fade-in duration-350">
+            <div className="w-16 h-16 bg-red-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-600/20">
+              <X className="w-9 h-9 stroke-[3px]" />
+            </div>
+            
+            <span className="text-xs font-black px-3 py-1 bg-red-600 text-white rounded-full inline-block mb-3 uppercase tracking-wider animate-pulse">
+              ● Participación Anulada
+            </span>
+
+            <h2 className="text-3xl font-black text-red-600 dark:text-red-400 mb-2 leading-tight">
+              Descalificado del Concurso
+            </h2>
+            <p className="text-slate-700 dark:text-slate-350 text-sm font-bold mb-6">
+              ¡Infracción de Seguridad Detectada!
+            </p>
+
+            <div className="text-left text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto mb-8 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-red-200/50 dark:border-red-950/50 space-y-3 font-semibold">
+              <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="font-bold text-slate-400">Motivo:</span>
+                <span className="font-black text-red-600 dark:text-red-400">{memberResponse.disqualificationReason || 'Salió de la pantalla de juego'}</span>
+              </div>
+              <div className="flex justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="font-bold text-slate-400">Concurso:</span>
+                <span className="font-extrabold text-slate-750 dark:text-slate-300">{activeSession?.title || 'Conexión Bíblica'}</span>
+              </div>
+              <p className="text-center font-bold text-[10px] text-red-500 uppercase tracking-widest pt-1 leading-snug">
+                ⚠️ Las reglas del club prohíben cambiar de pestaña, minimizar el juego o perder el foco del navegador. Tu puntuación ha sido invalidada.
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Esta pantalla se cerrará de forma automática e inmediata en cuanto el administrador finalice la sesión actual.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // Control de acceso: Validar si la sesión activa tiene participantes declarados y el miembro no está en la lista
     if (activeSession && activeSession.participantIds && !activeSession.participantIds.map(String).includes(String(member.id))) {
       return (

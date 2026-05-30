@@ -2644,6 +2644,31 @@ const ClubVencedoresSystem = () => {
     }
   };
 
+  const handleDisqualifyBiblicalMember = async (sessionId, reason = "Salió de la pantalla de juego") => {
+    try {
+      const memberId = portalMember?.id;
+      if (!memberId) return;
+
+      const responseId = `${sessionId}-${memberId}`;
+      const currentResp = biblicalConnectionResponses.find(r => r.id === responseId);
+      if (!currentResp) return;
+
+      const disqualifiedResponseItem = {
+        ...currentResp,
+        status: 'disqualified',
+        disqualificationReason: reason,
+        completedAt: new Date().toISOString(),
+        score: 0
+      };
+
+      setBiblicalConnectionResponses(prev => prev.map(r => r.id === responseId ? disqualifiedResponseItem : r));
+      await dataService.saveSingle('biblicalConnectionResponses', disqualifiedResponseItem);
+      console.log(`⚠️ Miembro ${memberId} descalificado de la sesión ${sessionId}.`);
+    } catch (e) {
+      console.error('Error al descalificar al miembro:', e);
+    }
+  };
+
   const handleSubmitBiblicalAnswers = async (sessionId, moduleId, moduleIdx, answers, questions) => {
     try {
       const memberId = portalMember?.id;
@@ -28467,6 +28492,7 @@ const MemberPortal = ({
                   member={member}
                   onJoinSession={onJoinBiblicalSession}
                   onSubmitAnswers={onSubmitAnswers => onSubmitBiblicalAnswers(onSubmitAnswers)}
+                  onDisqualifyMember={handleDisqualifyBiblicalMember}
                 />
               </div>
             </div>

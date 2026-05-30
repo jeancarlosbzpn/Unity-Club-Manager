@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   BookOpen, Plus, Play, Square, Check, X, Trash2, Edit2, 
   ChevronRight, ChevronDown, Award, Users, RefreshCw, Clock, 
-  FileText, Save, ArrowRight, ArrowLeft, ToggleLeft, ToggleRight
+  FileText, Save, ArrowRight, ArrowLeft, ToggleLeft, ToggleRight,
+  AlertCircle
 } from 'lucide-react';
 
 const BiblicalConnectionAdmin = ({
@@ -1091,6 +1092,34 @@ const BiblicalConnectionAdmin = ({
             </div>
           )}
 
+          {/* BANNER DE ALERTAS DE SEGURIDAD (ANTI-CHEAT) */}
+          {(() => {
+            const disqualifiedParticipants = activeSessionResponses.filter(r => r.status === 'disqualified');
+            if (disqualifiedParticipants.length === 0) return null;
+            return (
+              <div className="bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-900/50 p-4">
+                <div className="max-w-7xl mx-auto flex items-start gap-3">
+                  <div className="p-1.5 bg-red-650 text-white rounded-lg animate-pulse">
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-black text-red-750 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <span>Alertas de Seguridad en Vivo</span>
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                    </h4>
+                    <div className="mt-1 space-y-1.5">
+                      {disqualifiedParticipants.map(item => (
+                        <p key={item.id} className="text-xs font-bold text-slate-700 dark:text-slate-350 leading-snug">
+                          ⚠️ El miembro <span className="font-extrabold text-red-650 dark:text-red-450">"{item.memberName}"</span> ha sido <span className="font-black underline text-red-650 dark:text-red-400">ANULADO</span>. Razón: {item.disqualificationReason || 'Salió de la pantalla del concurso / Perdió foco'}.
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Monitor Navigation Tabs */}
           <div className="flex border-b border-slate-200 dark:border-slate-800 px-6 bg-slate-50/10">
             {[
@@ -1152,29 +1181,42 @@ const BiblicalConnectionAdmin = ({
                       </thead>
                       <tbody>
                         {activeSessionResponses.map(resp => {
+                          const isDisqualified = resp.status === 'disqualified';
                           const isFinished = resp.currentModuleIndex >= currentModIndex || resp.status === 'completed';
                           const isTotalFinished = resp.status === 'completed';
                           
                           return (
-                            <tr key={resp.id} className="border-b border-slate-100 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/10">
-                              <td className="py-4 px-4 font-bold">{resp.memberName}</td>
+                            <tr 
+                              key={resp.id} 
+                              className={`border-b border-slate-100 dark:border-slate-850 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors ${
+                                isDisqualified ? 'bg-red-50/20 dark:bg-red-950/5 text-red-600 dark:text-red-400' : ''
+                              }`}
+                            >
+                              <td className="py-4 px-4 font-bold flex items-center gap-2">
+                                {isDisqualified && <X className="w-4 h-4 text-red-500" />}
+                                <span className={isDisqualified ? 'line-through text-red-500 dark:text-red-400' : ''}>
+                                  {resp.memberName}
+                                </span>
+                              </td>
                               <td className="py-4 px-4 text-sm text-slate-500 dark:text-slate-400">{resp.unitName}</td>
                               <td className="py-4 px-4 text-center font-semibold text-sm">
-                                {resp.currentModuleIndex === -1 ? 'Ninguno' : `Módulo ${resp.currentModuleIndex + 1}`}
+                                {isDisqualified ? 'Anulado' : resp.currentModuleIndex === -1 ? 'Ninguno' : `Módulo ${resp.currentModuleIndex + 1}`}
                               </td>
                               <td className="py-4 px-4 text-center">
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full ${
-                                  isTotalFinished
+                                  isDisqualified
+                                    ? 'bg-red-650 text-white font-black animate-pulse'
+                                    : isTotalFinished
                                     ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400'
                                     : isFinished
                                     ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
                                     : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 animate-pulse'
                                 }`}>
-                                  {isTotalFinished ? 'Sesión Completada' : isFinished ? 'Esperando Siguiente' : 'Respondiendo...'}
+                                  {isDisqualified ? 'Anulado / Salió' : isTotalFinished ? 'Sesión Completada' : isFinished ? 'Esperando Siguiente' : 'Respondiendo...'}
                                 </span>
                               </td>
                               <td className="py-4 px-4 text-right font-black text-amber-500">
-                                {resp.score || 0} pts
+                                {isDisqualified ? '0' : resp.score || 0} pts
                               </td>
                             </tr>
                           );
@@ -1298,12 +1340,13 @@ const BiblicalConnectionAdmin = ({
                             'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/15 dark:text-amber-500' // Bronze
                           ];
 
+                          const isDisqualified = row.status === 'disqualified';
                           const isNotJoined = row.status === 'not_joined';
                           const isFinished = row.status === 'completed';
                           
                           // Formatear tiempo empleado de forma amigable
                           let timeText = '-';
-                          if (isFinished) {
+                          if (isFinished && !isDisqualified) {
                             const secs = row.timeSpent && row.timeSpent !== 999999
                               ? row.timeSpent
                               : (row.completedAt && row.startedAt 
@@ -1318,11 +1361,11 @@ const BiblicalConnectionAdmin = ({
                             <tr 
                               key={row.id} 
                               className={`border-b border-slate-100 dark:border-slate-850 transition ${
-                                index === 0 && !isNotJoined ? 'bg-amber-50/10 dark:bg-amber-950/5' : ''
-                              } ${isNotJoined ? 'opacity-50' : ''}`}
+                                index === 0 && !isNotJoined && !isDisqualified ? 'bg-amber-50/10 dark:bg-amber-950/5' : ''
+                              } ${isNotJoined ? 'opacity-50' : ''} ${isDisqualified ? 'bg-red-50/20 dark:bg-red-950/5 text-red-600 dark:text-red-400' : ''}`}
                             >
                               <td className="py-4 px-4 text-center">
-                                {isPodium && !isNotJoined ? (
+                                {isPodium && !isNotJoined && !isDisqualified ? (
                                   <span className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full font-black text-sm border ${podiumColors[index]}`}>
                                     {index + 1}
                                   </span>
@@ -1331,31 +1374,33 @@ const BiblicalConnectionAdmin = ({
                                 )}
                               </td>
                               <td className="py-4 px-4 font-bold flex items-center gap-2">
-                                <span className={isNotJoined ? 'text-slate-400 dark:text-slate-500 font-medium' : ''}>
+                                <span className={isNotJoined ? 'text-slate-400 dark:text-slate-500 font-medium' : isDisqualified ? 'line-through text-red-500 dark:text-red-400' : ''}>
                                   {row.memberName}
                                 </span>
-                                {index === 0 && !isNotJoined && <Award className="w-4 h-4 text-amber-500" />}
+                                {index === 0 && !isNotJoined && !isDisqualified && <Award className="w-4 h-4 text-amber-500" />}
                               </td>
                               <td className="py-4 px-4 text-sm text-slate-500 dark:text-slate-400">{row.unitName}</td>
                               <td className="py-4 px-4 text-center">
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-full ${
-                                  isNotJoined
+                                  isDisqualified
+                                    ? 'bg-red-600 text-white font-black animate-pulse'
+                                    : isNotJoined
                                     ? 'bg-slate-100 text-slate-400 dark:bg-slate-800'
                                     : isFinished
                                     ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
                                     : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 animate-pulse'
                                 }`}>
-                                  {isNotJoined ? 'Esperando' : isFinished ? 'Listo' : 'Jugando'}
+                                  {isDisqualified ? 'Anulado' : isNotJoined ? 'Esperando' : isFinished ? 'Listo' : 'Jugando'}
                                 </span>
                               </td>
                               <td className="py-4 px-4 text-center text-sm font-semibold">
-                                {isNotJoined ? '-' : `${row.totalCorrect || 0} / ${row.totalManualCorrect || 0}`}
+                                {isNotJoined || isDisqualified ? '-' : `${row.totalCorrect || 0} / ${row.totalManualCorrect || 0}`}
                               </td>
                               <td className="py-4 px-4 text-center text-sm font-semibold font-mono text-slate-500">
-                                {timeText}
+                                {isDisqualified ? 'Anulado' : timeText}
                               </td>
                               <td className="py-4 px-4 text-right font-black text-amber-500 text-lg">
-                                {row.score || 0}
+                                {isDisqualified ? '0' : row.score || 0}
                               </td>
                             </tr>
                           );
