@@ -14,7 +14,8 @@ const BiblicalConnectionAdmin = ({
   onSaveSession,
   onDeleteSession,
   onUpdateSessionStatus,
-  onGradeManualResponse
+  onGradeManualResponse,
+  onConsolidatePoints
 }) => {
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'create' | 'monitor'
   const [selectedSession, setSelectedSession] = useState(null);
@@ -41,6 +42,22 @@ const BiblicalConnectionAdmin = ({
   // Live Monitor States
   const [monitorSession, setMonitorSession] = useState(null);
   const [monitorTab, setMonitorTab] = useState('progress'); // 'progress' | 'grading' | 'ranking'
+
+  // Consolidation Merit States
+  const [consolidationPoints, setConsolidationPoints] = useState({});
+  const [isConsolidating, setIsConsolidating] = useState(false);
+
+  // Initialize consolidation points when session becomes completed
+  useEffect(() => {
+    if (monitorSession && (monitorSession.status === 'completed' || monitorSession.status === 'active')) {
+      const activeResponses = responses.filter(r => r.sessionId === monitorSession.id);
+      const initialPts = {};
+      activeResponses.forEach(r => {
+        initialPts[r.memberId] = r.status === 'disqualified' ? 0 : (r.score || 0);
+      });
+      setConsolidationPoints(initialPts);
+    }
+  }, [monitorSession?.id, monitorSession?.status, responses]);
 
   // Participant Selection States
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
@@ -1121,33 +1138,52 @@ const BiblicalConnectionAdmin = ({
           })()}
 
           {/* Monitor Navigation Tabs */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800 px-6 bg-slate-50/10">
-            {[
-              { id: 'progress', label: 'Progreso en Vivo', icon: RefreshCw, badge: undefined },
-              { id: 'grading', label: 'Calificación Manual', icon: FileText, badge: manualQuestionsToGrade.length || undefined },
-              { id: 'ranking', label: 'Tabla de Posiciones', icon: Award, badge: undefined }
-            ].map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setMonitorTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-4 text-sm font-bold border-b-2 transition relative ${
-                    monitorTab === tab.id
-                      ? 'border-amber-500 text-amber-500 font-extrabold'
-                      : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                  {tab.badge !== undefined && (
-                    <span className="px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded-full font-black animate-pulse">
-                      {tab.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="flex border-b border-slate-200 dark:border-slate-800 px-6 bg-slate-50/10 overflow-x-auto">
+            {(() => {
+              const tabsList = [
+                { id: 'progress', label: 'Progreso en Vivo', icon: RefreshCw, badge: undefined },
+                { id: 'grading', label: 'Calificación Manual', icon: FileText, badge: manualQuestionsToGrade.length || undefined },
+                { id: 'ranking', label: 'Tabla de Posiciones', icon: Award, badge: undefined }
+              ];
+              
+              if (monitorSession.status === 'completed') {
+                tabsList.push({ 
+                  id: 'consolidate', 
+                  label: 'Consolidar Méritos', 
+                  icon: Save, 
+                  badge: monitorSession.isConsolidated ? 'Listo' : 'Pendiente' 
+                });
+              }
+
+              return tabsList.map(tab => {
+                const Icon = tab.icon;
+                const isStringBadge = typeof tab.badge === 'string';
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setMonitorTab(tab.id)}
+                    className={`flex items-center gap-2 px-5 py-4 text-sm font-bold border-b-2 transition relative flex-shrink-0 ${
+                      monitorTab === tab.id
+                        ? 'border-amber-500 text-amber-500 font-extrabold'
+                        : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    {tab.badge !== undefined && (
+                      <span className={`px-2 py-0.5 text-[9px] rounded-full font-black ${
+                        isStringBadge
+                          ? (tab.badge === 'Listo' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white animate-pulse')
+                          : 'bg-red-500 text-white animate-pulse'
+                      }`}>
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              });
+            })()}
           </div>
 
           {/* Monitor Content Body */}
@@ -1407,6 +1443,134 @@ const BiblicalConnectionAdmin = ({
                         })}
                       </tbody>
                     </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: CONSOLIDAR MÉRITOS */}
+            {monitorTab === 'consolidate' && monitorSession.status === 'completed' && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="p-6 bg-amber-500/10 dark:bg-amber-950/15 border border-amber-500/20 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black text-amber-500 flex items-center gap-2">
+                      <Award className="w-6 h-6 stroke-[2.5px]" />
+                      <span>Consolidar Méritos a la Base de Datos</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-bold max-w-2xl leading-relaxed">
+                      El concurso ha finalizado. Aquí puedes revisar los puntos oficiales acumulados en base a las respuestas de los participantes. Modifica los puntos de forma individual si es necesario antes de exportarlos formalmente al historial del miembro.
+                    </p>
+                  </div>
+                  
+                  {monitorSession.isConsolidated && (
+                    <span className="px-4 py-2 bg-emerald-500 text-white text-xs font-black uppercase tracking-wider rounded-2xl flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
+                      <Check className="w-4 h-4 stroke-[3px]" />
+                      <span>Méritos Consolidados</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto bg-slate-50/20 dark:bg-slate-900/10 rounded-2xl border border-slate-200/60 dark:border-slate-800 p-1">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs font-black text-slate-400 uppercase tracking-wider">
+                        <th className="py-4 px-5">Miembro</th>
+                        <th className="py-4 px-5">Unidad</th>
+                        <th className="py-4 px-5 text-center">Correctas (Auto/Manual)</th>
+                        <th className="py-4 px-5 text-center">Puntaje Juego</th>
+                        <th className="py-4 px-5 text-center w-40">Puntos a Otorgar</th>
+                        <th className="py-4 px-5 text-right">Estatus</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeSessionResponses.map(resp => {
+                        const isDisq = resp.status === 'disqualified';
+                        const pointsVal = consolidationPoints[resp.memberId] ?? (isDisq ? 0 : (resp.score || 0));
+
+                        return (
+                          <tr key={resp.id} className={`border-b border-slate-100 dark:border-slate-850/80 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition ${
+                            isDisq ? 'bg-red-50/10 dark:bg-red-950/5' : ''
+                          }`}>
+                            <td className="py-4 px-5 font-extrabold flex items-center gap-2">
+                              {isDisq && <X className="w-4 h-4 text-red-500" />}
+                              <span className={isDisq ? 'line-through text-red-500 dark:text-red-400' : ''}>
+                                {resp.memberName}
+                              </span>
+                            </td>
+                            <td className="py-4 px-5 text-xs font-bold text-slate-500 dark:text-slate-450">{resp.unitName}</td>
+                            <td className="py-4 px-5 text-center text-sm font-semibold">
+                              {isDisq ? '-' : `${resp.totalCorrect || 0} / ${resp.totalManualCorrect || 0}`}
+                            </td>
+                            <td className="py-4 px-5 text-center text-sm font-black text-slate-700 dark:text-slate-350">
+                              {isDisq ? '0 pts' : `${resp.score || 0} pts`}
+                            </td>
+                            <td className="py-3 px-5 text-center">
+                              <input
+                                type="number"
+                                disabled={monitorSession.isConsolidated || isConsolidating || isDisq}
+                                min="0"
+                                value={pointsVal}
+                                onChange={(e) => {
+                                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                                  setConsolidationPoints(prev => ({
+                                    ...prev,
+                                    [resp.memberId]: val
+                                  }));
+                                }}
+                                className="w-24 text-center px-3 py-1.5 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 rounded-xl font-black text-sm text-slate-800 dark:text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                              />
+                            </td>
+                            <td className="py-4 px-5 text-right">
+                              <span className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase rounded-full ${
+                                isDisq 
+                                  ? 'bg-red-100 text-red-755 dark:bg-red-950/30' 
+                                  : monitorSession.isConsolidated 
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/20' 
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950/20'
+                              }`}>
+                                {isDisq ? 'Anulado' : monitorSession.isConsolidated ? 'Consolidado' : 'Pendiente'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {!monitorSession.isConsolidated && (
+                  <div className="flex justify-end pt-4">
+                    <button
+                      onClick={async () => {
+                        if (isConsolidating) return;
+                        setIsConsolidating(true);
+                        try {
+                          if (onConsolidatePoints) {
+                            await onConsolidatePoints(monitorSession.id, consolidationPoints);
+                          }
+                          // Recargamos el estatus de la sesión en el monitorSession
+                          setMonitorSession(prev => ({ ...prev, isConsolidated: true }));
+                        } catch (err) {
+                          console.error("Error al consolidar:", err);
+                        } finally {
+                          setIsConsolidating(false);
+                        }
+                      }}
+                      disabled={isConsolidating || activeSessionResponses.length === 0}
+                      className="flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold rounded-2xl transition shadow-lg shadow-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isConsolidating ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Guardando Puntos...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Guardar y Exportar a Méritos del Club</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 )}
               </div>

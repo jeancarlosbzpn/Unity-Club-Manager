@@ -2579,6 +2579,7 @@ const ClubVencedoresSystem = () => {
             [questionId]: {
               ...ans,
               isCorrect,
+              pointsAwarded: isCorrect ? 15 : 0,
               gradedAt: new Date().toISOString()
             }
           };
@@ -2587,11 +2588,22 @@ const ClubVencedoresSystem = () => {
           const totalCorrect = resp.totalCorrect || 0;
           const totalManualCorrect = Object.entries(newAnswers).filter(([_, a]) => a.isCorrect === true && a.gradedAt).length;
           
+          let totalScore = 0;
+          Object.entries(newAnswers).forEach(([_, a]) => {
+            if (a.isCorrect === true) {
+              if (a.pointsAwarded !== undefined && a.pointsAwarded !== null) {
+                totalScore += a.pointsAwarded;
+              } else {
+                totalScore += 5; // Fallback
+              }
+            }
+          });
+
           targetRespItem = {
             ...resp,
             answers: newAnswers,
             totalManualCorrect,
-            score: totalCorrect + totalManualCorrect
+            score: totalScore
           };
           return targetRespItem;
         }
@@ -2669,6 +2681,48 @@ const ClubVencedoresSystem = () => {
     }
   };
 
+  const handleConsolidateBiblicalPoints = async (sessionId, pointsMap) => {
+    try {
+      const session = biblicalConnectionSessions.find(s => s.id === sessionId);
+      if (!session) return;
+
+      const sessionTitle = session.title || 'Competencia Bíblica';
+
+      // 1. Exportar méritos a la colección points
+      for (const [memberId, officialPoints] of Object.entries(pointsMap)) {
+        if (Number(officialPoints) <= 0) continue;
+
+        const pointId = `pts_biblical_${sessionId}_${memberId}`;
+        const newPointRecord = {
+          id: pointId,
+          memberId: String(memberId),
+          points: Number(officialPoints),
+          reason: `Competencia Bíblica: ${sessionTitle}`,
+          category: 'actividad',
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        };
+
+        // Guardar registro individual de forma atómica
+        await dataService.saveSingle('points', newPointRecord);
+      }
+
+      // 2. Actualizar estatus de la sesión como consolidada
+      const updatedSessionItem = {
+        ...session,
+        isConsolidated: true,
+        consolidatedAt: new Date().toISOString()
+      };
+
+      setBiblicalConnectionSessions(prev => prev.map(s => s.id === sessionId ? updatedSessionItem : s));
+      await dataService.saveSingle('biblicalConnectionSessions', updatedSessionItem);
+      
+      console.log(`✅ Puntos de la sesión bíblica ${sessionId} consolidados exitosamente.`);
+    } catch (e) {
+      console.error('Error al consolidar los puntos de Conexión Bíblica:', e);
+    }
+  };
+
   const handleSubmitBiblicalAnswers = async (sessionId, moduleId, moduleIdx, answers, questions) => {
     try {
       const memberId = portalMember?.id;
@@ -2704,7 +2758,8 @@ const ClubVencedoresSystem = () => {
         newAnswers[qId] = {
           moduleId,
           userResponse: userVal,
-          isCorrect: isManual ? null : isCorrect
+          isCorrect: isManual ? null : isCorrect,
+          pointsAwarded: isManual ? null : (isCorrect ? (qDef.type === 'complete' ? 10 : 5) : 0)
         };
 
         if (!isManual && isCorrect) {
@@ -2723,13 +2778,25 @@ const ClubVencedoresSystem = () => {
         timeSpentSecs = (new Date(completedAtStr).getTime() - startedAtTime) / 1000;
       }
 
+      // Re-calculate total score based on points of correct answers
+      let totalScore = 0;
+      Object.entries(newAnswers).forEach(([_, ans]) => {
+        if (ans.isCorrect === true) {
+          if (ans.pointsAwarded !== undefined && ans.pointsAwarded !== null) {
+            totalScore += ans.pointsAwarded;
+          } else {
+            totalScore += 5; // Fallback
+          }
+        }
+      });
+
       const finalResponseItem = {
         ...currentResp,
         answers: newAnswers,
         totalCorrect: newCorrect,
         currentModuleIndex: moduleIdx,
         status: isLastModule ? 'completed' : 'waiting_next',
-        score: newCorrect + (currentResp.totalManualCorrect || 0),
+        score: totalScore,
         completedAt: completedAtStr,
         timeSpent: timeSpentSecs
       };
@@ -12237,6 +12304,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 onDeleteSession={handleDeleteBiblicalSession}
                 onUpdateSessionStatus={handleUpdateBiblicalSessionStatus}
                 onGradeManualResponse={handleGradeManualResponse}
+                onConsolidatePoints={handleConsolidateBiblicalPoints}
               />
             )}
 
