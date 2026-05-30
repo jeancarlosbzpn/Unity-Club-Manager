@@ -12,6 +12,8 @@ import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { dataService, setClubId } from './services/dataService';
 import Login from './components/Login';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
+import BiblicalConnectionAdmin from './components/BiblicalConnectionAdmin';
+import BiblicalConnectionPortal from './components/BiblicalConnectionPortal';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import CarnetFront from './assets/Carnet/frontal.svg';
 import CarnetBack from './assets/Carnet/trasero.svg';
@@ -531,6 +533,10 @@ const ClubVencedoresSystem = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [retryTrigger, setRetryTrigger] = useState(0);
 
+  // Biblical Connection States
+  const [biblicalConnectionSessions, setBiblicalConnectionSessions] = useState([]);
+  const [biblicalConnectionResponses, setBiblicalConnectionResponses] = useState([]);
+
   // Reminders State
   const [reminders, setReminders] = useState([]);
   const [showReminderForm, setShowReminderForm] = useState(false);
@@ -600,6 +606,7 @@ const ClubVencedoresSystem = () => {
     else if (moduleId === 'directive') { label = 'Directiva'; Icon = Award; }
     else if (moduleId === 'profile') { label = 'Perfil'; Icon = UserPlus; }
     else if (moduleId === 'attendance') { label = 'Asistencia'; Icon = ClipboardList; }
+    else if (moduleId === 'biblical-connection') { label = 'Conexión Bíblica'; Icon = BookOpen; }
     else { label = moduleId.charAt(0).toUpperCase() + moduleId.slice(1); }
 
     setTabs(prev => prev.map(t =>
@@ -1508,7 +1515,8 @@ const ClubVencedoresSystem = () => {
           'homeworks', 'memberHomeworkStatus', 'saturdayMeetings',
           // Previously missing — caused these modules to wipe data on every refresh:
           'campDetails', 'classRequirements', 'evaluationGroups', 'memberProgress',
-          'requirementSections', 'reminders', 'fixedPaymentConcepts', 'fixedPayments'
+          'requirementSections', 'reminders', 'fixedPaymentConcepts', 'fixedPayments',
+          'biblicalConnectionSessions', 'biblicalConnectionResponses'
         ];
         
         // Load all in parallel with individual error handling to prevent hangs
@@ -1533,7 +1541,7 @@ const ClubVencedoresSystem = () => {
           'evaluationGroups', 'requirementSections', 'reminders', 'disciplineRecords',
           'attendanceRecords', 'homeworks', 'memberHomeworkStatus', 'firstAidItems',
           'tents', 'lockedSaturdays', 'skippedSaturdays', 'inventory', 'unit_messages',
-          'saturdayMeetings'
+          'saturdayMeetings', 'biblicalConnectionSessions', 'biblicalConnectionResponses'
         ];
         mustBeArrays.forEach(k => {
           if (data[k] && !Array.isArray(data[k])) {
@@ -2061,6 +2069,8 @@ const ClubVencedoresSystem = () => {
         setHomeworks(allData.homeworks || []);
         setMemberHomeworkStatus(allData.memberHomeworkStatus || []);
         setSaturdayMeetings(allData.saturdayMeetings || []);
+        setBiblicalConnectionSessions(allData.biblicalConnectionSessions || []);
+        setBiblicalConnectionResponses(allData.biblicalConnectionResponses || []);
         
         // Fetch Clubs Global Registry
         const globalClubs = await dataService.readData('clubs');
@@ -2489,6 +2499,7 @@ const ClubVencedoresSystem = () => {
       'reminders':    ['Director','Subdirector','Secretario','Secretary'],
       'homeworks':    ['Director','Subdirector','Secretario','Secretary','DUMC','Instructor','Class Instructor'],
       'settings':     ['Director'],
+      'biblical-connection': ['Director','Subdirector','Secretario','Secretary','DUMC','Instructor','Class Instructor'],
     };
 
     // Check for write access
@@ -2502,6 +2513,197 @@ const ClubVencedoresSystem = () => {
 
     // Default: Allow all authenticated members to READ non-sensitive club data
     return 'read';
+  };
+
+  // --- HANDLERS PARA CONEXIÓN BÍBLICA ---
+  const handleSaveBiblicalSession = async (sessionData) => {
+    try {
+      const exists = biblicalConnectionSessions.some(s => s.id === sessionData.id);
+      let updatedSessions;
+      if (exists) {
+        updatedSessions = biblicalConnectionSessions.map(s => s.id === sessionData.id ? sessionData : s);
+      } else {
+        updatedSessions = [...biblicalConnectionSessions, sessionData];
+      }
+      setBiblicalConnectionSessions(updatedSessions);
+      await dataService.writeData('biblicalConnectionSessions', updatedSessions);
+      console.log('✅ Sesión de Conexión Bíblica guardada exitosamente.');
+    } catch (e) {
+      console.error('Error al guardar la sesión de Conexión Bíblica:', e);
+    }
+  };
+
+  const handleDeleteBiblicalSession = async (sessionId) => {
+    try {
+      const updatedSessions = biblicalConnectionSessions.filter(s => s.id !== sessionId);
+      const updatedResponses = biblicalConnectionResponses.filter(r => r.sessionId !== sessionId);
+      
+      setBiblicalConnectionSessions(updatedSessions);
+      setBiblicalConnectionResponses(updatedResponses);
+      
+      await dataService.writeData('biblicalConnectionSessions', updatedSessions);
+      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+      console.log('✅ Sesión de Conexión Bíblica eliminada exitosamente.');
+    } catch (e) {
+      console.error('Error al eliminar la sesión de Conexión Bíblica:', e);
+    }
+  };
+
+  const handleUpdateBiblicalSessionStatus = async (sessionId, fields) => {
+    try {
+      const updatedSessions = biblicalConnectionSessions.map(s => {
+        if (s.id === sessionId) {
+          const updated = { ...s, ...fields };
+          return updated;
+        }
+        return s;
+      });
+      setBiblicalConnectionSessions(updatedSessions);
+      await dataService.writeData('biblicalConnectionSessions', updatedSessions);
+      console.log('✅ Estado de la sesión de Conexión Bíblica actualizado.');
+    } catch (e) {
+      console.error('Error al actualizar el estado de la sesión:', e);
+    }
+  };
+
+  const handleGradeManualResponse = async (responseId, questionId, isCorrect) => {
+    try {
+      const updatedResponses = biblicalConnectionResponses.map(resp => {
+        if (resp.id === responseId) {
+          const answers = resp.answers || {};
+          const ans = answers[questionId] || {};
+          
+          const newAnswers = {
+            ...answers,
+            [questionId]: {
+              ...ans,
+              isCorrect,
+              gradedAt: new Date().toISOString()
+            }
+          };
+          
+          // Re-calculate manual correct responses and total score
+          const totalCorrect = resp.totalCorrect || 0;
+          const totalManualCorrect = Object.entries(newAnswers).filter(([_, a]) => a.isCorrect === true && a.gradedAt).length;
+          
+          return {
+            ...resp,
+            answers: newAnswers,
+            totalManualCorrect,
+            score: totalCorrect + totalManualCorrect
+          };
+        }
+        return resp;
+      });
+      setBiblicalConnectionResponses(updatedResponses);
+      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+      console.log('✅ Calificación manual aplicada.');
+    } catch (e) {
+      console.error('Error al calificar la respuesta manual:', e);
+    }
+  };
+
+  const handleJoinBiblicalSession = async (sessionId) => {
+    try {
+      const memberId = portalMember?.id;
+      if (!memberId) return;
+
+      const responseId = `${sessionId}-${memberId}`;
+      const exists = biblicalConnectionResponses.some(r => r.id === responseId);
+      if (exists) return;
+
+      const newResponse = {
+        id: responseId,
+        sessionId,
+        memberId,
+        memberName: `${portalMember.firstName} ${portalMember.lastName}`,
+        unitName: portalMember.unitId ? (units.find(u => String(u.id) === String(portalMember.unitId))?.name || 'Sin Unidad') : 'Sin Unidad',
+        status: 'playing',
+        currentModuleIndex: -1, // -1 significa que se unió pero no ha completado ningún módulo
+        answers: {},
+        totalCorrect: 0,
+        totalManualCorrect: 0,
+        score: 0,
+        startedAt: new Date().toISOString()
+      };
+
+      const updatedResponses = [...biblicalConnectionResponses, newResponse];
+      setBiblicalConnectionResponses(updatedResponses);
+      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+      console.log('✅ Miembro se unió a la sesión de Conexión Bíblica.');
+    } catch (e) {
+      console.error('Error al unirse a la sesión de Conexión Bíblica:', e);
+    }
+  };
+
+  const handleSubmitBiblicalAnswers = async (sessionId, moduleId, moduleIdx, answers, questions) => {
+    try {
+      const memberId = portalMember?.id;
+      if (!memberId) return;
+
+      const responseId = `${sessionId}-${memberId}`;
+      const currentResp = biblicalConnectionResponses.find(r => r.id === responseId);
+      if (!currentResp) return;
+
+      const newAnswers = { ...(currentResp.answers || {}) };
+      let newCorrect = currentResp.totalCorrect || 0;
+
+      // Grade questions of the current module
+      Object.entries(answers).forEach(([qId, userVal]) => {
+        const qDef = questions.find(q => q.id === qId);
+        if (!qDef) return;
+
+        let isCorrect = false;
+        let isManual = false;
+
+        if (qDef.type === 'select') {
+          isCorrect = String(qDef.correctAnswer).trim().toLowerCase() === String(userVal).trim().toLowerCase();
+        } else if (qDef.type === 'true_false') {
+          isCorrect = qDef.correctAnswer === userVal;
+        } else if (qDef.type === 'complete') {
+          const normalizeStr = (str) => String(str || '').trim().toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // strip accents
+          isCorrect = normalizeStr(qDef.correctAnswer) === normalizeStr(userVal);
+        } else if (qDef.type === 'open') {
+          isManual = true;
+        }
+
+        newAnswers[qId] = {
+          moduleId,
+          userResponse: userVal,
+          isCorrect: isManual ? null : isCorrect
+        };
+
+        if (!isManual && isCorrect) {
+          newCorrect++;
+        }
+      });
+
+      // Check if this was the last module in the session
+      const session = biblicalConnectionSessions.find(s => s.id === sessionId);
+      const isLastModule = session && moduleIdx === session.modules.length - 1;
+
+      const updatedResponses = biblicalConnectionResponses.map(r => {
+        if (r.id === responseId) {
+          return {
+            ...r,
+            answers: newAnswers,
+            totalCorrect: newCorrect,
+            currentModuleIndex: moduleIdx,
+            status: isLastModule ? 'completed' : 'waiting_next',
+            score: newCorrect + (r.totalManualCorrect || 0),
+            completedAt: isLastModule ? new Date().toISOString() : undefined
+          };
+        }
+        return r;
+      });
+
+      setBiblicalConnectionResponses(updatedResponses);
+      await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+      console.log('✅ Respuestas del módulo de Conexión Bíblica enviadas.');
+    } catch (e) {
+      console.error('Error al enviar las respuestas del módulo:', e);
+    }
   };
 
   // Check if user has access to a module (used by sidebar filter)
@@ -2579,6 +2781,7 @@ const ClubVencedoresSystem = () => {
     { id: 'points', label: 'Puntaje', icon: Award, available: true },
     { id: 'attendance', label: 'Asistencia', icon: ClipboardList, available: true },
     { id: 'reminders', label: 'Recordatorios', icon: Bell, available: true },
+    { id: 'biblical-connection', label: 'Conexión Bíblica', icon: BookOpen, available: true },
     { id: 'settings', label: 'Configuración', icon: Settings, available: true }
   ].map(item => ({
     ...item,
@@ -11203,6 +11406,8 @@ const ClubVencedoresSystem = () => {
         if (allData.masterGuideData) setMasterGuideData(allData.masterGuideData);
         if (allData.memberProgress) setMemberProgress(allData.memberProgress);
         if (allData.saturdayMeetings) setSaturdayMeetings(allData.saturdayMeetings);
+        if (allData.biblicalConnectionSessions) setBiblicalConnectionSessions(allData.biblicalConnectionSessions);
+        if (allData.biblicalConnectionResponses) setBiblicalConnectionResponses(allData.biblicalConnectionResponses);
         
         setSyncStatus('idle');
         return true;
@@ -11256,6 +11461,10 @@ const ClubVencedoresSystem = () => {
         fixedPaymentConcepts={fixedPaymentConcepts}
         isAdminPreview={isAuthenticated}
         onUpdateMember={updateMemberPortalStatus}
+        biblicalConnectionSessions={biblicalConnectionSessions}
+        biblicalConnectionResponses={biblicalConnectionResponses}
+        onJoinBiblicalSession={handleJoinBiblicalSession}
+        onSubmitBiblicalAnswers={handleSubmitBiblicalAnswers}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
           const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
@@ -11982,6 +12191,18 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             {activeModule === 'attendance' && renderAttendanceModule()}
             {activeModule === 'reminders' && renderRemindersModule()}
             {activeModule === 'profile' && renderMemberProfile()}
+            {activeModule === 'biblical-connection' && (
+              <BiblicalConnectionAdmin
+                sessions={biblicalConnectionSessions}
+                responses={biblicalConnectionResponses}
+                members={members}
+                currentUser={currentUser}
+                onSaveSession={handleSaveBiblicalSession}
+                onDeleteSession={handleDeleteBiblicalSession}
+                onUpdateSessionStatus={handleUpdateBiblicalSessionStatus}
+                onGradeManualResponse={handleGradeManualResponse}
+              />
+            )}
 
             {/* User Management Module */}
             {(activeModule === 'user-management' && (currentUser?.role === 'administrator' || currentUser?.role === 'director')) && (
@@ -25912,7 +26133,11 @@ const MemberPortal = ({
   isAdminPreview = false,
   financeCategories = [],
   fixedPaymentConcepts = [],
-  onUpdateMember
+  onUpdateMember,
+  biblicalConnectionSessions = [],
+  biblicalConnectionResponses = [],
+  onJoinBiblicalSession,
+  onSubmitBiblicalAnswers
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -25921,6 +26146,7 @@ const MemberPortal = ({
   const [showFinanceModal, setShowFinanceModal] = useState(false);
   const [showFaltasModal, setShowFaltasModal] = useState(false);
   const [showChatModal, setShowChatModal] = useState(false);
+  const [showBiblicalModal, setShowBiblicalModal] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
   // ── Saturday Meeting Calculations ──
@@ -27308,6 +27534,36 @@ const MemberPortal = ({
               </div>
             </div>
           </div>
+
+          {/* Conexión Bíblica — full width */}
+          <div
+            onClick={() => setShowBiblicalModal(true)}
+            className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group overflow-hidden col-span-2 cursor-pointer hover:border-purple-200"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:bg-purple-500/20 transition-colors">
+                <BookOpen className="w-5 h-5 text-purple-600" />
+              </div>
+              {biblicalConnectionSessions.some(s => s.status === 'active') && (
+                <span className="px-2.5 py-1 bg-red-100 border border-red-200 text-red-600 rounded-full text-[9px] font-black uppercase tracking-wider animate-pulse">
+                  ¡En Vivo!
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <div className="text-sm font-black tracking-tighter truncate leading-tight flex items-center text-gray-900">
+                Conexión Bíblica
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-0.5">
+                {biblicalConnectionSessions.some(s => s.status === 'active') 
+                  ? 'Hay una competencia bíblica en curso' 
+                  : 'Participa en competencias y juegos de estudio bíblico'}
+              </div>
+              <div className="mt-4 text-[8px] font-black uppercase tracking-widest text-purple-600 flex items-center gap-1 transition-colors group-active:text-purple-800">
+                Entrar al Portal Bíblico <ChevronRight className="w-3 h-3" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Signature Card — Only for Directivos */}
@@ -28181,6 +28437,29 @@ const MemberPortal = ({
             unitId={member.unitId}
             currentMember={member}
           />
+        )}
+
+        {showBiblicalModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-4xl bg-white rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 h-[95vh] sm:h-[85vh] overflow-y-auto relative">
+              <button 
+                onClick={() => setShowBiblicalModal(false)} 
+                className="absolute top-6 right-6 p-3 bg-gray-100 rounded-2xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all z-50 shadow-sm"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <div className="mt-4">
+                <BiblicalConnectionPortal
+                  sessions={biblicalConnectionSessions}
+                  responses={biblicalConnectionResponses}
+                  member={member}
+                  onJoinSession={onJoinBiblicalSession}
+                  onSubmitAnswers={onSubmitAnswers => onSubmitBiblicalAnswers(onSubmitAnswers)}
+                />
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
