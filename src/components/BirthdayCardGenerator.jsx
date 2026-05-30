@@ -58,6 +58,7 @@ const BIBLE_VERSES = [
 const BirthdayCardGenerator = ({ member, onClose }) => {
     const cardRef = useRef(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [photoError, setPhotoError] = useState(false);
 
     // Generate random verse only once on mount
     const randomVerse = useMemo(() => {
@@ -121,23 +122,31 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
                     </button>
                 </div>
 
-                {/* Content / Preview Area - Scrollable */}
-                <div className="p-4 overflow-y-auto flex-1 flex flex-col items-center bg-gray-200 dark:bg-gray-900 justify-center">
+                {/* Content / Preview Area - Center Scaled */}
+                <div className="p-4 overflow-y-auto flex-1 flex flex-col items-center bg-gray-200 dark:bg-gray-900 justify-start min-h-0">
 
-                    <p className="mb-4 text-xs text-gray-500 dark:text-gray-400 text-center">
+                    <p className="mb-2 text-xs text-gray-500 dark:text-gray-400 text-center font-bold">
                         Vista previa (se generará en alta calidad)
                     </p>
 
-                    {/* THE CARD ITSELF - Fixed Layout Size for consistent export */}
-                    <div
-                        ref={cardRef}
-                        className="relative flex flex-col shadow-2xl overflow-hidden shrink-0"
-                        style={{
-                            width: '800px',
-                            height: '1200px', // Fixed aspect ratio (2:3)
-                            backgroundColor: '#003B70' // Club Blue
+                    {/* THE CARD ITSELF - Scaled down for preview, exports at full 800x1200 */}
+                    <div 
+                        style={{ 
+                            width: '800px', 
+                            height: '1200px', 
+                            transform: 'scale(0.45)', 
+                            transformOrigin: 'top center',
+                            margin: '0 auto -660px' // Negative margin to absorb scale height differences
                         }}
+                        className="shrink-0 transition-transform duration-300"
                     >
+                        <div
+                            ref={cardRef}
+                            className="w-full h-full relative flex flex-col shadow-2xl overflow-hidden rounded-[32px] border-4 border-[#FABD00]"
+                            style={{
+                                backgroundColor: '#003B70' // Club Blue
+                            }}
+                        >
                         {/* Decorative Background - Triangle/Scarf Motif */}
                         <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
                             {/* Red Triangle (Scarf/Pañoleta style sort of) */}
@@ -185,16 +194,20 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
                                 <div className="absolute -inset-2 bg-[#FABD00] rounded-full opacity-80 shadow-[0_0_30px_#FABD00]"></div>
 
                                 <div className="relative w-64 h-64 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center">
-                                    {member.photo ? (
+                                    {member.photo && !photoError ? (
                                         <img
                                             src={member.photo}
                                             alt={member.firstName}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-cover animate-in fade-in duration-300"
                                             crossOrigin="anonymous"
+                                            onError={() => {
+                                                console.warn(`⚠️ Error al cargar la foto de ${member.firstName}, activando inicial de respaldo.`);
+                                                setPhotoError(true);
+                                            }}
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-[#E5E7EB] flex items-center justify-center">
-                                            <span className="text-9xl font-bold text-[#003B70]">{member.firstName[0]}</span>
+                                        <div className="w-full h-full bg-[#E5E7EB] flex items-center justify-center animate-in zoom-in duration-300">
+                                            <span className="text-[120px] font-black text-[#003B70] leading-none font-serif">{member.firstName ? member.firstName[0].toUpperCase() : 'C'}</span>
                                         </div>
                                     )}
                                 </div>
@@ -315,8 +328,9 @@ const BirthdayCardGenerator = ({ member, onClose }) => {
                             </p>
                         </div>
                     </div>
-
                 </div>
+
+            </div>
 
                 {/* Footer Actions */}
                 <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex justify-end gap-3 shrink-0">
