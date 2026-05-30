@@ -2375,9 +2375,9 @@ const ClubVencedoresSystem = () => {
       const isMaster = currentUser && masterEmails.includes(currentUser.email);
 
       const changedKeys = Object.keys(currentData).filter(key => {
-        // SECURITY: The users list should ONLY be saved through explicit actions 
-        // (Add/Delete/Edit) to prevent race conditions and accidental wipes.
-        if (key === 'users') return false;
+        // SECURITY: The users and announcements lists should ONLY be saved through explicit actions 
+        // to prevent race conditions, lag wipes, and accidental overwrites.
+        if (key === 'users' || key === 'announcements') return false;
 
         // Deep compare for complex objects/arrays
         const prev = prevDataRef.current[key];
