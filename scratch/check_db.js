@@ -14,29 +14,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function scan() {
-  console.log("Scanning known keys...");
-  const collections = ['clubvencedores_members', 'clubvencedores_transactions', 'clubvencedores_users'];
-  for (const k of collections) {
-    try {
-      const snap = await getDocs(collection(db, k));
-      console.log(`Collection '${k}': ${snap.size} docs`);
-    } catch(e) { console.error(`Err ${k}: ${e.message}`); }
-  }
+async function checkCollections() {
+  try {
+    const unitsSnap = await getDocs(collection(db, 'clubvencedores_units'));
+    console.log(`Club Vencedores Units: ${unitsSnap.size} docs`);
+    unitsSnap.forEach(d => console.log('Unit:', d.id, d.data().name));
 
-  const masterKeys = ['members', 'transactions', 'clubSettings', 'users', 'points'];
-  for (const k of masterKeys) {
-    try {
-      const snap = await getDoc(doc(db, 'club_vencedores_data', k));
-      if (snap.exists()) {
-        const d = snap.data();
-        const dataLength = Array.isArray(d.data) ? d.data.length : (typeof d.data === 'object' ? Object.keys(d.data).length : 'scalar');
-        console.log(`Master Doc '${k}': exists, size/length: ${dataLength}, updated: ${d.updatedAt}`);
-      } else {
-        console.log(`Master Doc '${k}': NOT FOUND`);
-      }
-    } catch(e) { console.error(`Err Master ${k}: ${e.message}`); }
+    const masterDoc = await getDoc(doc(db, 'club_vencedores_data', 'units'));
+    if (masterDoc.exists()) {
+      console.log('Master Doc (units):', masterDoc.data()?.data?.length || 'Empty/Not array');
+    } else {
+      console.log('Master Doc (units) does not exist');
+    }
+  } catch(e) {
+    console.error(e);
   }
 }
 
-scan();
+checkCollections();

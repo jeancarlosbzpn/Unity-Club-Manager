@@ -1,0 +1,19 @@
+{
+  "name": "projects/unityclubmanager/databases/(default)/documents/club_vencedores_data/units",
+  "fields": {
+    "isMap": {
+      "booleanValue": false
+    },
+    "updatedAt": {
+      "stringValue": "2026-05-16T01:38:32.590Z"
+    },
+    "data": {
+      "arrayValue": {}
+    },
+    "isCollection": {
+      "booleanValue": true
+    }
+  },
+  "createTime": "2026-04-18T02:59:06.415146Z",
+  "updateTime": "2026-05-16T01:38:33.024025Z"
+}

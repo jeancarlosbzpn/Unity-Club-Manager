@@ -1,0 +1,4168 @@
+{
+  "name": "projects/unityclubmanager/databases/(default)/documents/club_vencedores_data/members",
+  "fields": {
+    "isMap": {
+      "booleanValue": false
+    },
+    "updatedAt": {
+      "stringValue": "2026-05-16T03:16:40.459Z"
+    },
+    "data": {
+      "arrayValue": {
+        "values": [
+          {
+            "mapValue": {
+              "fields": {
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "emergencyContactName": {
+                  "stringValue": "Mery María Peña"
+                },
+                "baptismDate": {
+                  "stringValue": "2009-04-17"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "none"
+                },
+                "completedAdvancedClasses": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "friend"
+                      },
+                      {
+                        "stringValue": "explorer"
+                      },
+                      {
+                        "stringValue": "voyager"
+                      },
+                      {
+                        "stringValue": "guide"
+                      },
+                      {
+                        "stringValue": "ranger"
+                      },
+                      {
+                        "stringValue": "companion"
+                      }
+                    ]
+                  }
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1777750918211"
+                },
+                "doctorPhone": {
+                  "stringValue": ""
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "portalAccessCode": {
+                  "stringValue": "707607"
+                },
+                "doctorName": {
+                  "stringValue": ""
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  },
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Director"
+                                  },
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "continuousMedications": {
+                  "stringValue": ""
+                },
+                "conditionMedications": {
+                  "stringValue": "Loratadina, Cetiricina "
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "memberId": {
+                  "stringValue": "1768794707607"
+                },
+                "insuranceProvider": {
+                  "stringValue": ""
+                },
+                "firstName": {
+                  "stringValue": "Jean Carlos"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "medicalCondition": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "achievements": {
+                  "arrayValue": {}
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "insuranceNumber": {
+                  "stringValue": ""
+                },
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1768794707607_signature_1777345171252.png?alt=media&token=9c9f2eb7-2a96-4b12-9be7-a668b7a262aa"
+                },
+                "primaryContact": {
+                  "stringValue": "18496237116"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "age": {
+                  "stringValue": "25"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  },
+                                  "class": {
+                                    "stringValue": "Master Guide"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": ""
+                                  },
+                                  "role": {
+                                    "stringValue": "Director"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "dateOfBirth": {
+                  "stringValue": "2000-08-24"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "pathfinderClass": {
+                  "stringValue": "master_guide_invested"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "bloodType": {
+                  "stringValue": "A+"
+                },
+                "motherName": {
+                  "stringValue": ""
+                },
+                "allergies": {
+                  "stringValue": "Amoxicilina, Penicilina, Polvo, Calor, Picante, Hierba"
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": true
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18297033370"
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "lastName": {
+                  "stringValue": "Báez Peña"
+                },
+                "completedClasses": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "friend"
+                      },
+                      {
+                        "stringValue": "explorer"
+                      },
+                      {
+                        "stringValue": "voyager"
+                      },
+                      {
+                        "stringValue": "companion"
+                      },
+                      {
+                        "stringValue": "ranger"
+                      },
+                      {
+                        "stringValue": "guide"
+                      }
+                    ]
+                  }
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1768794707607_photo_1777335491571.jpg?alt=media&token=6f916e9e-200d-4ec3-9925-6758e41e5ac2"
+                },
+                "specialNotes": {
+                  "stringValue": ""
+                },
+                "address": {
+                  "stringValue": "C/ Búcaro #6 Residencial Alta Vista"
+                },
+                "id": {
+                  "stringValue": "1768794707607"
+                },
+                "membershipClass": {
+                  "stringValue": "master_guide_invested"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "fatherContact": {
+                  "stringValue": "18099068945"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Thais María"
+                },
+                "memberId": {
+                  "stringValue": "1769307928497"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Mora Arno"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769307928497_photo_1777335534483.jpg?alt=media&token=667232c8-f204-4a91-a094-3177c356a0b5"
+                },
+                "clubAssignments": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "mapValue": {
+                          "fields": {
+                            "advancedClassOption": {
+                              "stringValue": "both"
+                            },
+                            "positions": {
+                              "arrayValue": {
+                                "values": [
+                                  {
+                                    "stringValue": "Secretary"
+                                  }
+                                ]
+                              }
+                            },
+                            "class": {
+                              "stringValue": "Explorer"
+                            },
+                            "active": {
+                              "booleanValue": true
+                            }
+                          }
+                        }
+                      },
+                      "aventureros": {
+                        "mapValue": {
+                          "fields": {
+                            "class": {
+                              "stringValue": ""
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "active": {
+                              "booleanValue": false
+                            }
+                          }
+                        }
+                      },
+                      "guiasMayores": {
+                        "mapValue": {
+                          "fields": {
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "class": {
+                              "stringValue": "Investido"
+                            },
+                            "active": {
+                              "booleanValue": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "address": {
+                  "stringValue": "C/ Alberto Constanza, La Ciénaga"
+                },
+                "position": {
+                  "stringValue": "Secretary"
+                },
+                "fatherName": {
+                  "stringValue": "Juan Carlos Mora"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "id": {
+                  "stringValue": "1769307928497"
+                },
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1769307928497_signature_1777345206663.png?alt=media&token=35c92769-a3a5-472c-820d-12b7bfb6bc33"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "age": {
+                  "stringValue": "16"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18094619166"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Rosanny Arno"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Sunbeam"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Secretary"
+                                  },
+                                  "class": {
+                                    "stringValue": ""
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "motherContact": {
+                  "stringValue": "18294808292"
+                },
+                "baptismDate": {
+                  "stringValue": "2025-06-27"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "none"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1777693525682"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2009-12-18"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "pathfinderClass": {
+                  "stringValue": "Explorer"
+                },
+                "motherName": {
+                  "stringValue": "Rosanny Arno"
+                },
+                "portalAccessCode": {
+                  "stringValue": "928497"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": true
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18294808292"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Secretary"
+                                  },
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": true
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "unitId": {
+                  "stringValue": ""
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "lastPortalAccess": {
+                  "integerValue": "1777692552050"
+                },
+                "dateOfBirth": {
+                  "stringValue": "1978-01-11"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "none"
+                },
+                "baptismDate": {
+                  "stringValue": "1992-04-10"
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": ""
+                                  },
+                                  "role": {
+                                    "stringValue": "Chaplain"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": ""
+                                  },
+                                  "role": {
+                                    "stringValue": "Associate Director"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Vimary Rodríguez"
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Assistant Director"
+                                  },
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18294715416"
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": true
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "motherName": {
+                  "stringValue": ""
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "bloodType": {
+                  "stringValue": "B+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "578392"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "pathfinderClass": {
+                  "stringValue": "master_guide_invested"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "address": {
+                  "stringValue": "C/ Las Caobas, Residencial Los Hidalgos, La Ciénaga"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769308578392_photo_1777335519269.jpg?alt=media&token=9bbdc8ce-bd90-4e74-bee1-81330d52e1b3"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Spouse"
+                },
+                "firstName": {
+                  "stringValue": "Luis Rafael"
+                },
+                "lastName": {
+                  "stringValue": "Vargas Domínguez"
+                },
+                "memberId": {
+                  "stringValue": "1769308578392"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "age": {
+                  "stringValue": "48"
+                },
+                "primaryContact": {
+                  "stringValue": "18094209849"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "signature": {
+                  "stringValue": ""
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "id": {
+                  "stringValue": "1769308578392"
+                },
+                "membershipClass": {
+                  "stringValue": "master_guide_invested"
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "position": {
+                  "stringValue": ""
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769325435703_photo_1777335588217.jpg?alt=media&token=93dfccf3-382a-47ac-a943-0ca36751e6a6"
+                },
+                "address": {
+                  "stringValue": "Bella Colina, La Ciénaga"
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "memberId": {
+                  "stringValue": "1769325435703"
+                },
+                "advancedClassOption": {
+                  "stringValue": "none"
+                },
+                "lastName": {
+                  "stringValue": "Vicente Corporán"
+                },
+                "firstName": {
+                  "stringValue": "Jharolin Esther"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1769325435703_signature_1777345336289.png?alt=media&token=1c8b34a0-a018-44a7-83d9-0f535a498851"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18496284621"
+                },
+                "age": {
+                  "stringValue": "22"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "membershipClass": {
+                  "stringValue": "voyager"
+                },
+                "id": {
+                  "stringValue": "1769325435703"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2003-11-02"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Gladys Corporán"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Treasurer"
+                                  },
+                                  "class": {
+                                    "stringValue": ""
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Helping Hand"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Treasurer"
+                                  },
+                                  "class": {
+                                    "stringValue": ""
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Guide"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "baptismDate": {
+                  "stringValue": "2014-03-01"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "none"
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": true
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": true
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Treasurer"
+                                  },
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "instructorClass": {
+                                    "stringValue": "guide"
+                                  },
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18498623948"
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "voyager"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "portalAccessCode": {
+                  "stringValue": "435703"
+                },
+                "bloodType": {
+                  "stringValue": "B-"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "motherName": {
+                  "stringValue": ""
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "memberId": {
+                  "stringValue": "1769326140476"
+                },
+                "lastName": {
+                  "stringValue": "Galvez Fermin"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "firstName": {
+                  "stringValue": "Deibi Daniel"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": "18298855756"
+                },
+                "address": {
+                  "stringValue": "C/8 Km14 Autopista Duarte"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769326140476_photo_1777335557869.jpg?alt=media&token=70dbf8c4-4615-4ea3-801d-c4ea40b8fb6e"
+                },
+                "membershipClass": {
+                  "stringValue": "ranger"
+                },
+                "id": {
+                  "stringValue": "1769326140476"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Daniel Galvez"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18098704596"
+                },
+                "age": {
+                  "stringValue": "17"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1769326140476_signature_1777345289399.png?alt=media&token=2c1e28d6-24e3-4ccf-b4d9-9487ca13479e"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": "2024-06-03"
+                },
+                "motherContact": {
+                  "stringValue": "18298910100"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Issis Fermin"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Counselor"
+                                  },
+                                  "class": {
+                                    "stringValue": ""
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  },
+                                  "class": {
+                                    "stringValue": "Friend"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "dateOfBirth": {
+                  "stringValue": "2009-03-19"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778611158440"
+                },
+                "portalAccessCode": {
+                  "stringValue": "140476"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "motherName": {
+                  "stringValue": "Issis Fermin"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "ranger"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": true
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  },
+                                  "position": {
+                                    "stringValue": "Counselor"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  },
+                                  "instructorClass": {
+                                    "stringValue": "friend"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18298910100"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": "18096578099"
+                },
+                "memberId": {
+                  "stringValue": "1769326347840"
+                },
+                "lastName": {
+                  "stringValue": "Vicente Corporán"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Margaret Abigail"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769326347840_photo_1777335566285.jpg?alt=media&token=2b942b99-22a2-4192-957d-6535df391f63"
+                },
+                "address": {
+                  "stringValue": "Bella Colina, Manoguayabo"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Martín Vicente"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "id": {
+                  "stringValue": "1769326347840"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1769326347840_signature_1777345312797.png?alt=media&token=fb07d280-9b49-4719-9e6c-2b250e69e3f4"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18098633948"
+                },
+                "age": {
+                  "stringValue": "17"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Gladys Corporán"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Companion"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "role": {
+                                    "stringValue": "Associate Director"
+                                  },
+                                  "class": {
+                                    "stringValue": ""
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": "2022-07-13"
+                },
+                "motherContact": {
+                  "stringValue": "18498623948"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2009-02-02"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "explorer"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "portalAccessCode": {
+                  "stringValue": "347840"
+                },
+                "bloodType": {
+                  "stringValue": "B+"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "allergies": {
+                  "stringValue": "polvo, hierva, perfume fuerte, polen"
+                },
+                "motherName": {
+                  "stringValue": "Gladys Corporán"
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": false
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": true
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  },
+                                  "position": {
+                                    "stringValue": "DUMC"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  },
+                                  "instructorClass": {
+                                    "stringValue": "companion"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18498623948"
+                },
+                "unitId": {
+                  "stringValue": ""
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1769326865668_signature_1777345238148.png?alt=media&token=aea9565e-e0e7-4dfc-b986-db66a16895cf"
+                },
+                "age": {
+                  "stringValue": "59"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18098836285"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "membershipClass": {
+                  "stringValue": "master_guide_invested"
+                },
+                "id": {
+                  "stringValue": "1769326865668"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769326865668_photo_1777307454993.jpg?alt=media&token=91959768-6dad-4af0-8931-55f544d4a45d"
+                },
+                "completedClasses": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "friend"
+                      },
+                      {
+                        "stringValue": "explorer"
+                      },
+                      {
+                        "stringValue": "voyager"
+                      },
+                      {
+                        "stringValue": "companion"
+                      },
+                      {
+                        "stringValue": "ranger"
+                      },
+                      {
+                        "stringValue": "guide"
+                      }
+                    ]
+                  }
+                },
+                "medicalCondition": {
+                  "stringValue": "Hipertensión | Tiroides | Hiperglucemia"
+                },
+                "address": {
+                  "stringValue": "Residencial La Concordia, La Ciénaga"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "conditionMedications": {
+                  "stringValue": "Losartan 50/12.5 | Eutirox 75\n"
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "continuousMedications": {
+                  "stringValue": ""
+                },
+                "firstName": {
+                  "stringValue": "Angela"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Spouse"
+                },
+                "memberId": {
+                  "stringValue": "1769326865668"
+                },
+                "roleClass": {
+                  "stringValue": ""
+                },
+                "lastName": {
+                  "stringValue": "Frías Contreras"
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18297011441"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Counselor"
+                                  },
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "instructorClass": {
+                                    "stringValue": "explorer"
+                                  },
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "instructorClass": {
+                                    "nullValue": null
+                                  },
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": true
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "master_guide_invested"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "scope": {
+                  "stringValue": "conquistadores"
+                },
+                "allergies": {
+                  "stringValue": "Medios de Contraste, Mariscos"
+                },
+                "motherName": {
+                  "stringValue": ""
+                },
+                "portalAccessCode": {
+                  "stringValue": "865668"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "role": {
+                  "stringValue": "Counselor"
+                },
+                "dateOfBirth": {
+                  "stringValue": "1967-04-27"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": ""
+                                  },
+                                  "role": {
+                                    "stringValue": "Counselor"
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Explorer"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Master Guide"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Fausto de Jesús Aybar "
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "completedAdvancedClasses": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "friend"
+                      },
+                      {
+                        "stringValue": "explorer"
+                      },
+                      {
+                        "stringValue": "voyager"
+                      },
+                      {
+                        "stringValue": "companion"
+                      },
+                      {
+                        "stringValue": "ranger"
+                      },
+                      {
+                        "stringValue": "guide"
+                      }
+                    ]
+                  }
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "baptismDate": {
+                  "stringValue": "2022-01-28"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "none"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "dateOfBirth": {
+                  "stringValue": "2011-01-17"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "class": {
+                                    "stringValue": "Ranger"
+                                  },
+                                  "role": {
+                                    "stringValue": "Instructor"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Cristina Martínez"
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "motherContact": {
+                  "stringValue": "18097135932"
+                },
+                "baptismDate": {
+                  "stringValue": "2011-01-17"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18097135932"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {
+                          "values": [
+                            {
+                              "mapValue": {
+                                "fields": {
+                                  "position": {
+                                    "stringValue": "Class Instructor"
+                                  },
+                                  "instructorClass": {
+                                    "stringValue": "ranger"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "pathfinderClass": {
+                  "stringValue": "guide"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "motherName": {
+                  "stringValue": "Cristina Martínez"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "212887"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769327212887_photo_1777335574469.jpg?alt=media&token=0a32f6aa-b475-4b4a-943b-ca4e550bcb9a"
+                },
+                "address": {
+                  "stringValue": "residencial las mercedes"
+                },
+                "fatherContact": {
+                  "stringValue": "18298764751"
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Jennedy Reynaldo"
+                },
+                "advancedClassOption": {
+                  "stringValue": "none"
+                },
+                "lastName": {
+                  "stringValue": "Rojas Martínez"
+                },
+                "memberId": {
+                  "stringValue": "1769327212887"
+                },
+                "signature": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/signatures%2F1769327212887_signature_1777345324927.png?alt=media&token=0311f035-b4b4-423a-a613-048b0bd3cdea"
+                },
+                "age": {
+                  "stringValue": "15"
+                },
+                "primaryContact": {
+                  "stringValue": "18096301240"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Agustín Rojas"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "id": {
+                  "stringValue": "1769327212887"
+                },
+                "membershipClass": {
+                  "stringValue": "guide"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "address": {
+                  "stringValue": "C/ Alberto Constanza, La Ciénaga"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769327754888_photo_1777775185826.jpg?alt=media&token=d5c73d23-a14e-4383-87f0-cd56025756d8"
+                },
+                "lastName": {
+                  "stringValue": "Mora Arno"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "memberId": {
+                  "stringValue": "1769327754888"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Nashly María"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": "18099068945"
+                },
+                "primaryContact": {
+                  "stringValue": "18295258923"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "age": {
+                  "stringValue": "13"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "id": {
+                  "stringValue": "1769327754888"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "fatherName": {
+                  "stringValue": "Juan Carlos Mora"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "dateOfBirth": {
+                  "stringValue": "2013-01-05"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778886220468"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "motherContact": {
+                  "stringValue": "18294808292"
+                },
+                "baptismDate": {
+                  "stringValue": "2024-10-24"
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "unitRole": {
+                  "stringValue": "Captain"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Rosanny Arno"
+                },
+                "unitId": {
+                  "stringValue": "1769822483180"
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18294808292"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "portalAccessCode": {
+                  "stringValue": "754888"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "motherName": {
+                  "stringValue": "Rosanny Arno"
+                },
+                "pathfinderClass": {
+                  "stringValue": "explorer"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769327966840_photo_1777335671766.jpg?alt=media&token=c4b90879-edc4-4a6f-b5de-2e2400687364"
+                },
+                "address": {
+                  "stringValue": "Bella Colina, manoguayabo"
+                },
+                "fatherContact": {
+                  "stringValue": "18096578099"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Dalia Jocabeb"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Vicente Corporán"
+                },
+                "memberId": {
+                  "stringValue": "1769327966840"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "age": {
+                  "stringValue": "12"
+                },
+                "primaryContact": {
+                  "stringValue": "18496284621"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Martín Vicente"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "id": {
+                  "stringValue": "1769327966840"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778267180063"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2014-01-17"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Gladys Corporán"
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "unitRole": {
+                  "stringValue": "Captain"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": "2024-10-26"
+                },
+                "motherContact": {
+                  "stringValue": "18498623948"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18498623948"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "unitId": {
+                  "stringValue": "1769822463080"
+                },
+                "pathfinderClass": {
+                  "stringValue": "explorer"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "motherName": {
+                  "stringValue": "Gladys Corporán"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "966840"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18292140801"
+                },
+                "unitId": {
+                  "stringValue": "1769822483180"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "pathfinderClass": {
+                  "stringValue": "companion"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "bloodType": {
+                  "stringValue": "A+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "903828"
+                },
+                "motherName": {
+                  "stringValue": "Luisa Martínez"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2011-09-14"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778330315131"
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": "Secretary"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Luisa Martínez"
+                },
+                "motherContact": {
+                  "stringValue": "18292140801"
+                },
+                "baptismDate": {
+                  "stringValue": "2024-10-24"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "primaryContact": {
+                  "stringValue": "18292140801"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "age": {
+                  "stringValue": "14"
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "id": {
+                  "stringValue": "1769371903828"
+                },
+                "membershipClass": {
+                  "stringValue": "companion"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769371903828_photo_1777335656846.jpg?alt=media&token=ecb8395a-983f-49b4-949b-e63c2f1ae4cc"
+                },
+                "address": {
+                  "stringValue": "C/ Alberto Solano, La Ciénaga"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "lastName": {
+                  "stringValue": "González Martínez"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "memberId": {
+                  "stringValue": "1769371903828"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Diana Lucía"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "membershipClassModality": {
+                  "stringValue": "advanced"
+                },
+                "fatherContact": {
+                  "stringValue": "18298695146"
+                },
+                "memberId": {
+                  "stringValue": "1769372078411"
+                },
+                "lastName": {
+                  "stringValue": "Mena Martén"
+                },
+                "advancedClassOption": {
+                  "stringValue": "advanced-only"
+                },
+                "firstName": {
+                  "stringValue": "Daniel Alberto"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "completedClasses": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "friend"
+                      },
+                      {
+                        "stringValue": "explorer"
+                      },
+                      {
+                        "stringValue": "voyager"
+                      },
+                      {
+                        "stringValue": "guide"
+                      },
+                      {
+                        "stringValue": "ranger"
+                      },
+                      {
+                        "stringValue": "companion"
+                      }
+                    ]
+                  }
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769372078411_photo_1777335598072.jpg?alt=media&token=e1c3ee64-552e-44ee-808e-300c967d333d"
+                },
+                "address": {
+                  "stringValue": "C/ Don Ramón, La Ciénaga"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Danilo Alberto Mena Muñoz"
+                },
+                "membershipClass": {
+                  "stringValue": "companion"
+                },
+                "id": {
+                  "stringValue": "1769372078411"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18494664904"
+                },
+                "age": {
+                  "stringValue": "17"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Noemí Martén"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "completedAdvancedClasses": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "friend"
+                      },
+                      {
+                        "stringValue": "voyager"
+                      },
+                      {
+                        "stringValue": "guide"
+                      }
+                    ]
+                  }
+                },
+                "motherContact": {
+                  "stringValue": "18298085914"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "dateOfBirth": {
+                  "stringValue": "2008-05-30"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778268567676"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "religion": {
+                  "stringValue": "No Bautizado"
+                },
+                "pathfinderClass": {
+                  "stringValue": "companion"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "078411"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "motherName": {
+                  "stringValue": "Noemí Martén"
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18298085914"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "unitId": {
+                  "stringValue": "1777158048211"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "motherName": {
+                  "stringValue": "Noemí Martén"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "222869"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "guide"
+                },
+                "religion": {
+                  "stringValue": "No Bautizado"
+                },
+                "unitId": {
+                  "stringValue": "1777158048211"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18298085914"
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "motherContact": {
+                  "stringValue": "18298085914"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Noemí Martén"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2010-09-16"
+                },
+                "membershipClass": {
+                  "stringValue": "guide"
+                },
+                "id": {
+                  "stringValue": "1769372222869"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Danilo Alberto Mena Muñoz"
+                },
+                "age": {
+                  "stringValue": "15"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18099674857"
+                },
+                "firstName": {
+                  "stringValue": "Damil Alejandro"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "memberId": {
+                  "stringValue": "1769372222869"
+                },
+                "lastName": {
+                  "stringValue": "Mena Martén"
+                },
+                "advancedClassOption": {
+                  "stringValue": "none"
+                },
+                "fatherContact": {
+                  "stringValue": "18298695146"
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "address": {
+                  "stringValue": "C/ Don Ramón, La Ciénaga"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769372222869_photo_1777335708321.jpg?alt=media&token=d11d46b5-f3a9-40a3-9cf7-0d06ab978f61"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "portalAccessCode": {
+                  "stringValue": "422002"
+                },
+                "bloodType": {
+                  "stringValue": "A+"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "motherName": {
+                  "stringValue": "Ruth Estephany Rosario"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "explorer"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "unitId": {
+                  "stringValue": "1769822463080"
+                },
+                "membershipClub": {
+                  "stringValue": ""
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18299333434"
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "father"
+                },
+                "baptismDate": {
+                  "stringValue": "2022-10-29"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "emergencyContactName": {
+                  "stringValue": "José Altagracia"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "dateOfBirth": {
+                  "stringValue": "2013-11-21"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778443160426"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "id": {
+                  "stringValue": "1769372422002"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "José Altagracia"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18299333434"
+                },
+                "age": {
+                  "stringValue": "12"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "memberId": {
+                  "stringValue": "1769372422002"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Soriano Rodríguez"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Father"
+                },
+                "firstName": {
+                  "stringValue": "Keisha Chanel"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": "18299333434"
+                },
+                "address": {
+                  "stringValue": "C/ Hermanas Mirabal, La Ciénaga"
+                },
+                "clubAssignments": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "mapValue": {
+                          "fields": {
+                            "class": {
+                              "stringValue": ""
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "active": {
+                              "booleanValue": false
+                            }
+                          }
+                        }
+                      },
+                      "conquistadores": {
+                        "mapValue": {
+                          "fields": {
+                            "active": {
+                              "booleanValue": false
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "class": {
+                              "stringValue": "Explorer"
+                            },
+                            "advancedClassOption": {
+                              "stringValue": "both"
+                            }
+                          }
+                        }
+                      },
+                      "guiasMayores": {
+                        "mapValue": {
+                          "fields": {
+                            "class": {
+                              "stringValue": ""
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "active": {
+                              "booleanValue": false
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769372422002_photo_1777335679760.jpg?alt=media&token=6c9055a3-f157-4144-8388-f662dfd405b8"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18498755850"
+                },
+                "age": {
+                  "stringValue": "16"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Sr. Francisco"
+                },
+                "membershipClass": {
+                  "stringValue": "voyager"
+                },
+                "id": {
+                  "stringValue": "1769372854952"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769372854952_photo_1777335632028.jpg?alt=media&token=8861e2de-9a29-467b-a5c7-7b4a928c71ef"
+                },
+                "address": {
+                  "stringValue": "Pantoja calle pegoro, residencial habita"
+                },
+                "medicalCondition": {
+                  "stringValue": "asma"
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "fatherContact": {
+                  "stringValue": "18092595637"
+                },
+                "memberId": {
+                  "stringValue": "1769372854952"
+                },
+                "lastName": {
+                  "stringValue": "Francisco Roa"
+                },
+                "advancedClassOption": {
+                  "stringValue": "none"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Yoenmy Isabel "
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18094810705"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": true
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "unitId": {
+                  "stringValue": "1769822483180"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "religion": {
+                  "stringValue": "No bautizada"
+                },
+                "pathfinderClass": {
+                  "stringValue": "voyager"
+                },
+                "portalAccessCode": {
+                  "stringValue": "854952"
+                },
+                "bloodType": {
+                  "stringValue": "A+"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "motherName": {
+                  "stringValue": "Yomaira Roa"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2009-09-08"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Yomaira Roa"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "motherContact": {
+                  "stringValue": "18094810705"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "id": {
+                  "stringValue": "1769388477121"
+                },
+                "membershipClass": {
+                  "stringValue": "companion"
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18096299618"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "age": {
+                  "stringValue": "19"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Jean"
+                },
+                "memberId": {
+                  "stringValue": "1769388477121"
+                },
+                "firstName": {
+                  "stringValue": "Kalepson"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "address": {
+                  "stringValue": "C/ Alberto Solano, La Ciénaga"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769388477121_photo_1777335606399.jpg?alt=media&token=697c70d9-739a-4583-9739-cf533039c476"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "portalAccessCode": {
+                  "stringValue": "477121"
+                },
+                "bloodType": {
+                  "stringValue": "A+"
+                },
+                "motherName": {
+                  "stringValue": ""
+                },
+                "pathfinderClass": {
+                  "stringValue": "companion"
+                },
+                "religion": {
+                  "stringValue": "No Bautizado"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "unitId": {
+                  "stringValue": "1777158048211"
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18092706940"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "none"
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Marie Hermanie Jean "
+                },
+                "dateOfBirth": {
+                  "stringValue": "2007-03-24"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "age": {
+                  "stringValue": "11"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18494999849"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "id": {
+                  "stringValue": "1769452805137"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Luis Vargas"
+                },
+                "address": {
+                  "stringValue": "C/ Las Caobas, Residencial Los Hidalgos, La Ciénaga"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769452805137_photo_1777335691931.jpg?alt=media&token=de340265-2bc3-49aa-b32f-4237281ec071"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Luis Manuel"
+                },
+                "memberId": {
+                  "stringValue": "1769452805137"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Vargas Rodríguez"
+                },
+                "fatherContact": {
+                  "stringValue": "18094209849"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "unitId": {
+                  "stringValue": "1777158048211"
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18294715416"
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "allergies": {
+                  "stringValue": "polvo"
+                },
+                "motherName": {
+                  "stringValue": "Vimary Rodríguez"
+                },
+                "bloodType": {
+                  "stringValue": "AB+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "805137"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "explorer"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1777752305009"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2014-09-23"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "motherContact": {
+                  "stringValue": "18294715416"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Vimary Rodríguez"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Male"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "membershipClass": {
+                  "stringValue": "guide"
+                },
+                "id": {
+                  "stringValue": "1769452996750"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": "Rayneiro Lara "
+                },
+                "age": {
+                  "stringValue": "15"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "primaryContact": {
+                  "stringValue": "18296399176"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Raymely Abigail"
+                },
+                "memberId": {
+                  "stringValue": "1769452996750"
+                },
+                "advancedClassOption": {
+                  "stringValue": "none"
+                },
+                "lastName": {
+                  "stringValue": "Lara González"
+                },
+                "fatherContact": {
+                  "stringValue": "18092495838"
+                },
+                "membershipClassModality": {
+                  "stringValue": "progressive"
+                },
+                "address": {
+                  "stringValue": "Residencial Bosque Real, La Ciénaga"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769452996750_photo_1777335721256.jpg?alt=media&token=7be64d6a-8e91-4d50-8ad5-849347b55852"
+                },
+                "motherName": {
+                  "stringValue": "Ana González"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "portalAccessCode": {
+                  "stringValue": "996750"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "pathfinderClass": {
+                  "stringValue": "guide"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "unitId": {
+                  "stringValue": ""
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18099893355"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": "2019-02-08"
+                },
+                "motherContact": {
+                  "stringValue": "18099893355"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Ana González"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2011-01-14"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "motherName": {
+                  "stringValue": "Josefina de la Cruz"
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "portalAccessCode": {
+                  "stringValue": "157186"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "pathfinderClass": {
+                  "stringValue": "explorer"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "unitId": {
+                  "stringValue": "1777158048211"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18293014426"
+                },
+                "membershipClub": {
+                  "stringValue": "guiasMayores"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": "2025-04-19"
+                },
+                "motherContact": {
+                  "stringValue": "18293014426"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactName": {
+                  "stringValue": "Josefina de la Cruz"
+                },
+                "gender": {
+                  "stringValue": "Male"
+                },
+                "unitRole": {
+                  "stringValue": "Captain"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778609179195"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2009-12-12"
+                },
+                "id": {
+                  "stringValue": "1769453157186"
+                },
+                "membershipClass": {
+                  "stringValue": "explorer"
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "age": {
+                  "stringValue": "16"
+                },
+                "primaryContact": {
+                  "stringValue": "18293014426"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "firstName": {
+                  "stringValue": "Yandel"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Tejada de la Cruz"
+                },
+                "memberId": {
+                  "stringValue": "1769453157186"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "address": {
+                  "stringValue": "a"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769453157186_photo_1777335622714.jpg?alt=media&token=7121e7fd-cf67-493c-adca-527b3d913be0"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "religion": {
+                  "stringValue": "No Bautizada"
+                },
+                "pathfinderClass": {
+                  "stringValue": "friend"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "motherName": {
+                  "stringValue": ""
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "portalAccessCode": {
+                  "stringValue": "402828"
+                },
+                "bloodType": {
+                  "stringValue": "A+"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18299333434"
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "unitId": {
+                  "stringValue": "1769822463080"
+                },
+                "emergencyContactName": {
+                  "stringValue": "José Altagracia"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "guias": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "conquistadores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "motherContact": {
+                  "stringValue": ""
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "father"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778773949966"
+                },
+                "dateOfBirth": {
+                  "stringValue": "2015-07-07"
+                },
+                "fatherName": {
+                  "stringValue": "José Altagracia"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "id": {
+                  "stringValue": "1769453402828"
+                },
+                "membershipClass": {
+                  "stringValue": "friend"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "age": {
+                  "stringValue": "10"
+                },
+                "primaryContact": {
+                  "stringValue": "18299333434"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "fatherContact": {
+                  "stringValue": "18299333434"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Father"
+                },
+                "firstName": {
+                  "stringValue": "Jeimy Esther"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "lastName": {
+                  "stringValue": "Urbaez Rodríguez"
+                },
+                "memberId": {
+                  "stringValue": "1769453402828"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1769453402828_photo_1777335649461.jpg?alt=media&token=b19999fc-cb37-4305-ba4c-720e93c03901"
+                },
+                "address": {
+                  "stringValue": "C/ Zaramaguyón, Residencial Alta Vista, La Ciénaga"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "dateOfBirth": {
+                  "stringValue": "2015-03-11"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1777779916378"
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "instructorOf": {
+                  "stringValue": ""
+                },
+                "unitRole": {
+                  "stringValue": "Secretary"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Rosanny Arno"
+                },
+                "clubRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guias": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "motherContact": {
+                  "stringValue": "18294808292"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "masterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18294808292"
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": false
+                },
+                "unitId": {
+                  "stringValue": "1769822463080"
+                },
+                "religion": {
+                  "stringValue": "Adventista"
+                },
+                "pathfinderClass": {
+                  "stringValue": "companion"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "waivedSaturdays": {
+                  "arrayValue": {
+                    "values": [
+                      {
+                        "stringValue": "2026-02-22"
+                      }
+                    ]
+                  }
+                },
+                "portalAccessCode": {
+                  "stringValue": "192339"
+                },
+                "bloodType": {
+                  "stringValue": "O+"
+                },
+                "motherName": {
+                  "stringValue": "Rosanny Arno"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1770642192339_photo_1777775172346.jpg?alt=media&token=39596075-7139-4aa4-a4da-8fa3572f3301"
+                },
+                "address": {
+                  "stringValue": "C/ Alberto Constanza, La Ciénaga"
+                },
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": "18099068945"
+                },
+                "lastName": {
+                  "stringValue": "Mora Arno"
+                },
+                "advancedClassOption": {
+                  "stringValue": "both"
+                },
+                "memberId": {
+                  "stringValue": "1770642192339"
+                },
+                "firstName": {
+                  "stringValue": "Teisy María "
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "primaryContact": {
+                  "stringValue": "18094619166"
+                },
+                "clubScope": {
+                  "stringValue": ""
+                },
+                "age": {
+                  "stringValue": "11"
+                },
+                "fatherName": {
+                  "stringValue": "Juan Carlos Mora"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "id": {
+                  "stringValue": "1770642192339"
+                },
+                "membershipClass": {
+                  "stringValue": "companion"
+                }
+              }
+            }
+          },
+          {
+            "mapValue": {
+              "fields": {
+                "membershipClassModality": {
+                  "stringValue": "both"
+                },
+                "fatherContact": {
+                  "stringValue": ""
+                },
+                "memberId": {
+                  "stringValue": "1776571082823"
+                },
+                "advancedClassOption": {
+                  "stringValue": "none"
+                },
+                "lastName": {
+                  "stringValue": "González de los Santos"
+                },
+                "firstName": {
+                  "stringValue": "Yanneris Maris"
+                },
+                "emergencyContactRelationship": {
+                  "stringValue": "Mother"
+                },
+                "photo": {
+                  "stringValue": "https://firebasestorage.googleapis.com/v0/b/unityclubmanager.firebasestorage.app/o/photos%2F1776571082823_photo_1777775155633.jpg?alt=media&token=fd8365c9-25ec-4c25-bab0-fedd3d45d23d"
+                },
+                "clubAssignments": {
+                  "mapValue": {
+                    "fields": {
+                      "aventureros": {
+                        "mapValue": {
+                          "fields": {
+                            "active": {
+                              "booleanValue": false
+                            },
+                            "class": {
+                              "stringValue": ""
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            }
+                          }
+                        }
+                      },
+                      "conquistadores": {
+                        "mapValue": {
+                          "fields": {
+                            "active": {
+                              "booleanValue": false
+                            },
+                            "class": {
+                              "stringValue": ""
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "advancedClassOption": {
+                              "stringValue": "none"
+                            }
+                          }
+                        }
+                      },
+                      "guiasMayores": {
+                        "mapValue": {
+                          "fields": {
+                            "class": {
+                              "stringValue": ""
+                            },
+                            "positions": {
+                              "arrayValue": {}
+                            },
+                            "active": {
+                              "booleanValue": false
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "address": {
+                  "stringValue": "Residencial Los Hidalgos, KM14 Autopista Duarte"
+                },
+                "position": {
+                  "stringValue": ""
+                },
+                "fatherName": {
+                  "stringValue": ""
+                },
+                "membershipClass": {
+                  "stringValue": "friend"
+                },
+                "id": {
+                  "stringValue": "1776571082823"
+                },
+                "lastSeenAnnouncementId": {
+                  "stringValue": "1777408045016"
+                },
+                "primaryContact": {
+                  "stringValue": "18297877037"
+                },
+                "age": {
+                  "stringValue": "10"
+                },
+                "unitRole": {
+                  "stringValue": ""
+                },
+                "gender": {
+                  "stringValue": "Female"
+                },
+                "emergencyContactName": {
+                  "stringValue": "Zoila Cuello"
+                },
+                "motherContact": {
+                  "stringValue": "18297877037"
+                },
+                "useParentAsEmergency": {
+                  "stringValue": "mother"
+                },
+                "baptismDate": {
+                  "stringValue": ""
+                },
+                "dateOfBirth": {
+                  "stringValue": "2015-09-09"
+                },
+                "lastPortalAccess": {
+                  "integerValue": "1778337028890"
+                },
+                "isMasterGuideCandidate": {
+                  "booleanValue": false
+                },
+                "religion": {
+                  "stringValue": ""
+                },
+                "pathfinderClass": {
+                  "stringValue": "friend"
+                },
+                "bloodType": {
+                  "stringValue": ""
+                },
+                "portalAccessCode": {
+                  "stringValue": "082823"
+                },
+                "motherName": {
+                  "stringValue": "Zoila Cuello"
+                },
+                "membershipClub": {
+                  "stringValue": "conquistadores"
+                },
+                "isExemptFromPoints": {
+                  "booleanValue": false
+                },
+                "directiveRoles": {
+                  "mapValue": {
+                    "fields": {
+                      "conquistadores": {
+                        "arrayValue": {}
+                      },
+                      "aventureros": {
+                        "arrayValue": {}
+                      },
+                      "guiasMayores": {
+                        "arrayValue": {}
+                      }
+                    }
+                  }
+                },
+                "emergencyContactPhone": {
+                  "stringValue": "18297877037"
+                },
+                "unitId": {
+                  "stringValue": "1769822483180"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "isCollection": {
+      "booleanValue": true
+    }
+  },
+  "createTime": "2026-04-18T02:59:05.776194Z",
+  "updateTime": "2026-05-16T03:16:40.659Z"
+}

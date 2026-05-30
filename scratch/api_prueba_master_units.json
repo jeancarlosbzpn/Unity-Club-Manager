@@ -1,0 +1,19 @@
+{
+  "name": "projects/unityclubmanager/databases/(default)/documents/club_prueba_data/units",
+  "fields": {
+    "updatedAt": {
+      "stringValue": "2026-05-13T16:26:48.832Z"
+    },
+    "data": {
+      "arrayValue": {}
+    },
+    "isCollection": {
+      "booleanValue": true
+    },
+    "isMap": {
+      "booleanValue": false
+    }
+  },
+  "createTime": "2026-05-13T15:55:20.048889Z",
+  "updateTime": "2026-05-13T16:26:48.979180Z"
+}

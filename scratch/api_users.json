@@ -1,0 +1,638 @@
+{
+  "documents": [
+    {
+      "name": "projects/unityclubmanager/databases/(default)/documents/clubvencedores_users/deibigalvesp13@gmail.com",
+      "fields": {
+        "positions": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Consejero"
+              },
+              {
+                "stringValue": "Instructor"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "deibigalvesp13@gmail.com"
+        },
+        "position": {
+          "stringValue": "Consejero"
+        },
+        "allowedModules": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "dashboard"
+              },
+              {
+                "stringValue": "activities"
+              },
+              {
+                "stringValue": "homeworks"
+              },
+              {
+                "stringValue": "uniformity"
+              },
+              {
+                "stringValue": "reports"
+              },
+              {
+                "stringValue": "birthdays"
+              },
+              {
+                "stringValue": "medical"
+              },
+              {
+                "stringValue": "announcements"
+              },
+              {
+                "stringValue": "directive"
+              },
+              {
+                "stringValue": "discipline"
+              },
+              {
+                "stringValue": "parents"
+              },
+              {
+                "stringValue": "classes"
+              },
+              {
+                "stringValue": "attendance"
+              },
+              {
+                "stringValue": "members"
+              },
+              {
+                "stringValue": "reminders"
+              },
+              {
+                "stringValue": "units"
+              },
+              {
+                "stringValue": "qualifications"
+              }
+            ]
+          }
+        },
+        "password": {
+          "stringValue": "8098704596"
+        },
+        "instructorClasses": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "friend"
+              }
+            ]
+          }
+        },
+        "instructorClass": {
+          "stringValue": "friend"
+        },
+        "clubId": {
+          "stringValue": "vencedores"
+        },
+        "modulePermissions": {
+          "mapValue": {
+            "fields": {
+              "parents": {
+                "stringValue": "read"
+              },
+              "reminders": {
+                "stringValue": "edit"
+              },
+              "units": {
+                "stringValue": "read"
+              },
+              "medical": {
+                "stringValue": "read"
+              },
+              "attendance": {
+                "stringValue": "read"
+              },
+              "reports": {
+                "stringValue": "read"
+              },
+              "birthdays": {
+                "stringValue": "read"
+              },
+              "discipline": {
+                "stringValue": "edit"
+              },
+              "announcements": {
+                "stringValue": "edit"
+              },
+              "activities": {
+                "stringValue": "read"
+              },
+              "dashboard": {
+                "stringValue": "read"
+              },
+              "qualifications": {
+                "stringValue": "read"
+              },
+              "members": {
+                "stringValue": "read"
+              },
+              "directive": {
+                "stringValue": "read"
+              },
+              "uniformity": {
+                "stringValue": "read"
+              },
+              "homeworks": {
+                "stringValue": "edit"
+              },
+              "classes": {
+                "stringValue": "read"
+              }
+            }
+          }
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "username": {
+          "stringValue": "deibigalvesp13@gmail.com"
+        },
+        "name": {
+          "stringValue": "Deibi Daniel Galvez Fermin"
+        }
+      },
+      "createTime": "2026-05-03T02:43:43.946282Z",
+      "updateTime": "2026-05-13T17:20:08.393465Z"
+    },
+    {
+      "name": "projects/unityclubmanager/databases/(default)/documents/clubvencedores_users/jharolinesthervicentecorporan@gmail.com",
+      "fields": {
+        "allowedModules": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "dashboard"
+              },
+              {
+                "stringValue": "cuotas"
+              },
+              {
+                "stringValue": "finances"
+              },
+              {
+                "stringValue": "reports"
+              },
+              {
+                "stringValue": "members"
+              },
+              {
+                "stringValue": "inventory"
+              },
+              {
+                "stringValue": "reminders"
+              },
+              {
+                "stringValue": "birthdays"
+              },
+              {
+                "stringValue": "classes"
+              },
+              {
+                "stringValue": "units"
+              },
+              {
+                "stringValue": "homeworks"
+              },
+              {
+                "stringValue": "announcements"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "jharolinesthervicentecorporan@gmail.com"
+        },
+        "positions": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Tesorera"
+              },
+              {
+                "stringValue": "Instructor"
+              }
+            ]
+          }
+        },
+        "position": {
+          "stringValue": "Tesorera"
+        },
+        "modulePermissions": {
+          "mapValue": {
+            "fields": {
+              "birthdays": {
+                "stringValue": "read"
+              },
+              "members": {
+                "stringValue": "read"
+              },
+              "inventory": {
+                "stringValue": "read"
+              },
+              "units": {
+                "stringValue": "read"
+              },
+              "reminders": {
+                "stringValue": "edit"
+              },
+              "classes": {
+                "stringValue": "read"
+              },
+              "homeworks": {
+                "stringValue": "edit"
+              },
+              "announcements": {
+                "stringValue": "edit"
+              }
+            }
+          }
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "name": {
+          "stringValue": "Jharolin Esther Vicente Corporán"
+        },
+        "username": {
+          "stringValue": "jharolinesthervicentecorporan@gmail.com"
+        },
+        "password": {
+          "stringValue": "8496284621"
+        },
+        "instructorClass": {
+          "stringValue": "guide"
+        }
+      },
+      "createTime": "2026-04-20T13:43:39.153195Z",
+      "updateTime": "2026-05-02T01:17:09.947979Z"
+    },
+    {
+      "name": "projects/unityclubmanager/databases/(default)/documents/clubvencedores_users/margaretabigail0202@gmail.com",
+      "fields": {
+        "name": {
+          "stringValue": "Margaret Abigail Vicente Corporán"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "username": {
+          "stringValue": "margaretabigail0202@gmail.com"
+        },
+        "modulePermissions": {
+          "mapValue": {
+            "fields": {
+              "medical": {
+                "stringValue": "read"
+              },
+              "attendance": {
+                "stringValue": "edit"
+              },
+              "parents": {
+                "stringValue": "read"
+              },
+              "reminders": {
+                "stringValue": "edit"
+              },
+              "units": {
+                "stringValue": "edit"
+              },
+              "announcements": {
+                "stringValue": "edit"
+              },
+              "activities": {
+                "stringValue": "read"
+              },
+              "dashboard": {
+                "stringValue": "read"
+              },
+              "reports": {
+                "stringValue": "edit"
+              },
+              "discipline": {
+                "stringValue": "edit"
+              },
+              "birthdays": {
+                "stringValue": "read"
+              },
+              "ranking": {
+                "stringValue": "read"
+              },
+              "directive": {
+                "stringValue": "read"
+              },
+              "uniformity": {
+                "stringValue": "edit"
+              },
+              "homeworks": {
+                "stringValue": "edit"
+              },
+              "qualifications": {
+                "stringValue": "edit"
+              },
+              "camps": {
+                "stringValue": "none"
+              },
+              "members": {
+                "stringValue": "read"
+              },
+              "inventory": {
+                "stringValue": "read"
+              },
+              "points": {
+                "stringValue": "edit"
+              },
+              "master_guide": {
+                "stringValue": "read"
+              },
+              "classes": {
+                "stringValue": "read"
+              },
+              "finances": {
+                "stringValue": "none"
+              }
+            }
+          }
+        },
+        "instructorClass": {
+          "stringValue": "companion"
+        },
+        "password": {
+          "stringValue": "8098633948"
+        },
+        "allowedModules": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "dashboard"
+              },
+              {
+                "stringValue": "attendance"
+              },
+              {
+                "stringValue": "activities"
+              },
+              {
+                "stringValue": "directive"
+              },
+              {
+                "stringValue": "members"
+              },
+              {
+                "stringValue": "inventory"
+              },
+              {
+                "stringValue": "uniformity"
+              },
+              {
+                "stringValue": "discipline"
+              },
+              {
+                "stringValue": "points"
+              },
+              {
+                "stringValue": "reports"
+              },
+              {
+                "stringValue": "reminders"
+              },
+              {
+                "stringValue": "ranking"
+              },
+              {
+                "stringValue": "master_guide"
+              },
+              {
+                "stringValue": "birthdays"
+              },
+              {
+                "stringValue": "classes"
+              },
+              {
+                "stringValue": "units"
+              },
+              {
+                "stringValue": "medical"
+              },
+              {
+                "stringValue": "parents"
+              },
+              {
+                "stringValue": "qualifications"
+              },
+              {
+                "stringValue": "homeworks"
+              },
+              {
+                "stringValue": "announcements"
+              }
+            ]
+          }
+        },
+        "position": {
+          "stringValue": "DUMC"
+        },
+        "positions": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "DUMC"
+              },
+              {
+                "stringValue": "Instructor"
+              }
+            ]
+          }
+        },
+        "id": {
+          "stringValue": "margaretabigail0202@gmail.com"
+        }
+      },
+      "createTime": "2026-04-24T23:33:22.384064Z",
+      "updateTime": "2026-05-02T01:15:30.420057Z"
+    },
+    {
+      "name": "projects/unityclubmanager/databases/(default)/documents/clubvencedores_users/mariamoraa018@gmail.com",
+      "fields": {
+        "position": {
+          "stringValue": "Secretario"
+        },
+        "id": {
+          "stringValue": "mariamoraa018@gmail.com"
+        },
+        "positions": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "Secretario"
+              }
+            ]
+          }
+        },
+        "allowedModules": {
+          "arrayValue": {
+            "values": [
+              {
+                "stringValue": "dashboard"
+              },
+              {
+                "stringValue": "master_guide"
+              },
+              {
+                "stringValue": "members"
+              },
+              {
+                "stringValue": "medical"
+              },
+              {
+                "stringValue": "uniformity"
+              },
+              {
+                "stringValue": "achievements"
+              },
+              {
+                "stringValue": "activities"
+              },
+              {
+                "stringValue": "birthdays"
+              },
+              {
+                "stringValue": "classes"
+              },
+              {
+                "stringValue": "parents"
+              },
+              {
+                "stringValue": "inventory"
+              },
+              {
+                "stringValue": "reports"
+              },
+              {
+                "stringValue": "qualifications"
+              },
+              {
+                "stringValue": "ranking"
+              },
+              {
+                "stringValue": "directive"
+              },
+              {
+                "stringValue": "units"
+              },
+              {
+                "stringValue": "inventory_tents"
+              },
+              {
+                "stringValue": "idcards"
+              },
+              {
+                "stringValue": "settings"
+              },
+              {
+                "stringValue": "reminders"
+              },
+              {
+                "stringValue": "discipline"
+              },
+              {
+                "stringValue": "camps"
+              },
+              {
+                "stringValue": "attendance"
+              },
+              {
+                "stringValue": "finances"
+              },
+              {
+                "stringValue": "points"
+              },
+              {
+                "stringValue": "cuotas"
+              },
+              {
+                "stringValue": "homeworks"
+              },
+              {
+                "stringValue": "announcements"
+              }
+            ]
+          }
+        },
+        "instructorClass": {
+          "stringValue": ""
+        },
+        "password": {
+          "stringValue": "8296833924"
+        },
+        "role": {
+          "stringValue": "user"
+        },
+        "name": {
+          "stringValue": "Thais María Mora Arno"
+        },
+        "username": {
+          "stringValue": "mariamoraa018@gmail.com"
+        },
+        "modulePermissions": {
+          "mapValue": {
+            "fields": {
+              "qualifications": {
+                "stringValue": "read"
+              },
+              "directive": {
+                "stringValue": "read"
+              },
+              "uniformity": {
+                "stringValue": "read"
+              },
+              "homeworks": {
+                "stringValue": "edit"
+              },
+              "settings": {
+                "stringValue": "read"
+              },
+              "finances": {
+                "stringValue": "read"
+              },
+              "points": {
+                "stringValue": "read"
+              },
+              "units": {
+                "stringValue": "read"
+              },
+              "cuotas": {
+                "stringValue": "read"
+              },
+              "attendance": {
+                "stringValue": "read"
+              },
+              "discipline": {
+                "stringValue": "read"
+              },
+              "announcements": {
+                "stringValue": "edit"
+              },
+              "dashboard": {
+                "stringValue": "read"
+              }
+            }
+          }
+        }
+      },
+      "createTime": "2026-04-20T20:26:52.520924Z",
+      "updateTime": "2026-04-26T06:58:06.129092Z"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, Plus, Play, Square, Check, X, Trash2, Edit2, 
   ChevronRight, ChevronDown, Award, Users, RefreshCw, Clock, 

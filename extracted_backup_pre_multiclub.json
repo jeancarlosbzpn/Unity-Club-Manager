@@ -1,0 +1,22 @@
+{
+  "activities": [
+    {
+      "title": "Campamento",
+      "type": "Local",
+      "date": "2026-08-26",
+      "time": "07:30",
+      "location": "Los Corozos",
+      "description": "",
+      "uniform": "Type A",
+      "cost": "2000",
+      "transportation": "Autob\u00fas",
+      "meetingPoint": "Iglesia",
+      "isRanking": true,
+      "rankingScore": "200",
+      "rankingDeadline": "",
+      "attendees": [],
+      "id": "1769288957094"
+    }
+  ],
+  "inventory": []
+}

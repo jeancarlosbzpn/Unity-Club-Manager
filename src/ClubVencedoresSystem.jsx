@@ -4674,12 +4674,31 @@ const ClubVencedoresSystem = () => {
     return translations[position] || position;
   };
 
+  // Helper: Convert image URL to base64 data URL (needed for print popups that can't load external URLs)
+  const urlToBase64 = async (url) => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url; // Already base64
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.warn('No se pudo convertir la foto a base64:', e);
+      return '';
+    }
+  };
+
   // Helper: Print Member Form
-  const printMemberForm = (member) => {
+  const printMemberForm = async (member) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return alert('Please allow popups for this website');
 
-    const photoSrc = member.photo || '';
+    const photoSrc = await urlToBase64(member.photo || '');
     const age = calculateAge(member.dateOfBirth);
 
     printWindow.document.write(`
@@ -4815,11 +4834,11 @@ const ClubVencedoresSystem = () => {
   };
 
   // Helper: Print Medical Record
-  const printMedicalRecord = (member) => {
+  const printMedicalRecord = async (member) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return alert('Please allow popups for this website');
 
-    const photoSrc = member.photo || '';
+    const photoSrc = await urlToBase64(member.photo || '');
     const age = calculateAge(member.dateOfBirth);
 
     printWindow.document.write(`
@@ -5180,7 +5199,7 @@ const ClubVencedoresSystem = () => {
   // RENDER: MEMBER PROFILE VIEW
   // ========================================
   // Helper: Print ID Cards
-  const printIdCards = (selectedMemberIds) => {
+  const printIdCards = async (selectedMemberIds) => {
 
     // Filter actual member objects
     const selectedMembers = members.filter(m => selectedMemberIds.includes(m.id));
@@ -5190,8 +5209,14 @@ const ClubVencedoresSystem = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return alert('Please allow popups for this website');
 
+    // Convert all photos to base64 so they work in the print popup (Firebase URLs are blocked otherwise)
+    const photoMap = {};
+    await Promise.all(selectedMembers.map(async (member) => {
+      photoMap[member.id] = await urlToBase64(member.photo || '');
+    }));
+
     const cardsHtml = selectedMembers.map(member => {
-      const photoSrc = member.photo || '';
+      const photoSrc = photoMap[member.id] || '';
       const bloodType = member.bloodType || 'N/A';
       let formattedDob = '';
       if (member.dateOfBirth) {
