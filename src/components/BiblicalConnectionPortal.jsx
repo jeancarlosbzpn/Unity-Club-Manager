@@ -548,135 +548,38 @@ const BiblicalConnectionPortal = ({
     }
 
     // ----------------------------------------------------
-    // CASE C: NO ACTIVE SESSION, BUT JUST FINISHED A SESSION (Results)
+    // CASE C: NO ACTIVE SESSION, BUT JUST FINISHED A SESSION (Completion Screen - no scores shown)
     // ----------------------------------------------------
     if (!activeSession && finishedSessionResponse && recentlyCompletedSession) {
-      const answers = finishedSessionResponse.answers || {};
-      
-      // Calculate scores
-      const totalCorrect = finishedSessionResponse.totalCorrect || 0;
-      const totalManual = finishedSessionResponse.totalManualCorrect || 0;
-      const finalScore = finishedSessionResponse.score || 0;
-      const totalQuestionsCount = recentlyCompletedSession.modules?.reduce((acc, m) => acc + (m.questions?.length || 0), 0) || 0;
-      
-      // Find final ranking position
-      const sessionResponses = responses.filter(r => r.sessionId === recentlyCompletedSession.id);
-      const sortedLeaderboard = [...sessionResponses].sort((a, b) => (b.score || 0) - (a.score || 0));
-      const myRank = sortedLeaderboard.findIndex(r => r.memberId === member.id) + 1;
-
       return (
-        <div className="max-w-3xl mx-auto">
-          {/* Trophy Header */}
-          <div className="text-center mb-10">
-            <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/20 relative">
+        <div className="max-w-xl mx-auto py-12">
+          <div className="p-8 md:p-10 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-800 text-center shadow-xl shadow-slate-100/50 dark:shadow-none animate-in fade-in duration-300">
+            <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/20">
               <Award className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-black leading-tight">¡Felicidades, {member.firstName}!</h2>
-            <p className="text-sm text-slate-400 max-w-sm mx-auto mt-1">
-              Has completado con éxito la Conexión Bíblica: **{recentlyCompletedSession.title}**
+
+            <span className="text-xs font-black px-3 py-1 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400 rounded-full inline-block mb-4 uppercase tracking-wider">
+              ✓ Concurso Completado
+            </span>
+
+            <h2 className="text-3xl font-black leading-tight mb-2">
+              ¡Excelente, {member.firstName}!
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-8">
+              Has participado en <strong>{recentlyCompletedSession.title}</strong>. Los resultados serán revisados y comunicados por el director del club.
             </p>
-          </div>
 
-          {/* Results Summary Widgets */}
-          <div className="grid grid-cols-3 gap-6 mb-8 text-center">
-            <div className="p-5 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800/80">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                Puntuación Final
-              </span>
-              <span className="text-2xl font-black text-amber-500">
-                {finalScore} pts
-              </span>
+            <div className="p-5 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-2xl text-left mb-6">
+              <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-1">Palabra de Aliento</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300 italic leading-relaxed">
+                "En mi corazón he guardado tus dichos, para no pecar contra ti."
+              </p>
+              <p className="text-right text-xs font-bold text-slate-400 mt-1">— Salmos 119:11</p>
             </div>
-            <div className="p-5 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800/80">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                Respuestas Correctas
-              </span>
-              <span className="text-2xl font-black text-emerald-500">
-                {totalCorrect + totalManual} de {totalQuestionsCount}
-              </span>
-            </div>
-            <div className="p-5 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800/80">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                Posición General
-              </span>
-              <span className="text-2xl font-black text-blue-500">
-                #{myRank} de {sortedLeaderboard.length}
-              </span>
-            </div>
-          </div>
 
-          {/* Detailed Question Review */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold">Resumen de Preguntas y Respuestas</h3>
-            
-            {recentlyCompletedSession.modules?.map((mod, modIdx) => (
-              <div key={mod.id} className="space-y-4">
-                <h4 className="text-sm font-black text-slate-400 uppercase tracking-wider pt-2">
-                  {mod.title}
-                </h4>
-                
-                {mod.questions.map((q, qIdx) => {
-                  const memberAns = answers[q.id];
-                  const userVal = memberAns?.userResponse;
-                  const isCorrect = memberAns?.isCorrect;
-                  const isPending = isCorrect === null;
-
-                  return (
-                    <div 
-                      key={q.id}
-                      className="p-5 bg-white dark:bg-slate-850 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-start gap-3 flex-1">
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs mt-0.5 ${
-                          isPending
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
-                            : isCorrect
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
-                            : 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400'
-                        }`}>
-                          {isPending ? '?' : isCorrect ? '✓' : '✗'}
-                        </span>
-                        <div>
-                          <p className="font-bold text-sm text-slate-850 dark:text-slate-100">
-                            {q.questionText}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-400 font-semibold">
-                            <span>
-                              Tu respuesta: <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold">
-                                {String(userVal ?? 'Sin responder')}
-                              </span>
-                            </span>
-                            {!isPending && !isCorrect && (
-                              <span>
-                                • Correcta: <span className="text-emerald-600 dark:text-emerald-400">
-                                  {String(q.correctAnswer)}
-                                </span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        {isPending ? (
-                          <span className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 text-xs font-bold rounded-full">
-                            Pendiente Calificar
-                          </span>
-                        ) : isCorrect ? (
-                          <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-full">
-                            Correcta
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-1 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 text-xs font-bold rounded-full">
-                            Incorrecta
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+            <p className="text-xs text-slate-400">
+              Sigue estudiando la Biblia y el Espíritu de Profecía. ¡Nos vemos en el próximo concurso!
+            </p>
           </div>
         </div>
       );
