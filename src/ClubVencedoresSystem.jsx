@@ -9344,10 +9344,6 @@ const ClubVencedoresSystem = () => {
                     Resumen
                   </h3>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
-                      <span className="text-indigo-700 font-medium">Puntos Acumulados</span>
-                      <span className="text-2xl font-bold text-indigo-800">{totalPoints}</span>
-                    </div>
                     <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                       <span className="text-green-700 font-medium">Asistencias</span>
                       <span className="text-2xl font-bold text-green-800">{attendanceCount}</span>
@@ -9453,33 +9449,14 @@ const ClubVencedoresSystem = () => {
                 </div>
 
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Últimas Actividades {isDirective ? '' : '(Puntos)'}</h4>
-
-                  {!isDirective ? (
-                    recentPoints.length === 0 ? (
-                      <p className="text-gray-500 text-sm italic">No hay actividad reciente.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {recentPoints.map(p => (
-                          <div key={p.id} className="text-sm border-l-2 border-indigo-200 pl-3 py-1">
-                            <div className="font-medium text-gray-900">{p.reason}</div>
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                              <span>{new Date(p.date).toLocaleDateString()}</span>
-                              <span className="font-bold text-indigo-600">+{p.points} pts</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  ) : (
-                    <p className="text-gray-500 text-sm italic">Las actividades de directiva no acumulan puntos.</p>
-                  )}
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Últimas Actividades</h4>
+                  <p className="text-gray-500 text-sm italic">Historial de actividades no disponible.</p>
                 </div>
               </div>
 
             </div>
 
-            {/* Statistics Card (New) */}
+            {/* Statistics Card */}
             {!member.isExemptFromPoints && (
               <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2 border-b dark:border-gray-700 pb-2">
@@ -9487,12 +9464,11 @@ const ClubVencedoresSystem = () => {
                   Estadísticas Detalladas
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
                   {/* 1. Global Attendance Breakdown */}
                   <div>
                     <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Desglose de Asistencia</h4>
                     {(() => {
-                      // Calculate global stats for this member across ALL time
                       let stats = {
                         friday: { p: 0, total: 0 },
                         satAM: { p: 0, total: 0 },
@@ -9502,21 +9478,11 @@ const ClubVencedoresSystem = () => {
                       points.filter(p => p.memberId === member.id).forEach(record => {
                         if (!record.saturdays) return;
                         Object.values(record.saturdays).forEach(day => {
-                          const statusPM = day.attendanceSatPM || day.attendance; // Fallback
-
-                          // Only count if there was an actual event (implied by record existence, but let's be safe)
-                          // Actually, we can assume every Saturday in the record implies 3 events if we follow the new system strictness.
-                          // But let's just count totals.
-
-                          // Friday
+                          const statusPM = day.attendanceSatPM || day.attendance;
                           stats.friday.total++;
                           if (day.attendanceFriday === 'P' || day.attendanceFriday === 'L') stats.friday.p++;
-
-                          // Sat AM
                           stats.satAM.total++;
                           if (day.attendanceSatAM === 'P' || day.attendanceSatAM === 'L') stats.satAM.p++;
-
-                          // Sat PM
                           stats.satPM.total++;
                           if (statusPM === 'P' || statusPM === 'L') stats.satPM.p++;
                         });
@@ -9526,8 +9492,6 @@ const ClubVencedoresSystem = () => {
                       const pctFri = getPct(stats.friday.p, stats.friday.total);
                       const pctSatAM = getPct(stats.satAM.p, stats.satAM.total);
                       const pctSatPM = getPct(stats.satPM.p, stats.satPM.total);
-
-                      // General Average
                       const totalP = stats.friday.p + stats.satAM.p + stats.satPM.p;
                       const totalEvents = stats.friday.total + stats.satAM.total + stats.satPM.total;
                       const pctGeneral = getPct(totalP, totalEvents);
@@ -9545,7 +9509,7 @@ const ClubVencedoresSystem = () => {
                       );
 
                       return (
-                        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg">
+                        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg max-w-md">
                           <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
                             <span className="text-xs uppercase font-bold text-gray-500 dark:text-gray-400 mb-1">Promedio General</span>
                             <span className={`text-3xl font-bold ${pctGeneral >= 80 ? 'text-green-600' : pctGeneral >= 60 ? 'text-yellow-600' : 'text-red-600'} `}>
@@ -9558,75 +9522,6 @@ const ClubVencedoresSystem = () => {
                         </div>
                       );
                     })()}
-                  </div>
-
-                  {/* 2. Points History Chart */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Puntos Acumulados por Mes</h4>
-                    <div className="h-64 w-full bg-gray-50 dark:bg-gray-700/30 p-2 rounded-lg border border-gray-100 dark:border-gray-700/50">
-                      {(() => {
-                        // Re-aggregated points properly
-                        const monthMap = {};
-
-                        points.filter(p => p.memberId === member.id).forEach(record => {
-                          let monthTotal = 0;
-                          if (record.saturdays) {
-                            Object.values(record.saturdays).forEach(satVal => {
-                              // Sum all numeric fields
-                              const val = (satVal.worshipFriday || 0) +
-                                (satVal.punctuality || 0) +
-                                (satVal.bible || 0) +
-                                (satVal.uniform || 0) +
-                                (satVal.discipline || 0) +
-                                (satVal.homework || 0) +
-                                (satVal.participation || 0) +
-                                (satVal.worshipSaturday || 0) +
-                                (satVal.sabbathSchool || 0) +
-                                (parseFloat(satVal.additional) || 0);
-                              monthTotal += val;
-                            });
-                          }
-                          monthMap[record.month] = (monthMap[record.month] || 0) + monthTotal;
-                        });
-
-                        const data = Object.entries(monthMap)
-                          .sort((a, b) => a[0].localeCompare(b[0])) // Sort by date YYYY-MM
-                          .slice(-6) // Last 6 months
-                          .map(([month, total]) => {
-                            // Format month name (e.g. "2024-02" -> "Feb")
-                            const [y, m] = month.split('-');
-                            const date = new Date(parseInt(y), parseInt(m) - 1, 1);
-                            const monthName = date.toLocaleString('es-ES', { month: 'short' });
-                            return {
-                              name: monthName.charAt(0).toUpperCase() + monthName.slice(1),
-                              points: total
-                            };
-                          });
-
-                        if (data.length === 0) {
-                          return (
-                            <div className="h-full flex items-center justify-center text-gray-400 text-sm">
-                              Sin datos de puntos
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data}>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                              <Tooltip
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                cursor={{ fill: '#F3F4F6' }}
-                              />
-                              <Bar dataKey="points" name="Puntos" fill="#4F46E5" radius={[4, 4, 0, 0]} barSize={32} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        );
-                      })()}
-                    </div>
                   </div>
                 </div>
 
@@ -27419,13 +27314,7 @@ const MemberPortal = ({
                       </div>
                     </div>
                   )}
-                  <button
-                    onClick={() => setShowAwardsModal(true)}
-                    className="flex flex-col items-center py-4 px-1 hover:bg-amber-50 transition-colors active:scale-95 group"
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Puntos</span>
-                    <span className="text-xl font-black tracking-tighter text-gray-900 group-hover:text-amber-600 transition-colors">{displayTotalPoints}</span>
-                  </button>
+
                   <div className="flex flex-col items-center py-4 px-1">
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 text-center">Viernes</span>
                     <span className={`text-xl font-black tracking-tighter ${attendanceRateFriday >= (clubSettings.minAttendanceFriday ?? 75) ? 'text-green-600' : 'text-red-600'}`}>
@@ -27569,33 +27458,7 @@ const MemberPortal = ({
           </section>
         )}
 
-        {/* ── Desglose de Puntos Globales ── */}
-        {!(member.isExemptFromPoints || member.exemptFromScoring) && (
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex items-center justify-between">
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Puntos Base</span>
-              <span className="text-xl font-black text-gray-900">{totalPoints}</span>
-            </div>
-            
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100">
-              <span className="text-gray-400 font-black text-lg">-</span>
-            </div>
 
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">Faltas</span>
-              <span className="text-xl font-black text-red-600">{Math.abs(myScore)}</span>
-            </div>
-
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100">
-              <span className="text-gray-400 font-black text-lg">=</span>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Total Neto</span>
-              <span className="text-2xl font-black text-emerald-600">{displayTotalPoints}</span>
-            </div>
-          </div>
-        )}
 
         {/* ── Detailed Stats Grid ── */}
         <div className="grid grid-cols-2 gap-4">
@@ -27614,22 +27477,7 @@ const MemberPortal = ({
             </div>
           </div>
 
-          {/* Points this month */}
-          {!(member.isExemptFromPoints || member.exemptFromScoring) && (
-            <div 
-              onClick={() => setShowAwardsModal(true)}
-              className="bg-gray-50 border border-gray-100 rounded-3xl p-5 shadow-sm transition-transform active:scale-95 group cursor-pointer hover:border-orange-200"
-            >
-              <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-4 group-hover:bg-orange-500/20 transition-colors">
-                <Star className="w-5 h-5 text-orange-500" />
-              </div>
-              <div className="text-2xl font-black tracking-tighter text-gray-900">{displayMonthPoints}</div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Puntos de {currentMonthName}</div>
-              <div className="mt-2 text-[8px] font-black uppercase tracking-widest text-orange-600 flex items-center gap-1 transition-colors group-active:text-orange-800">
-                Ver Galardones <ChevronRight className="w-3 h-3" />
-              </div>
-            </div>
-          )}
+
 
           {/* Total Paid */}
           <div 
