@@ -2560,6 +2560,18 @@ const ClubVencedoresSystem = () => {
       });
       setBiblicalConnectionSessions(updatedSessions);
       await dataService.writeData('biblicalConnectionSessions', updatedSessions);
+
+      // Si la sesión se activa, limpiar respuestas anteriores para los miembros seleccionados
+      if (fields.status === 'active' && fields.participantIds) {
+        const participantIdsSet = new Set(fields.participantIds.map(String));
+        const updatedResponses = biblicalConnectionResponses.filter(r => 
+          !(r.sessionId === sessionId && participantIdsSet.has(String(r.memberId)))
+        );
+        setBiblicalConnectionResponses(updatedResponses);
+        await dataService.writeData('biblicalConnectionResponses', updatedResponses);
+        console.log('✅ Respuestas de participantes restablecidas para la repetición del concurso.');
+      }
+
       console.log('✅ Estado de la sesión de Conexión Bíblica actualizado.');
     } catch (e) {
       console.error('Error al actualizar el estado de la sesión:', e);

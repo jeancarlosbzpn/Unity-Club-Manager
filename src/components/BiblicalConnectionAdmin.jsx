@@ -64,6 +64,7 @@ const BiblicalConnectionAdmin = ({
   const [selectedSessionForActive, setSelectedSessionForActive] = useState(null);
   const [selectedParticipantIds, setSelectedParticipantIds] = useState([]);
   const [unitFilter, setUnitFilter] = useState('all');
+  const [isRepeatingMode, setIsRepeatingMode] = useState(false);
 
   // Filter list states
   const [listFilter, setListFilter] = useState('all'); // 'all' | 'active' | 'draft' | 'completed'
@@ -303,9 +304,36 @@ const BiblicalConnectionAdmin = ({
 
   const handleStartSession = (session) => {
     setSelectedSessionForActive(session);
+    setIsRepeatingMode(false);
     // Seleccionar por defecto a todos los miembros no exentos de puntuación
     const initialParticipants = members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring).map(m => m.id);
     setSelectedParticipantIds(initialParticipants);
+    setUnitFilter('all');
+    setShowParticipantsModal(true);
+  };
+
+  const handleRepeatSession = (session) => {
+    setSelectedSessionForActive(session);
+    setIsRepeatingMode(true);
+    
+    const sessionResponses = responses.filter(r => r.sessionId === session.id);
+    const previousParticipantIds = session.participantIds ? new Set(session.participantIds.map(String)) : null;
+    
+    // Filtrar miembros que cumplen con los criterios de repetición
+    const targetMembers = members.filter(m => {
+      if (m.isExemptFromPoints || m.exemptFromScoring) return false;
+      
+      const mIdStr = String(m.id);
+      const resp = sessionResponses.find(r => String(r.memberId) === mIdStr);
+      
+      const isDisqualified = resp && resp.status === 'disqualified';
+      const isNotSelected = previousParticipantIds ? !previousParticipantIds.has(mIdStr) : false;
+      const didNotParticipate = !resp || resp.status === 'not_joined';
+      
+      return isDisqualified || isNotSelected || didNotParticipate;
+    });
+    
+    setSelectedParticipantIds(targetMembers.map(m => m.id));
     setUnitFilter('all');
     setShowParticipantsModal(true);
   };
@@ -319,7 +347,8 @@ const BiblicalConnectionAdmin = ({
     await onUpdateSessionStatus(selectedSessionForActive.id, { 
       status: 'active', 
       activeModuleIndex: 0,
-      participantIds: selectedParticipantIds
+      participantIds: selectedParticipantIds,
+      isConsolidated: false
     });
 
     // Update local state if monitoring
@@ -328,7 +357,8 @@ const BiblicalConnectionAdmin = ({
         ...prev, 
         status: 'active', 
         activeModuleIndex: 0,
-        participantIds: selectedParticipantIds
+        participantIds: selectedParticipantIds,
+        isConsolidated: false
       }));
     }
 
@@ -621,13 +651,22 @@ const BiblicalConnectionAdmin = ({
                           <span>Monitorear En Vivo</span>
                         </button>
                       ) : s.status === 'completed' ? (
-                        <button
-                          onClick={() => handleStartMonitor(s)}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-semibold rounded-xl transition"
-                        >
-                          <Award className="w-4 h-4" />
-                          <span>Ver Resultados</span>
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleStartMonitor(s)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-semibold rounded-xl transition"
+                          >
+                            <Award className="w-4 h-4" />
+                            <span>Resultados</span>
+                          </button>
+                          <button
+                            onClick={() => handleRepeatSession(s)}
+                            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition shadow-md shadow-amber-500/10"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                            <span>Repetir</span>
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => handleStartSession(s)}
@@ -1591,108 +1630,183 @@ const BiblicalConnectionAdmin = ({
               <X className="w-5 h-5" />
             </button>
 
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Users className="w-5 h-5 text-amber-500" />
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fase de Preparación</span>
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
-                Selección de Participantes
-              </h3>
-              <p className="text-sm text-slate-550 dark:text-slate-400 mt-1">
-                Elige a los miembros que competirán en la sesión: <span className="font-extrabold text-amber-500">"{selectedSessionForActive.title}"</span>
-              </p>
-            </div>
+            {(() => {
+              // Calcular miembros disponibles según el modo
+              const sessionResponses = responses.filter(r => r.sessionId === selectedSessionForActive.id);
+              const previousParticipantIds = selectedSessionForActive.participantIds ? new Set(selectedSessionForActive.participantIds.map(String)) : null;
 
-            {/* CONTROLES RÁPIDOS */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800 items-center justify-between">
-              {/* Filtro por unidad */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filtrar por Unidad:</span>
-                <select
-                  value={unitFilter}
-                  onChange={(e) => setUnitFilter(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-amber-500 outline-none"
-                >
-                  <option value="all">Todas las Unidades</option>
-                  {Array.from(new Set(members.filter(m => m.unitId).map(m => m.unitId))).map(uId => (
-                    <option key={uId} value={uId}>{uId}</option>
-                  ))}
-                </select>
-              </div>
+              const repeatingMembers = members.filter(m => {
+                if (m.isExemptFromPoints || m.exemptFromScoring) return false;
+                const mIdStr = String(m.id);
+                const resp = sessionResponses.find(r => String(r.memberId) === mIdStr);
+                const isDisqualified = resp && resp.status === 'disqualified';
+                const isNotSelected = previousParticipantIds ? !previousParticipantIds.has(mIdStr) : false;
+                const didNotParticipate = !resp || resp.status === 'not_joined';
+                return isDisqualified || isNotSelected || didNotParticipate;
+              });
 
-              {/* Botones de acción rápida */}
-              <div className="flex gap-2 w-full sm:w-auto justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allIds = members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring).map(m => m.id);
-                    setSelectedParticipantIds(allIds);
-                  }}
-                  className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
-                >
-                  Seleccionar Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedParticipantIds([])}
-                  className="px-3 py-2 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
-                >
-                  Deseleccionar Todos
-                </button>
-              </div>
-            </div>
+              const availableMembers = isRepeatingMode ? repeatingMembers : members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring);
 
-            {/* LISTA DE MIEMBROS */}
-            <div className="space-y-3 max-h-[40vh] overflow-y-auto mb-8 pr-2">
-              {members
-                .filter(m => !m.isExemptFromPoints && !m.exemptFromScoring)
-                .filter(m => unitFilter === 'all' || String(m.unitId) === String(unitFilter))
-                .map(m => {
-                  const isChecked = selectedParticipantIds.includes(m.id);
-                  return (
-                    <div
-                      key={m.id}
-                      onClick={() => {
-                        setSelectedParticipantIds(prev =>
-                          isChecked 
-                            ? prev.filter(id => id !== m.id)
-                            : [...prev, m.id]
-                        );
-                      }}
-                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
-                        isChecked
-                          ? 'border-amber-500 bg-amber-50/5 dark:bg-amber-950/10'
-                          : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                          isChecked ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                        }`}>
-                          {m.firstName.charAt(0)}{m.lastName.charAt(0)}
-                        </div>
-                        <div>
-                          <span className="block font-bold text-sm text-slate-900 dark:text-white leading-tight">
-                            {m.firstName} {m.lastName}
-                          </span>
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                            Unidad: {m.unitId || 'Sin Unidad'} • Clase: {m.pathfinderClass || m.currentClass || 'Ninguna'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                        isChecked 
-                          ? 'bg-amber-500 border-amber-500 text-white' 
-                          : 'border-slate-300 dark:border-slate-650'
-                      }`}>
-                        {isChecked && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
-                      </div>
+              return (
+                <>
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Users className="w-5 h-5 text-amber-500" />
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        {isRepeatingMode ? 'Fase de Recuperación / Repetición' : 'Fase de Preparación'}
+                      </span>
                     </div>
-                  );
-                })}
-            </div>
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                      {isRepeatingMode ? 'Repetir Concurso' : 'Selección de Participantes'}
+                    </h3>
+                    <p className="text-sm text-slate-550 dark:text-slate-400 mt-1">
+                      {isRepeatingMode 
+                        ? 'Selecciona a los miembros que repetirán o recuperarán el concurso: '
+                        : 'Elige a los miembros que competirán en la sesión: '}
+                      <span className="font-extrabold text-amber-500">"{selectedSessionForActive.title}"</span>
+                    </p>
+                  </div>
+
+                  {isRepeatingMode && (
+                    <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/30 rounded-2xl text-xs text-amber-800 dark:text-amber-400 leading-relaxed font-semibold">
+                      ℹ️ **Modo de Recuperación:** Solo se muestran miembros que fueron **anulados / descalificados**, **no seleccionados** o **no participaron** en la sesión original de este concurso.
+                    </div>
+                  )}
+
+                  {/* CONTROLES RÁPIDOS */}
+                  <div className="flex flex-col sm:flex-row gap-4 mb-6 pb-6 border-b border-slate-100 dark:border-slate-800 items-center justify-between">
+                    {/* Filtro por unidad */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filtrar por Unidad:</span>
+                      <select
+                        value={unitFilter}
+                        onChange={(e) => setUnitFilter(e.target.value)}
+                        className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-amber-500 outline-none"
+                      >
+                        <option value="all">Todas las Unidades</option>
+                        {Array.from(new Set(availableMembers.filter(m => m.unitId).map(m => m.unitId))).map(uId => (
+                          <option key={uId} value={uId}>{uId}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Botones de acción rápida */}
+                    <div className="flex gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allIds = availableMembers.map(m => m.id);
+                          setSelectedParticipantIds(allIds);
+                        }}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
+                      >
+                        Seleccionar Todos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedParticipantIds([])}
+                        className="px-3 py-2 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
+                      >
+                        Deseleccionar Todos
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* LISTA DE MIEMBROS */}
+                  <div className="space-y-3 max-h-[40vh] overflow-y-auto mb-8 pr-2">
+                    {(() => {
+                      const filteredList = availableMembers.filter(m => unitFilter === 'all' || String(m.unitId) === String(unitFilter));
+                      
+                      if (filteredList.length === 0) {
+                        return (
+                          <div className="text-center py-12 text-slate-400">
+                            <Users className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-3" />
+                            <p className="font-semibold text-sm">No hay miembros disponibles</p>
+                            <p className="text-xs max-w-xs mx-auto mt-1 leading-relaxed">
+                              {isRepeatingMode 
+                                ? 'Todos los miembros elegibles completaron el concurso exitosamente en la sesión anterior.'
+                                : 'No se encontraron miembros para el filtro seleccionado.'}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return filteredList.map(m => {
+                        const isChecked = selectedParticipantIds.includes(m.id);
+                        
+                        // Determinar la etiqueta del estado previo para repetición
+                        let labelPrev = '';
+                        if (isRepeatingMode) {
+                          const resp = sessionResponses.find(r => String(r.memberId) === String(m.id));
+                          if (resp && resp.status === 'disqualified') {
+                            labelPrev = 'Anulado / Descalificado';
+                          } else if (previousParticipantIds && !previousParticipantIds.has(String(m.id))) {
+                            labelPrev = 'No Seleccionado';
+                          } else {
+                            labelPrev = 'No Participó';
+                          }
+                        }
+
+                        return (
+                          <div
+                            key={m.id}
+                            onClick={() => {
+                              setSelectedParticipantIds(prev =>
+                                isChecked 
+                                  ? prev.filter(id => id !== m.id)
+                                  : [...prev, m.id]
+                              );
+                            }}
+                            className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
+                              isChecked
+                                ? 'border-amber-500 bg-amber-50/5 dark:bg-amber-950/10'
+                                : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                                isChecked ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                              }`}>
+                                {m.firstName.charAt(0)}{m.lastName.charAt(0)}
+                              </div>
+                              <div>
+                                <span className="block font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                                  {m.firstName} {m.lastName}
+                                </span>
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                    Unidad: {m.unitId || 'Sin Unidad'} • Clase: {m.pathfinderClass || m.currentClass || 'Ninguna'}
+                                  </span>
+                                  {labelPrev && (
+                                    <span className={`px-1.5 py-0.5 text-[8px] font-black rounded-full uppercase tracking-wider ${
+                                      labelPrev === 'Anulado / Descalificado'
+                                        ? 'bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400'
+                                        : labelPrev === 'No Seleccionado'
+                                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400'
+                                        : 'bg-slate-100 text-slate-650 dark:bg-slate-850 dark:text-slate-450'
+                                    }`}>
+                                      {labelPrev}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                              isChecked 
+                                ? 'bg-amber-500 border-amber-500 text-white' 
+                                : 'border-slate-300 dark:border-slate-650'
+                            }`}>
+                              {isChecked && <Check className="w-3.5 h-3.5 stroke-[3px]" />}
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* BOTONES DE CONFIRMACIÓN */}
             <div className="flex gap-4">
