@@ -65,10 +65,42 @@ const BiblicalConnectionPortal = ({
     }
   }, [sessions, responses, member.id]);
 
-  // 2. Clear local answers when module changes
+  // 2. Storage key for current session and module answers
+  const storageKey = activeSession && currentModule 
+    ? `biblical_answers_${member.id}_${activeSession.id}_${currentModule.id}` 
+    : null;
+
+  const [isAnswersLoaded, setIsAnswersLoaded] = useState(false);
+
+  // Load answers from localStorage when storageKey changes
   useEffect(() => {
+    setIsAnswersLoaded(false);
+    if (storageKey) {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          setLocalAnswers(JSON.parse(saved));
+          setIsAnswersLoaded(true);
+          return;
+        }
+      } catch (e) {
+        console.error("Error reading answers from localStorage:", e);
+      }
+    }
     setLocalAnswers({});
-  }, [activeSession?.activeModuleIndex]);
+    setIsAnswersLoaded(true);
+  }, [storageKey]);
+
+  // Save answers to localStorage when localAnswers changes
+  useEffect(() => {
+    if (storageKey && isAnswersLoaded) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(localAnswers));
+      } catch (e) {
+        console.error("Error writing answers to localStorage:", e);
+      }
+    }
+  }, [localAnswers, storageKey, isAnswersLoaded]);
 
   // 3. Shuffle questions using Fisher-Yates when current module changes
   const [shuffledQuestions, setShuffledQuestions] = useState([]);
@@ -88,46 +120,6 @@ const BiblicalConnectionPortal = ({
       setShuffledQuestions([]);
     }
   }, [currentModule?.id]);
-
-  // 4. Anti-Cheat: Detect losing focus or changing tabs when actively playing
-  useEffect(() => {
-    const isPlaying = activeSession && memberResponse && memberResponse.status === 'playing' && currentModule;
-    if (!isPlaying) return;
-
-    let alreadyDisqualified = false;
-
-    const handleCheatDisqualify = async (eventDetails) => {
-      if (alreadyDisqualified) return;
-      alreadyDisqualified = true;
-
-      console.warn("⚠️ Anti-Cheat Activado: Infracción detectada.", eventDetails);
-      try {
-        if (onDisqualifyMember) {
-          await onDisqualifyMember(activeSession.id, "Salió de la pantalla de juego / Cambió de pestaña");
-        }
-      } catch (err) {
-        console.error("Error al registrar la descalificación:", err);
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        handleCheatDisqualify("visibility_hidden");
-      }
-    };
-
-    const handleWindowBlur = () => {
-      handleCheatDisqualify("window_blur");
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-    };
-  }, [activeSession?.id, memberResponse?.status, currentModule?.id, onDisqualifyMember]);
 
   const handleJoin = async () => {
     if (!activeSession) return;
@@ -179,6 +171,9 @@ const BiblicalConnectionPortal = ({
         localAnswers,
         currentModule.questions
       );
+      if (storageKey) {
+        localStorage.removeItem(storageKey);
+      }
     } catch (e) {
       alert('Ocurrió un error al enviar tus respuestas. Por favor intenta de nuevo.');
       console.error(e);

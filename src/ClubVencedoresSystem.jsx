@@ -2632,6 +2632,25 @@ const ClubVencedoresSystem = () => {
     }
   };
 
+  const handleRestoreBiblicalMember = async (responseId) => {
+    try {
+      const resp = biblicalConnectionResponses.find(r => r.id === responseId);
+      if (!resp) return;
+
+      const restoredItem = {
+        ...resp,
+        status: 'playing',
+        disqualificationReason: null
+      };
+
+      setBiblicalConnectionResponses(prev => prev.map(r => r.id === responseId ? restoredItem : r));
+      await dataService.saveSingle('biblicalConnectionResponses', restoredItem);
+      console.log('✅ Miembro descalificado ha sido restaurado.');
+    } catch (e) {
+      console.error('Error al restaurar al miembro descalificado:', e);
+    }
+  };
+
   const handleJoinBiblicalSession = async (sessionId) => {
     try {
       const memberId = portalMember?.id;
@@ -12244,6 +12263,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 onUpdateSessionStatus={handleUpdateBiblicalSessionStatus}
                 onGradeManualResponse={handleGradeManualResponse}
                 onConsolidatePoints={handleConsolidateBiblicalPoints}
+                onRestoreMember={handleRestoreBiblicalMember}
               />
             )}
 

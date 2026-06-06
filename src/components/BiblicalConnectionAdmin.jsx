@@ -16,7 +16,8 @@ const BiblicalConnectionAdmin = ({
   onDeleteSession,
   onUpdateSessionStatus,
   onGradeManualResponse,
-  onConsolidatePoints
+  onConsolidatePoints,
+  onRestoreMember
 }) => {
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'create' | 'monitor'
   const [selectedSession, setSelectedSession] = useState(null);
@@ -1290,17 +1291,28 @@ const BiblicalConnectionAdmin = ({
                                 {isDisqualified ? 'Anulado' : resp.currentModuleIndex === -1 ? 'Ninguno' : `Módulo ${resp.currentModuleIndex + 1}`}
                               </td>
                               <td className="py-4 px-4 text-center">
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full ${
-                                  isDisqualified
-                                    ? 'bg-red-650 text-white font-black animate-pulse'
-                                    : isTotalFinished
-                                    ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400'
-                                    : isFinished
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
-                                    : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 animate-pulse'
-                                }`}>
-                                  {isDisqualified ? 'Anulado / Salió' : isTotalFinished ? 'Sesión Completada' : isFinished ? 'Esperando Siguiente' : 'Respondiendo...'}
-                                </span>
+                                <div className="flex flex-col items-center gap-1.5">
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full ${
+                                    isDisqualified
+                                      ? 'bg-red-650 text-white font-black animate-pulse'
+                                      : isTotalFinished
+                                      ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400'
+                                      : isFinished
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400'
+                                      : 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 animate-pulse'
+                                  }`}>
+                                    {isDisqualified ? 'Anulado / Salió' : isTotalFinished ? 'Sesión Completada' : isFinished ? 'Esperando Siguiente' : 'Respondiendo...'}
+                                  </span>
+                                  {isDisqualified && selectedSessionForActive?.status === 'active' && onRestoreMember && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onRestoreMember(resp.id)}
+                                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-650 text-white text-[10px] font-black rounded-lg transition shadow-sm border border-slate-700 dark:border-slate-600"
+                                    >
+                                      Permitir Reingreso
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-4 px-4 text-right font-black text-amber-500">
                                 {isDisqualified ? '0' : resp.score || 0} pts
