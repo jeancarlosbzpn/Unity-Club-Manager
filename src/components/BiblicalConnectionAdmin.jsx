@@ -11,6 +11,7 @@ const BiblicalConnectionAdmin = ({
   responses = [],
   members = [],
   currentUser,
+  units = [],
   onSaveSession,
   onDeleteSession,
   onUpdateSessionStatus,
@@ -19,6 +20,19 @@ const BiblicalConnectionAdmin = ({
 }) => {
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'create' | 'monitor'
   const [selectedSession, setSelectedSession] = useState(null);
+
+  const isMemberDirectivo = (m) => {
+    if (!m) return false;
+    const hasPosition = m.position && m.position.trim() !== '';
+    const hasDirectiveRoles = m.directiveRoles && Object.values(m.directiveRoles).some(roles => Array.isArray(roles) && roles.length > 0);
+    return (hasPosition || hasDirectiveRoles) && !m.unitId;
+  };
+
+  const getUnitName = (unitId) => {
+    if (!unitId) return 'Sin Unidad';
+    const found = units.find(u => String(u.id) === String(unitId));
+    return found ? found.name : unitId;
+  };
   
   // Create / Edit Session Form States
   const [sessionFormData, setSessionFormData] = useState({
@@ -305,8 +319,8 @@ const BiblicalConnectionAdmin = ({
   const handleStartSession = (session) => {
     setSelectedSessionForActive(session);
     setIsRepeatingMode(false);
-    // Seleccionar por defecto a todos los miembros no exentos de puntuación
-    const initialParticipants = members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring).map(m => m.id);
+    // Seleccionar por defecto a todos los miembros
+    const initialParticipants = members.map(m => m.id);
     setSelectedParticipantIds(initialParticipants);
     setUnitFilter('all');
     setShowParticipantsModal(true);
@@ -321,8 +335,6 @@ const BiblicalConnectionAdmin = ({
     
     // Filtrar miembros que cumplen con los criterios de repetición
     const targetMembers = members.filter(m => {
-      if (m.isExemptFromPoints || m.exemptFromScoring) return false;
-      
       const mIdStr = String(m.id);
       const resp = sessionResponses.find(r => String(r.memberId) === mIdStr);
       
@@ -1636,7 +1648,6 @@ const BiblicalConnectionAdmin = ({
               const previousParticipantIds = selectedSessionForActive.participantIds ? new Set(selectedSessionForActive.participantIds.map(String)) : null;
 
               const repeatingMembers = members.filter(m => {
-                if (m.isExemptFromPoints || m.exemptFromScoring) return false;
                 const mIdStr = String(m.id);
                 const resp = sessionResponses.find(r => String(r.memberId) === mIdStr);
                 const isDisqualified = resp && resp.status === 'disqualified';
@@ -1645,7 +1656,14 @@ const BiblicalConnectionAdmin = ({
                 return isDisqualified || isNotSelected || didNotParticipate;
               });
 
-              const availableMembers = isRepeatingMode ? repeatingMembers : members.filter(m => !m.isExemptFromPoints && !m.exemptFromScoring);
+              const availableMembers = isRepeatingMode ? repeatingMembers : members;
+
+              const filteredList = availableMembers.filter(m => {
+                if (unitFilter === 'all') return true;
+                if (unitFilter === 'directiva') return isMemberDirectivo(m);
+                if (unitFilter === 'no_unit') return !m.unitId && !isMemberDirectivo(m);
+                return String(m.unitId) === String(unitFilter);
+              });
 
               return (
                 <>
@@ -1681,12 +1699,21 @@ const BiblicalConnectionAdmin = ({
                       <select
                         value={unitFilter}
                         onChange={(e) => setUnitFilter(e.target.value)}
-                        className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-amber-500 outline-none"
+                        className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-350 focus:ring-1 focus:ring-amber-500 outline-none"
                       >
                         <option value="all">Todas las Unidades</option>
-                        {Array.from(new Set(availableMembers.filter(m => m.unitId).map(m => m.unitId))).map(uId => (
-                          <option key={uId} value={uId}>{uId}</option>
-                        ))}
+                        {Array.from(new Set(availableMembers.filter(m => m.unitId && !isMemberDirectivo(m)).map(m => m.unitId))).map(uId => {
+                          const unitName = getUnitName(uId);
+                          return (
+                            <option key={uId} value={uId}>{unitName}</option>
+                          );
+                        })}
+                        {availableMembers.some(m => isMemberDirectivo(m)) && (
+                          <option value="directiva">Directiva</option>
+                        )}
+                        {availableMembers.some(m => !m.unitId && !isMemberDirectivo(m)) && (
+                          <option value="no_unit">Sin Unidad</option>
+                        )}
                       </select>
                     </div>
 
@@ -1695,8 +1722,11 @@ const BiblicalConnectionAdmin = ({
                       <button
                         type="button"
                         onClick={() => {
-                          const allIds = availableMembers.map(m => m.id);
-                          setSelectedParticipantIds(allIds);
+                          const visibleIds = filteredList.map(m => m.id);
+                          setSelectedParticipantIds(prev => {
+                            const newIds = new Set([...prev, ...visibleIds]);
+                            return Array.from(newIds);
+                          });
                         }}
                         className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
                       >
@@ -1704,7 +1734,10 @@ const BiblicalConnectionAdmin = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => setSelectedParticipantIds([])}
+                        onClick={() => {
+                          const visibleIds = new Set(filteredList.map(m => m.id));
+                          setSelectedParticipantIds(prev => prev.filter(id => !visibleIds.has(id)));
+                        }}
                         className="px-3 py-2 bg-slate-105 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-xs font-black uppercase text-slate-650 dark:text-slate-300 transition"
                       >
                         Deseleccionar Todos
@@ -1715,8 +1748,6 @@ const BiblicalConnectionAdmin = ({
                   {/* LISTA DE MIEMBROS */}
                   <div className="space-y-3 max-h-[40vh] overflow-y-auto mb-8 pr-2">
                     {(() => {
-                      const filteredList = availableMembers.filter(m => unitFilter === 'all' || String(m.unitId) === String(unitFilter));
-                      
                       if (filteredList.length === 0) {
                         return (
                           <div className="text-center py-12 text-slate-400">
@@ -1775,7 +1806,7 @@ const BiblicalConnectionAdmin = ({
                                 </span>
                                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                    Unidad: {m.unitId || 'Sin Unidad'} • Clase: {m.pathfinderClass || m.currentClass || 'Ninguna'}
+                                    Unidad: {isMemberDirectivo(m) ? 'Directiva' : (getUnitName(m.unitId) || 'Sin Unidad')} • Clase: {m.pathfinderClass || m.currentClass || 'Ninguna'}
                                   </span>
                                   {labelPrev && (
                                     <span className={`px-1.5 py-0.5 text-[8px] font-black rounded-full uppercase tracking-wider ${

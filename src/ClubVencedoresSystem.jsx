@@ -2646,7 +2646,9 @@ const ClubVencedoresSystem = () => {
         sessionId,
         memberId,
         memberName: `${portalMember.firstName} ${portalMember.lastName}`,
-        unitName: portalMember.unitId ? (units.find(u => String(u.id) === String(portalMember.unitId))?.name || 'Sin Unidad') : 'Sin Unidad',
+        unitName: portalMember.unitId 
+          ? (units.find(u => String(u.id) === String(portalMember.unitId))?.name || 'Sin Unidad') 
+          : (isMemberDirectivoGlobal(portalMember) ? 'Directiva' : 'Sin Unidad'),
         status: 'playing',
         currentModuleIndex: -1, // -1 significa que se unió pero no ha completado ningún módulo
         answers: {},
@@ -12236,6 +12238,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 responses={biblicalConnectionResponses}
                 members={members}
                 currentUser={currentUser}
+                units={units}
                 onSaveSession={handleSaveBiblicalSession}
                 onDeleteSession={handleDeleteBiblicalSession}
                 onUpdateSessionStatus={handleUpdateBiblicalSessionStatus}
