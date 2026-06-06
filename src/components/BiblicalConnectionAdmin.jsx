@@ -1294,7 +1294,7 @@ const BiblicalConnectionAdmin = ({
                                 <div className="flex flex-col items-center gap-1.5">
                                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-full ${
                                     isDisqualified
-                                      ? 'bg-red-650 text-white font-black animate-pulse'
+                                      ? 'bg-red-600 dark:bg-red-900/40 text-white dark:text-red-300 font-black animate-pulse'
                                       : isTotalFinished
                                       ? 'bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400'
                                       : isFinished
@@ -1303,11 +1303,11 @@ const BiblicalConnectionAdmin = ({
                                   }`}>
                                     {isDisqualified ? 'Anulado / Salió' : isTotalFinished ? 'Sesión Completada' : isFinished ? 'Esperando Siguiente' : 'Respondiendo...'}
                                   </span>
-                                  {isDisqualified && selectedSessionForActive?.status === 'active' && onRestoreMember && (
+                                  {isDisqualified && monitorSession?.status === 'active' && onRestoreMember && (
                                     <button
                                       type="button"
                                       onClick={() => onRestoreMember(resp.id)}
-                                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-650 text-white text-[10px] font-black rounded-lg transition shadow-sm border border-slate-700 dark:border-slate-600"
+                                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-750 dark:hover:bg-slate-700 text-white text-[10px] font-black rounded-lg transition shadow-sm border border-slate-700 dark:border-slate-650"
                                     >
                                       Permitir Reingreso
                                     </button>
