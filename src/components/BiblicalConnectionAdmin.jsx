@@ -39,19 +39,41 @@ const BiblicalConnectionAdmin = ({
   const urlToBase64 = async (url) => {
     if (!url) return '';
     if (url.startsWith('data:')) return url;
+    
+    // 1. Intento normal
     try {
       const response = await fetch(url);
-      const blob = await response.blob();
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      if (response.ok) {
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
     } catch (e) {
-      console.warn('No se pudo convertir la foto a base64:', e);
-      return '';
+      console.warn('CORS bloqueó el fetch directo, intentando proxy...');
     }
+
+    // 2. Intento con proxy CORS gratuito
+    try {
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
+      if (response.ok) {
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+    } catch (e) {
+      console.warn('El fetch con proxy también falló:', e);
+    }
+    
+    return '';
   };
 
   const drawCornerBrackets = (ctx, color) => {
@@ -106,19 +128,35 @@ const BiblicalConnectionAdmin = ({
     ctx.fill();
     ctx.stroke();
 
-    // Draw little circles on crown tips
+    // Draw little circles on crown tips (separated paths to avoid filling artifacts)
     ctx.fillStyle = '#ffffff';
+    
     ctx.beginPath();
     ctx.arc(x - 40, y - 30, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
     ctx.arc(x, y - 45, 5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
     ctx.arc(x + 40, y - 30, 4, 0, Math.PI * 2);
     ctx.fill();
+    
     ctx.restore();
   };
 
   const handleGenerateCard = async (row, rankIndex) => {
     try {
       const memberObj = members.find(m => String(m.id) === String(row.memberId));
+      
+      console.log('DEBUG CARD GENERATION:', {
+        memberName: row.memberName,
+        memberId: row.memberId,
+        rankIndex,
+        memberObjFound: !!memberObj,
+        memberPhoto: memberObj?.photo
+      });
       
       // Resolve Unit Name
       let unitLabel = row.unitName || 'Sin Unidad';
