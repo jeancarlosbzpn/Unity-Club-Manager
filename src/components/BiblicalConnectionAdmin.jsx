@@ -54,10 +54,81 @@ const BiblicalConnectionAdmin = ({
     }
   };
 
+  const drawCornerBrackets = (ctx, color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 6;
+    const len = 40;
+    const pad = 30;
+
+    // Top Left
+    ctx.beginPath();
+    ctx.moveTo(pad + len, pad);
+    ctx.lineTo(pad, pad);
+    ctx.lineTo(pad, pad + len);
+    ctx.stroke();
+
+    // Top Right
+    ctx.beginPath();
+    ctx.moveTo(800 - pad - len, pad);
+    ctx.lineTo(800 - pad, pad);
+    ctx.lineTo(800 - pad, pad + len);
+    ctx.stroke();
+
+    // Bottom Left
+    ctx.beginPath();
+    ctx.moveTo(pad + len, 1000 - pad);
+    ctx.lineTo(pad, 1000 - pad);
+    ctx.lineTo(pad, 1000 - pad + len);
+    ctx.stroke();
+
+    // Bottom Right
+    ctx.beginPath();
+    ctx.moveTo(800 - pad - len, 1000 - pad);
+    ctx.lineTo(800 - pad, 1000 - pad);
+    ctx.lineTo(800 - pad, 1000 - pad + len);
+    ctx.stroke();
+  };
+
+  const drawCrown = (ctx, x, y) => {
+    ctx.save();
+    ctx.fillStyle = '#fbbf24'; // Premium Gold
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - 30, y);
+    ctx.lineTo(x - 40, y - 30);
+    ctx.lineTo(x - 15, y - 15);
+    ctx.lineTo(x, y - 45);
+    ctx.lineTo(x + 15, y - 15);
+    ctx.lineTo(x + 40, y - 30);
+    ctx.lineTo(x + 30, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw little circles on crown tips
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x - 40, y - 30, 4, 0, Math.PI * 2);
+    ctx.arc(x, y - 45, 5, 0, Math.PI * 2);
+    ctx.arc(x + 40, y - 30, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+
   const handleGenerateCard = async (row, rankIndex) => {
     try {
       const memberObj = members.find(m => String(m.id) === String(row.memberId));
-      const photoSrc = memberObj?.photo ? await urlToBase64(memberObj.photo) : '';
+      
+      // Resolve Unit Name
+      let unitLabel = row.unitName || 'Sin Unidad';
+      if (unitLabel === 'Sin Unidad' && memberObj) {
+        if (isMemberDirectivo(memberObj)) {
+          unitLabel = 'Directiva';
+        } else if (memberObj.unitId) {
+          unitLabel = getUnitName(memberObj.unitId);
+        }
+      }
 
       // Create a canvas element
       const canvas = document.createElement('canvas');
@@ -67,73 +138,134 @@ const BiblicalConnectionAdmin = ({
 
       // 1. Draw Background Gradient
       const gradient = ctx.createLinearGradient(0, 0, 0, 1000);
-      gradient.addColorStop(0, '#0f172a');
-      gradient.addColorStop(0.5, '#1e1b4b');
+      gradient.addColorStop(0, '#090d16');
+      gradient.addColorStop(0.5, '#0f172a');
       gradient.addColorStop(1, '#020617');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, 800, 1000);
 
-      // 2. Draw Decorative Border based on rank
-      let borderColor = '#3b82f6';
-      let placeWord = `${rankIndex + 1}º Puesto`;
+      // Rank configuration
+      let themeColor = '#3b82f6'; // blue-500
+      let placeWord = `${rankIndex + 1}º PUESTO`;
       if (rankIndex === 0) {
-        borderColor = '#f59e0b';
+        themeColor = '#fbbf24'; // Premium Gold
         placeWord = '1º LUGAR';
       } else if (rankIndex === 1) {
-        borderColor = '#94a3b8';
+        themeColor = '#cbd5e1'; // Silver
         placeWord = '2º LUGAR';
       } else if (rankIndex === 2) {
-        borderColor = '#b45309';
+        themeColor = '#f59e0b'; // Bronze
         placeWord = '3º LUGAR';
       }
 
-      ctx.lineWidth = 16;
-      ctx.strokeStyle = borderColor;
-      ctx.strokeRect(16, 16, 768, 968);
+      // Draw background glow circles
+      const glowGrad1 = ctx.createRadialGradient(400, 350, 50, 400, 350, 350);
+      glowGrad1.addColorStop(0, rankIndex === 0 ? 'rgba(251, 191, 36, 0.12)' : 'rgba(59, 130, 246, 0.12)');
+      glowGrad1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGrad1;
+      ctx.beginPath();
+      ctx.arc(400, 350, 350, 0, Math.PI * 2);
+      ctx.fill();
 
-      // 3. Draw Header Texts
+      // Draw diagonal background stripes for texture
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
+      ctx.lineWidth = 15;
+      for (let i = -500; i < 1500; i += 80) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + 400, 1000);
+        ctx.stroke();
+      }
+
+      // 2. Draw Borders and Corners
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.strokeRect(30, 30, 740, 940);
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = themeColor;
+      ctx.strokeRect(40, 40, 720, 920);
+
+      drawCornerBrackets(ctx, themeColor);
+
+      // 3. Draw Header
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // Title
-      ctx.fillStyle = '#f59e0b';
-      ctx.font = '900 32px sans-serif';
-      ctx.fillText('CONEXIÓN BÍBLICA', 400, 80);
+      // Title: "CONEXIÓN BÍBLICA" with gradient and shadow
+      const titleGrad = ctx.createLinearGradient(300, 0, 500, 0);
+      titleGrad.addColorStop(0, '#fbbf24');
+      titleGrad.addColorStop(1, '#f59e0b');
+      
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = titleGrad;
+      ctx.font = '900 28px sans-serif';
+      ctx.fillText('CONEXIÓN BÍBLICA', 400, 85);
+      ctx.restore();
 
       // Session Name
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 40px sans-serif';
-      ctx.fillText(monitorSession?.title || 'Competencia Bíblica', 400, 140);
+      ctx.font = '900 38px sans-serif';
+      ctx.fillText(monitorSession?.title || 'Competencia Bíblica', 400, 138);
 
-      // Divider line
+      // Divider line with fade out on edges
+      const divGrad = ctx.createLinearGradient(150, 0, 650, 0);
+      divGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      divGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+      divGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
       ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = divGrad;
       ctx.beginPath();
-      ctx.moveTo(150, 190);
-      ctx.lineTo(650, 190);
+      ctx.moveTo(150, 185);
+      ctx.lineTo(650, 185);
       ctx.stroke();
 
-      // 4. Draw Member Photo
+      // 4. Draw Member Photo with robust double-fallback
       const photoX = 400;
-      const photoY = 360;
-      const photoRadius = 130;
+      const photoY = 350;
+      const photoRadius = 115;
 
-      // Outer circle border
-      ctx.lineWidth = 10;
-      ctx.strokeStyle = borderColor;
+      // Draw glowing ring background
+      ctx.save();
+      ctx.shadowColor = themeColor;
+      ctx.shadowBlur = 15;
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = themeColor;
       ctx.beginPath();
-      ctx.arc(photoX, photoY, photoRadius + 5, 0, Math.PI * 2);
+      ctx.arc(photoX, photoY, photoRadius + 4, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
 
-      // Draw photo or placeholder
-      if (photoSrc) {
-        const img = new Image();
-        img.src = photoSrc;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
+      // Load Image
+      let imgLoaded = false;
+      const img = new Image();
+      
+      if (memberObj?.photo) {
+        // Try base64 conversion first
+        const base64 = await urlToBase64(memberObj.photo);
+        if (base64) {
+          img.src = base64;
+          imgLoaded = await new Promise((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+          });
+        }
+        
+        // Fallback: Try loading raw URL with anonymous crossOrigin
+        if (!imgLoaded) {
+          img.crossOrigin = "anonymous";
+          img.src = memberObj.photo;
+          imgLoaded = await new Promise((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+          });
+        }
+      }
 
+      if (imgLoaded) {
         ctx.save();
         ctx.beginPath();
         ctx.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
@@ -156,67 +288,89 @@ const BiblicalConnectionAdmin = ({
         ctx.restore();
       } else {
         // Draw Placeholder Circle
-        ctx.fillStyle = '#334155';
+        ctx.fillStyle = '#1e293b';
         ctx.beginPath();
         ctx.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
         ctx.fill();
 
         // Draw User Icon
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#64748b';
         ctx.beginPath();
-        ctx.arc(photoX, photoY - 20, 45, 0, Math.PI * 2);
+        ctx.arc(photoX, photoY - 18, 40, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(photoX, photoY + 110, 80, Math.PI, Math.PI * 2);
+        ctx.arc(photoX, photoY + 100, 70, Math.PI, Math.PI * 2);
         ctx.fill();
       }
 
-      // 5. Draw Member Name
+      // Draw Crown for 1st Place
+      if (rankIndex === 0) {
+        drawCrown(ctx, photoX, photoY - photoRadius - 10);
+      }
+
+      // 5. Draw Member Name with drop shadow
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 3;
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 48px sans-serif';
-      ctx.fillText(row.memberName, 400, 560);
+      ctx.font = '900 44px sans-serif';
+      ctx.fillText(row.memberName, 400, 535);
+      ctx.restore();
 
       // Class / Unit
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '700 28px sans-serif';
-      ctx.fillText(row.unitName || 'Sin Unidad', 400, 615);
+      ctx.fillStyle = themeColor;
+      ctx.font = '800 24px sans-serif';
+      ctx.fillText(unitLabel.toUpperCase(), 400, 582);
 
       // 6. Draw Place Badge
-      const badgeY = 710;
-      ctx.fillStyle = borderColor;
-      const badgeWidth = 340;
-      const badgeHeight = 70;
+      const badgeY = 675;
+      
+      // Draw a metallic-style badge with a subtle outline
+      const badgeWidth = 320;
+      const badgeHeight = 64;
       const badgeX = 400 - badgeWidth / 2;
+      
+      ctx.fillStyle = themeColor;
       ctx.beginPath();
-      ctx.roundRect(badgeX, badgeY - badgeHeight / 2, badgeWidth, badgeHeight, 18);
+      ctx.roundRect(badgeX, badgeY - badgeHeight / 2, badgeWidth, badgeHeight, 14);
       ctx.fill();
 
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+
       // Place Text
-      ctx.fillStyle = rankIndex === 0 || rankIndex === 1 ? '#0f172a' : '#ffffff';
-      ctx.font = '900 34px sans-serif';
+      ctx.fillStyle = rankIndex === 0 || rankIndex === 1 ? '#090d16' : '#ffffff';
+      ctx.font = '900 30px sans-serif';
       ctx.fillText(placeWord, 400, badgeY);
 
       // 7. Draw Score Box
-      const scoreY = 850;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      const scoreY = 810;
+      
+      // Box Background
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
       ctx.beginPath();
-      ctx.roundRect(180, scoreY - 60, 440, 120, 24);
+      ctx.roundRect(180, scoreY - 55, 440, 110, 20);
       ctx.fill();
+      
       ctx.lineWidth = 2;
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.stroke();
 
-      ctx.fillStyle = '#f59e0b';
-      ctx.font = '900 64px sans-serif';
-      ctx.fillText(`${row.status === 'disqualified' ? '0' : row.score || 0}`, 400, scoreY - 10);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 24px sans-serif';
-      ctx.fillText('PUNTOS OBTENIDOS', 400, scoreY + 30);
+      // Score Value
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '900 58px sans-serif';
+      ctx.fillText(`${row.status === 'disqualified' ? '0' : row.score || 0}`, 400, scoreY - 14);
+      
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.font = '800 18px sans-serif';
+      ctx.fillText('PUNTOS OBTENIDOS', 400, scoreY + 24);
 
       // 8. Footer Brand
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.font = '500 20px sans-serif';
-      ctx.fillText('CLUB VENCEDORES — TRICLUB MANAGER', 400, 940);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.font = '700 16px sans-serif';
+      ctx.fillText('CLUB VENCEDORES — TRICLUB MANAGER', 400, 905);
 
       // 9. Download the Image
       const dataUrl = canvas.toDataURL('image/png');
