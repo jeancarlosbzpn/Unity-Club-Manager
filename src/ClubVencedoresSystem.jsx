@@ -20246,14 +20246,30 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   const containerPad = isSingle ? 'p-4' : 'p-2';
 
                                   return (
-                                    <div key={scorer.member.id} className={`flex items-center gap-3 bg-white/50 dark:bg-black/20 ${containerPad} rounded-xl border border-red-200/50 dark:border-red-700/30`}>
-                                      <div className="text-left min-w-0">
+                                    <div key={scorer.member.id} className={`flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-gray-800 ${containerPad} rounded-2xl border border-red-100 dark:border-red-900 shadow-sm hover:shadow-md transition-all`}>
+                                      <div className="relative shrink-0">
+                                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-red-100 dark:border-red-900/50 overflow-hidden bg-gray-100 flex items-center justify-center shadow-inner">
+                                          {scorer.member.photo ? (
+                                            <img src={scorer.member.photo} alt={scorer.member.firstName} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <User className="w-8 h-8 text-gray-400" />
+                                          )}
+                                        </div>
+                                        <div className="absolute -top-2 -right-2 text-2xl drop-shadow-md">👑</div>
+                                      </div>
+                                      <div className="text-center md:text-left min-w-0">
                                         <h2 className={`${nameSize} font-bold text-gray-900 dark:text-white leading-tight truncate`}>
                                           {scorer.member.firstName} {scorer.member.lastName}
                                         </h2>
-                                        <p className="text-sm text-red-700 dark:text-red-300 font-medium truncate">
-                                          {units.find(u => u.id === scorer.member.unitId)?.name || 'Sin Unidad'} • <span className="font-bold text-gray-800 dark:text-white">{scorer.totalMonth} pts</span>
-                                        </p>
+                                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 mt-1">
+                                          <span className="inline-flex items-center gap-1 text-xs font-semibold bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded-md">
+                                            <Flag size={12} />
+                                            {units.find(u => u.id === scorer.member.unitId)?.name || 'Sin Unidad'}
+                                          </span>
+                                          <span className="text-sm text-red-600 dark:text-red-400 font-black tracking-wide">
+                                            {scorer.totalMonth} pts
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
                                   );
@@ -20362,14 +20378,30 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                   const containerPad = isSingle ? 'p-4' : 'p-2';
 
                                   return (
-                                    <div key={scorer.member.id} className={`flex items-center gap-3 bg-white/50 dark:bg-black/20 ${containerPad} rounded-xl border border-yellow-200/50 dark:border-yellow-700/30`}>
-                                      <div className="text-left min-w-0">
+                                    <div key={scorer.member.id} className={`flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-gray-800 ${containerPad} rounded-2xl border border-yellow-100 dark:border-yellow-900 shadow-sm hover:shadow-md transition-all`}>
+                                      <div className="relative shrink-0">
+                                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-yellow-100 dark:border-yellow-900/50 overflow-hidden bg-gray-100 flex items-center justify-center shadow-inner">
+                                          {scorer.member.photo ? (
+                                            <img src={scorer.member.photo} alt={scorer.member.firstName} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <User className="w-8 h-8 text-gray-400" />
+                                          )}
+                                        </div>
+                                        <div className="absolute -top-2 -right-2 text-2xl drop-shadow-md">⭐</div>
+                                      </div>
+                                      <div className="text-center md:text-left min-w-0">
                                         <h2 className={`${nameSize} font-bold text-gray-900 dark:text-white leading-tight truncate`}>
                                           {scorer.member.firstName} {scorer.member.lastName}
                                         </h2>
-                                        <p className="text-sm text-yellow-700 dark:text-yellow-300 font-medium truncate">
-                                          {scorer.member.position || 'Directiva'} • <span className="font-bold text-gray-800 dark:text-white">{scorer.totalMonth} pts</span>
-                                        </p>
+                                        <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2 mt-1">
+                                          <span className="inline-flex items-center gap-1 text-xs font-semibold bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 px-2 py-1 rounded-md">
+                                            <Award size={12} />
+                                            {scorer.member.position || 'Directiva'}
+                                          </span>
+                                          <span className="text-sm text-yellow-600 dark:text-yellow-400 font-black tracking-wide">
+                                            {scorer.totalMonth} pts
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
                                   );
@@ -20423,10 +20455,26 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                                           className={`bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isWinner ? 'bg-yellow-50/30 dark:bg-yellow-900/10' : ''}`}
                                         >
                                           <td className="px-6 py-3 font-medium text-gray-900 dark:text-white whitespace-nowrap sticky left-0 bg-inherit border-r dark:border-gray-700">
-                                            {memberData.member.firstName} {memberData.member.lastName}
-                                            {isWinner && (
-                                              <span className="ml-2 text-xs" title="Mejor Puntaje">👑</span>
-                                            )}
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex shrink-0 items-center justify-center border border-gray-200 dark:border-gray-600">
+                                                {memberData.member.photo ? (
+                                                  <img src={memberData.member.photo} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                  <User className="w-4 h-4 text-gray-400" />
+                                                )}
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <div className="flex items-center gap-1">
+                                                  <span>{memberData.member.firstName} {memberData.member.lastName}</span>
+                                                  {isWinner && (
+                                                    <span className="text-sm drop-shadow-sm" title="Mejor Puntaje">👑</span>
+                                                  )}
+                                                </div>
+                                                <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                                                  {memberData.member.position || units.find(u => u.id === memberData.member.unitId)?.name || 'Sin Unidad'}
+                                                </span>
+                                              </div>
+                                            </div>
                                           </td>
                                           {activityDays.map(date => {
                                             const dateStr = date.toISOString().slice(0, 10);
