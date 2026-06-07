@@ -648,42 +648,37 @@ const BiblicalConnectionAdmin = ({
     if (!monitorSession) return [];
 
     const participantIds = monitorSession.participantIds || [];
-    let leaderboardData = [];
+    const leaderboardData = [];
 
-    if (participantIds.length > 0) {
-      leaderboardData = participantIds.map(pId => {
-        const existingResponse = activeSessionResponses.find(r => String(r.memberId) === String(pId));
-        const memberObj = members.find(m => String(m.id) === String(pId));
-
-        if (existingResponse) {
-          return {
-            ...existingResponse,
-            status: existingResponse.status || 'joined'
-          };
-        } else {
-          // Resolver el nombre de la unidad si tiene unitId
-          const uName = getUnitName(memberObj?.unitId);
-          
-          return {
-            id: `temp_${pId}`,
-            memberId: pId,
-            memberName: memberObj ? `${memberObj.firstName} ${memberObj.lastName}` : 'Miembro',
-            unitName: uName,
-            score: 0,
-            totalCorrect: 0,
-            totalManualCorrect: 0,
-            currentModuleIndex: -1,
-            status: 'not_joined',
-            timeSpent: 999999
-          };
-        }
-      });
-    } else {
-      leaderboardData = activeSessionResponses.map(r => ({
+    // 1. Agregar todas las respuestas reales existentes
+    activeSessionResponses.forEach(r => {
+      leaderboardData.push({
         ...r,
         status: r.status || 'joined'
-      }));
-    }
+      });
+    });
+
+    // 2. Agregar como placeholders a los participantes seleccionados que no han entrado
+    participantIds.forEach(pId => {
+      const alreadyAdded = leaderboardData.some(item => String(item.memberId) === String(pId));
+      if (!alreadyAdded) {
+        const memberObj = members.find(m => String(m.id) === String(pId));
+        const uName = getUnitName(memberObj?.unitId);
+        
+        leaderboardData.push({
+          id: `temp_${pId}`,
+          memberId: pId,
+          memberName: memberObj ? `${memberObj.firstName} ${memberObj.lastName}` : 'Miembro',
+          unitName: uName,
+          score: 0,
+          totalCorrect: 0,
+          totalManualCorrect: 0,
+          currentModuleIndex: -1,
+          status: 'not_joined',
+          timeSpent: 999999
+        });
+      }
+    });
 
     return leaderboardData.sort((a, b) => {
       // 1. Mayor puntuación acumulada
