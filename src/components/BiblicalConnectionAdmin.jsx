@@ -257,16 +257,7 @@ const BiblicalConnectionAdmin = ({
   const [consolidationPoints, setConsolidationPoints] = useState({});
   const [isConsolidating, setIsConsolidating] = useState(false);
 
-  // Initialize consolidation points when session becomes completed
-  useEffect(() => {
-    if (monitorSession && (monitorSession.status === 'completed' || monitorSession.status === 'active')) {
-      const initialPts = {};
-      liveLeaderboard.forEach(r => {
-        initialPts[r.memberId] = r.status === 'disqualified' ? 0 : (r.score || 0);
-      });
-      setConsolidationPoints(initialPts);
-    }
-  }, [monitorSession?.id, monitorSession?.status, liveLeaderboard]);
+
 
   // Participant Selection States
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
@@ -711,6 +702,17 @@ const BiblicalConnectionAdmin = ({
       return timeSpentA - timeSpentB;
     });
   }, [monitorSession, activeSessionResponses, members]);
+
+  // Initialize consolidation points when session becomes completed
+  useEffect(() => {
+    if (monitorSession && (monitorSession.status === 'completed' || monitorSession.status === 'active')) {
+      const initialPts = {};
+      liveLeaderboard.forEach(r => {
+        initialPts[r.memberId] = r.status === 'disqualified' ? 0 : (r.score || 0);
+      });
+      setConsolidationPoints(initialPts);
+    }
+  }, [monitorSession?.id, monitorSession?.status, liveLeaderboard]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-200">
