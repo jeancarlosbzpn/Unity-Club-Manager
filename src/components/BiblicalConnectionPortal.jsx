@@ -292,6 +292,13 @@ const BiblicalConnectionPortal = ({
               Tus respuestas están a salvo.
             </p>
 
+            {activeSession.showScoresToMembers && (
+              <div className="mb-6 px-5 py-3 bg-amber-500/10 rounded-2xl border border-amber-500/15 text-center">
+                <span className="text-[10px] font-black text-slate-450 dark:text-slate-400 uppercase tracking-widest block mb-0.5">Puntaje Acumulado</span>
+                <span className="text-2xl font-black text-amber-500">{memberResponse.score || 0} pts</span>
+              </div>
+            )}
+
             {/* Glassmorphic motivational verse card */}
             <div className="w-full p-6 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 text-left mb-6 relative overflow-hidden">
               <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-2">
@@ -563,6 +570,20 @@ const BiblicalConnectionPortal = ({
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-8">
               Has participado en <strong>{recentlyCompletedSession.title}</strong>. Los resultados serán revisados y comunicados por el director del club.
             </p>
+
+            {recentlyCompletedSession.showScoresToMembers && finishedSessionResponse && (
+              <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Tu Puntuación Oficial</span>
+                <div className="text-4xl font-black text-amber-500 mb-2">
+                  {finishedSessionResponse.status === 'disqualified' ? '0' : finishedSessionResponse.score || 0} <span className="text-sm font-bold text-slate-450">pts</span>
+                </div>
+                <div className="text-xs font-bold text-slate-500">
+                  {finishedSessionResponse.status === 'disqualified' 
+                    ? 'Participación anulada' 
+                    : `Aciertos: ${finishedSessionResponse.totalCorrect || 0} de ${recentlyCompletedSession.modules?.reduce((acc, m) => acc + (m.questions?.length || 0), 0) || 0} preguntas`}
+                </div>
+              </div>
+            )}
 
             <div className="p-5 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-2xl text-left mb-6">
               <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest mb-1">Palabra de Aliento</p>

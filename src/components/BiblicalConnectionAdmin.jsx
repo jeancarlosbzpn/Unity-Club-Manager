@@ -3,7 +3,7 @@ import {
   BookOpen, Plus, Play, Square, Check, X, Trash2, Edit2, 
   ChevronRight, ChevronDown, Award, Users, RefreshCw, Clock, 
   FileText, Save, ArrowRight, ArrowLeft, ToggleLeft, ToggleRight,
-  AlertCircle
+  AlertCircle, Download, Image as ImageIcon
 } from 'lucide-react';
 
 const BiblicalConnectionAdmin = ({
@@ -34,6 +34,200 @@ const BiblicalConnectionAdmin = ({
     if (!unitId) return 'Sin Unidad';
     const found = units.find(u => String(u.id) === String(unitId));
     return found ? found.name : unitId;
+  };
+
+  const urlToBase64 = async (url) => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.warn('No se pudo convertir la foto a base64:', e);
+      return '';
+    }
+  };
+
+  const handleGenerateCard = async (row, rankIndex) => {
+    try {
+      const memberObj = members.find(m => String(m.id) === String(row.memberId));
+      const photoSrc = memberObj?.photo ? await urlToBase64(memberObj.photo) : '';
+
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 1000;
+      const ctx = canvas.getContext('2d');
+
+      // 1. Draw Background Gradient
+      const gradient = ctx.createLinearGradient(0, 0, 0, 1000);
+      gradient.addColorStop(0, '#0f172a');
+      gradient.addColorStop(0.5, '#1e1b4b');
+      gradient.addColorStop(1, '#020617');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 800, 1000);
+
+      // 2. Draw Decorative Border based on rank
+      let borderColor = '#3b82f6';
+      let placeWord = `${rankIndex + 1}º Puesto`;
+      if (rankIndex === 0) {
+        borderColor = '#f59e0b';
+        placeWord = '1º LUGAR';
+      } else if (rankIndex === 1) {
+        borderColor = '#94a3b8';
+        placeWord = '2º LUGAR';
+      } else if (rankIndex === 2) {
+        borderColor = '#b45309';
+        placeWord = '3º LUGAR';
+      }
+
+      ctx.lineWidth = 16;
+      ctx.strokeStyle = borderColor;
+      ctx.strokeRect(16, 16, 768, 968);
+
+      // 3. Draw Header Texts
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Title
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '900 32px sans-serif';
+      ctx.fillText('CONEXIÓN BÍBLICA', 400, 80);
+
+      // Session Name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 40px sans-serif';
+      ctx.fillText(monitorSession?.title || 'Competencia Bíblica', 400, 140);
+
+      // Divider line
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.beginPath();
+      ctx.moveTo(150, 190);
+      ctx.lineTo(650, 190);
+      ctx.stroke();
+
+      // 4. Draw Member Photo
+      const photoX = 400;
+      const photoY = 360;
+      const photoRadius = 130;
+
+      // Outer circle border
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = borderColor;
+      ctx.beginPath();
+      ctx.arc(photoX, photoY, photoRadius + 5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Draw photo or placeholder
+      if (photoSrc) {
+        const img = new Image();
+        img.src = photoSrc;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
+        ctx.clip();
+        
+        const imgAspect = img.width / img.height;
+        let drawWidth, drawHeight, drawX, drawY;
+        if (imgAspect > 1) {
+          drawHeight = photoRadius * 2;
+          drawWidth = drawHeight * imgAspect;
+          drawX = photoX - drawWidth / 2;
+          drawY = photoY - photoRadius;
+        } else {
+          drawWidth = photoRadius * 2;
+          drawHeight = drawWidth / imgAspect;
+          drawX = photoX - photoRadius;
+          drawY = photoY - drawHeight / 2;
+        }
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        ctx.restore();
+      } else {
+        // Draw Placeholder Circle
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw User Icon
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.arc(photoX, photoY - 20, 45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(photoX, photoY + 110, 80, Math.PI, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 5. Draw Member Name
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 48px sans-serif';
+      ctx.fillText(row.memberName, 400, 560);
+
+      // Class / Unit
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '700 28px sans-serif';
+      ctx.fillText(row.unitName || 'Sin Unidad', 400, 615);
+
+      // 6. Draw Place Badge
+      const badgeY = 710;
+      ctx.fillStyle = borderColor;
+      const badgeWidth = 340;
+      const badgeHeight = 70;
+      const badgeX = 400 - badgeWidth / 2;
+      ctx.beginPath();
+      ctx.roundRect(badgeX, badgeY - badgeHeight / 2, badgeWidth, badgeHeight, 18);
+      ctx.fill();
+
+      // Place Text
+      ctx.fillStyle = rankIndex === 0 || rankIndex === 1 ? '#0f172a' : '#ffffff';
+      ctx.font = '900 34px sans-serif';
+      ctx.fillText(placeWord, 400, badgeY);
+
+      // 7. Draw Score Box
+      const scoreY = 850;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.beginPath();
+      ctx.roundRect(180, scoreY - 60, 440, 120, 24);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.stroke();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '900 64px sans-serif';
+      ctx.fillText(`${row.status === 'disqualified' ? '0' : row.score || 0}`, 400, scoreY - 10);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 24px sans-serif';
+      ctx.fillText('PUNTOS OBTENIDOS', 400, scoreY + 30);
+
+      // 8. Footer Brand
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.font = '500 20px sans-serif';
+      ctx.fillText('CLUB VENCEDORES — TRICLUB MANAGER', 400, 940);
+
+      // 9. Download the Image
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `tarjeta_concurso_${row.memberName.replace(/\s+/g, '_')}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      console.error('Error al generar la tarjeta del participante:', e);
+      alert('Ocurrió un error al generar la imagen. Por favor intenta de nuevo.');
+    }
   };
   
   // Create / Edit Session Form States
@@ -66,14 +260,13 @@ const BiblicalConnectionAdmin = ({
   // Initialize consolidation points when session becomes completed
   useEffect(() => {
     if (monitorSession && (monitorSession.status === 'completed' || monitorSession.status === 'active')) {
-      const activeResponses = responses.filter(r => r.sessionId === monitorSession.id);
       const initialPts = {};
-      activeResponses.forEach(r => {
+      liveLeaderboard.forEach(r => {
         initialPts[r.memberId] = r.status === 'disqualified' ? 0 : (r.score || 0);
       });
       setConsolidationPoints(initialPts);
     }
-  }, [monitorSession?.id, monitorSession?.status, responses]);
+  }, [monitorSession?.id, monitorSession?.status, liveLeaderboard]);
 
   // Participant Selection States
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
@@ -1144,6 +1337,22 @@ const BiblicalConnectionAdmin = ({
               )}
               
               <button
+                onClick={async () => {
+                  const newVal = !monitorSession.showScoresToMembers;
+                  await onUpdateSessionStatus(monitorSession.id, { showScoresToMembers: newVal });
+                  setMonitorSession(prev => ({ ...prev, showScoresToMembers: newVal }));
+                }}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl transition border ${
+                  monitorSession.showScoresToMembers
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white border-transparent shadow-md'
+                    : 'border-slate-200 dark:border-slate-700 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-350 bg-transparent'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>{monitorSession.showScoresToMembers ? 'Puntajes Visibles' : 'Puntajes Ocultos'}</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('list')}
                 className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-slate-700 dark:hover:bg-slate-750 text-sm font-semibold rounded-xl transition"
               >
@@ -1457,6 +1666,7 @@ const BiblicalConnectionAdmin = ({
                           <th className="py-3 px-4 text-center">Aciertos (Auto / Manual)</th>
                           <th className="py-3 px-4 text-center">Tiempo Empleado</th>
                           <th className="py-3 px-4 text-right">Puntuación</th>
+                          <th className="py-3 px-4 text-center w-24">Tarjeta</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1530,6 +1740,15 @@ const BiblicalConnectionAdmin = ({
                               <td className="py-4 px-4 text-right font-black text-amber-500 text-lg">
                                 {isDisqualified ? '0' : row.score || 0}
                               </td>
+                              <td className="py-4 px-4 text-center">
+                                <button
+                                  onClick={() => handleGenerateCard(row, index)}
+                                  title="Descargar Tarjeta de Posición"
+                                  className="p-2 bg-gradient-to-tr from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl transition shadow-md shadow-amber-500/10 hover:scale-105 active:scale-95 inline-flex items-center justify-center"
+                                >
+                                  <ImageIcon className="w-4 h-4" />
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
@@ -1575,26 +1794,32 @@ const BiblicalConnectionAdmin = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {activeSessionResponses.map(resp => {
+                      {liveLeaderboard.map(resp => {
                         const isDisq = resp.status === 'disqualified';
+                        const isNotJoined = resp.status === 'not_joined';
                         const pointsVal = consolidationPoints[resp.memberId] ?? (isDisq ? 0 : (resp.score || 0));
 
                         return (
                           <tr key={resp.id} className={`border-b border-slate-100 dark:border-slate-850/80 hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition ${
-                            isDisq ? 'bg-red-50/10 dark:bg-red-950/5' : ''
+                            isDisq ? 'bg-red-50/10 dark:bg-red-950/5' : isNotJoined ? 'opacity-85' : ''
                           }`}>
                             <td className="py-4 px-5 font-extrabold flex items-center gap-2">
                               {isDisq && <X className="w-4 h-4 text-red-500" />}
-                              <span className={isDisq ? 'line-through text-red-500 dark:text-red-400' : ''}>
+                              <span className={isDisq ? 'line-through text-red-500 dark:text-red-400' : isNotJoined ? 'text-slate-500 dark:text-slate-400' : ''}>
                                 {resp.memberName}
                               </span>
+                              {isNotJoined && (
+                                <span className="text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">
+                                  No Participó Directamente
+                                </span>
+                              )}
                             </td>
                             <td className="py-4 px-5 text-xs font-bold text-slate-500 dark:text-slate-450">{resp.unitName}</td>
                             <td className="py-4 px-5 text-center text-sm font-semibold">
-                              {isDisq ? '-' : `${resp.totalCorrect || 0} / ${resp.totalManualCorrect || 0}`}
+                              {isDisq || isNotJoined ? '-' : `${resp.totalCorrect || 0} / ${resp.totalManualCorrect || 0}`}
                             </td>
                             <td className="py-4 px-5 text-center text-sm font-black text-slate-700 dark:text-slate-350">
-                              {isDisq ? '0 pts' : `${resp.score || 0} pts`}
+                              {isDisq || isNotJoined ? '0 pts' : `${resp.score || 0} pts`}
                             </td>
                             <td className="py-3 px-5 text-center">
                               <input
@@ -1616,11 +1841,13 @@ const BiblicalConnectionAdmin = ({
                               <span className={`inline-flex px-2 py-0.5 text-[10px] font-black uppercase rounded-full ${
                                 isDisq 
                                   ? 'bg-red-100 text-red-755 dark:bg-red-950/30' 
+                                  : isNotJoined
+                                  ? 'bg-slate-100 text-slate-400 dark:bg-slate-850/50'
                                   : monitorSession.isConsolidated 
                                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/20' 
                                   : 'bg-amber-100 text-amber-800 dark:bg-amber-950/20'
                               }`}>
-                                {isDisq ? 'Anulado' : monitorSession.isConsolidated ? 'Consolidado' : 'Pendiente'}
+                                {isDisq ? 'Anulado' : isNotJoined && !monitorSession.isConsolidated ? 'Manual' : monitorSession.isConsolidated ? 'Consolidado' : 'Pendiente'}
                               </span>
                             </td>
                           </tr>
@@ -1648,7 +1875,7 @@ const BiblicalConnectionAdmin = ({
                           setIsConsolidating(false);
                         }
                       }}
-                      disabled={isConsolidating || activeSessionResponses.length === 0}
+                      disabled={isConsolidating || liveLeaderboard.length === 0}
                       className="flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold rounded-2xl transition shadow-lg shadow-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isConsolidating ? (
