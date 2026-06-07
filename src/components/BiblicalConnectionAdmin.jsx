@@ -17,7 +17,8 @@ const BiblicalConnectionAdmin = ({
   onUpdateSessionStatus,
   onGradeManualResponse,
   onConsolidatePoints,
-  onRestoreMember
+  onRestoreMember,
+  onForceCompleteMember
 }) => {
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'create' | 'monitor'
   const [selectedSession, setSelectedSession] = useState(null);
@@ -1310,6 +1311,19 @@ const BiblicalConnectionAdmin = ({
                                       className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-750 dark:hover:bg-slate-700 text-white text-[10px] font-black rounded-lg transition shadow-sm border border-slate-700 dark:border-slate-650"
                                     >
                                       Permitir Reingreso
+                                    </button>
+                                  )}
+                                  {!isTotalFinished && !isDisqualified && monitorSession?.status === 'active' && onForceCompleteMember && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (confirm(`¿Estás seguro de forzar el envío y dar por completado a ${resp.memberName}?`)) {
+                                          onForceCompleteMember(resp.id);
+                                        }
+                                      }}
+                                      className="px-2 py-0.5 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white text-[10px] font-black rounded-lg transition shadow-sm"
+                                    >
+                                      Forzar Envío
                                     </button>
                                   )}
                                 </div>

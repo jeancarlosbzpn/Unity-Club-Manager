@@ -2651,6 +2651,29 @@ const ClubVencedoresSystem = () => {
     }
   };
 
+  const handleForceCompleteBiblicalMember = async (responseId) => {
+    try {
+      const resp = biblicalConnectionResponses.find(r => r.id === responseId);
+      if (!resp) return;
+
+      const session = biblicalConnectionSessions.find(s => s.id === resp.sessionId);
+      const lastModIdx = session ? session.modules.length - 1 : resp.currentModuleIndex;
+
+      const completedItem = {
+        ...resp,
+        status: 'completed',
+        currentModuleIndex: lastModIdx,
+        completedAt: new Date().toISOString()
+      };
+
+      setBiblicalConnectionResponses(prev => prev.map(r => r.id === responseId ? completedItem : r));
+      await dataService.saveSingle('biblicalConnectionResponses', completedItem);
+      console.log('✅ Miembro completado de forma forzada.');
+    } catch (e) {
+      console.error('Error al completar forzadamente al miembro:', e);
+    }
+  };
+
   const handleJoinBiblicalSession = async (sessionId) => {
     try {
       const memberId = portalMember?.id;
@@ -12264,6 +12287,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 onGradeManualResponse={handleGradeManualResponse}
                 onConsolidatePoints={handleConsolidateBiblicalPoints}
                 onRestoreMember={handleRestoreBiblicalMember}
+                onForceCompleteMember={handleForceCompleteBiblicalMember}
               />
             )}
 
