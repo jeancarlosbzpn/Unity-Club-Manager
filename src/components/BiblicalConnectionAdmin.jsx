@@ -277,31 +277,86 @@ const BiblicalConnectionAdmin = ({
       ctx.stroke();
       ctx.restore();
 
-      // Load Image
+      // Load Image - try multiple strategies to handle Firebase CORS
       let imgLoaded = false;
       const img = new Image();
+
+      const photoUrl = memberObj?.photo || '';
       
-      if (memberObj?.photo) {
-        // Try base64 conversion first
-        const base64 = await urlToBase64(memberObj.photo);
-        if (base64) {
-          img.src = base64;
+      console.log('Loading photo for:', memberObj?.firstName, '| photo URL:', photoUrl ? photoUrl.substring(0, 80) + '...' : 'NONE');
+
+      if (photoUrl) {
+        // Strategy 1: If it's already base64, use directly
+        if (photoUrl.startsWith('data:')) {
+          img.src = photoUrl;
           imgLoaded = await new Promise((resolve) => {
             img.onload = () => resolve(true);
             img.onerror = () => resolve(false);
           });
         }
         
-        // Fallback: Try loading raw URL with anonymous crossOrigin
+        // Strategy 2: Try direct fetch (Firebase allows this from same origin or with CORS headers)
         if (!imgLoaded) {
-          img.crossOrigin = "anonymous";
-          img.src = memberObj.photo;
+          try {
+            const response = await fetch(photoUrl, { mode: 'cors' });
+            if (response.ok) {
+              const blob = await response.blob();
+              const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              if (base64) {
+                img.src = base64;
+                imgLoaded = await new Promise((resolve) => {
+                  img.onload = () => resolve(true);
+                  img.onerror = () => resolve(false);
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('Direct fetch failed:', e.message);
+          }
+        }
+
+        // Strategy 3: Try via corsproxy.io
+        if (!imgLoaded) {
+          try {
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(photoUrl)}`;
+            const response = await fetch(proxyUrl);
+            if (response.ok) {
+              const blob = await response.blob();
+              const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              if (base64) {
+                img.src = base64;
+                imgLoaded = await new Promise((resolve) => {
+                  img.onload = () => resolve(true);
+                  img.onerror = () => resolve(false);
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('Proxy fetch failed:', e.message);
+          }
+        }
+
+        // Strategy 4: Try loading via an <img> element directly (canvas will be tainted but photo shown)
+        if (!imgLoaded) {
+          img.src = photoUrl;
           imgLoaded = await new Promise((resolve) => {
             img.onload = () => resolve(true);
             img.onerror = () => resolve(false);
+            setTimeout(() => resolve(false), 6000);
           });
         }
       }
+
 
       if (imgLoaded) {
         ctx.save();
@@ -411,11 +466,30 @@ const BiblicalConnectionAdmin = ({
       ctx.fillText('CLUB VENCEDORES — TRICLUB MANAGER', 400, 905);
 
       // 9. Download the Image
-      const dataUrl = canvas.toDataURL('image/png');
+      let dataUrl;
+      try {
+        dataUrl = canvas.toDataURL('image/png');
+      } catch (taintedError) {
+        console.warn('Canvas tainted (CORS), retrying without photo...');
+        // Redraw without photo (placeholder only)
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath();
+        ctx.arc(photoX, photoY - 18, 40, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(photoX, photoY + 100, 70, Math.PI, Math.PI * 2);
+        ctx.fill();
+        dataUrl = canvas.toDataURL('image/png');
+      }
       const link = document.createElement('a');
       link.download = `tarjeta_concurso_${row.memberName.replace(/\s+/g, '_')}.png`;
       link.href = dataUrl;
       link.click();
+
     } catch (e) {
       console.error('Error al generar la tarjeta del participante:', e);
       alert('Ocurrió un error al generar la imagen. Por favor intenta de nuevo.');
