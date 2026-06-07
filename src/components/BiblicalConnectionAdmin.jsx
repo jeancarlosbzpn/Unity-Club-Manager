@@ -662,7 +662,7 @@ const BiblicalConnectionAdmin = ({
           };
         } else {
           // Resolver el nombre de la unidad si tiene unitId
-          const uName = memberObj?.unitId || 'Sin Unidad';
+          const uName = getUnitName(memberObj?.unitId);
           
           return {
             id: `temp_${pId}`,
