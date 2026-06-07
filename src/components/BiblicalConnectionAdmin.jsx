@@ -1313,7 +1313,7 @@ const BiblicalConnectionAdmin = ({
                                       Permitir Reingreso
                                     </button>
                                   )}
-                                  {!isTotalFinished && !isDisqualified && monitorSession?.status === 'active' && onForceCompleteMember && (
+                                  {!isTotalFinished && !isDisqualified && (monitorSession?.status === 'active' || monitorSession?.status === 'completed') && onForceCompleteMember && (
                                     <button
                                       type="button"
                                       onClick={() => {
