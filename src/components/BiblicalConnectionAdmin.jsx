@@ -1128,6 +1128,21 @@ const BiblicalConnectionAdmin = ({
                 </>
               )}
               
+              {monitorSession.status === 'completed' && !monitorSession.isConsolidated && (
+                <button
+                  onClick={async () => {
+                    if (confirm('¿Estás seguro de reabrir este concurso? Esto permitirá a los miembros que no terminaron seguir jugando.')) {
+                      await onUpdateSessionStatus(monitorSession.id, { status: 'active' });
+                      setMonitorSession(prev => ({ ...prev, status: 'active' }));
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition shadow-md shadow-emerald-600/10"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Reabrir Concurso</span>
+                </button>
+              )}
+              
               <button
                 onClick={() => setActiveTab('list')}
                 className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-slate-700 dark:hover:bg-slate-750 text-sm font-semibold rounded-xl transition"
@@ -1679,7 +1694,13 @@ const BiblicalConnectionAdmin = ({
                 const isDisqualified = resp && resp.status === 'disqualified';
                 const isNotSelected = previousParticipantIds ? !previousParticipantIds.has(mIdStr) : false;
                 const didNotParticipate = !resp || resp.status === 'not_joined';
-                return isDisqualified || isNotSelected || didNotParticipate;
+                
+                // Si la sesión general ya terminó, pero el miembro no completó su participación (quedó en 'playing' o 'waiting_next')
+                const sessionIsCompleted = selectedSessionForActive?.status === 'completed';
+                const didNotComplete = resp && (resp.status === 'playing' || resp.status === 'waiting_next');
+                const isEligibleToRecover = sessionIsCompleted && didNotComplete;
+
+                return isDisqualified || isNotSelected || didNotParticipate || isEligibleToRecover;
               });
 
               const availableMembers = isRepeatingMode ? repeatingMembers : members;
