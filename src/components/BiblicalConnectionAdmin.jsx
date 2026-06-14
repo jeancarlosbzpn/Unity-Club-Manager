@@ -12,6 +12,8 @@ const BiblicalConnectionAdmin = ({
   members = [],
   currentUser,
   units = [],
+  clubSettings = {},
+  onUpdateClubSettings,
   onSaveSession,
   onDeleteSession,
   onUpdateSessionStatus,
@@ -852,6 +854,15 @@ const BiblicalConnectionAdmin = ({
     }
   };
 
+  const handleToggleShowScoresInPortal = () => {
+    if (onUpdateClubSettings) {
+      onUpdateClubSettings(prev => ({
+        ...prev,
+        showBiblicalScoresInPortal: !prev?.showBiblicalScoresInPortal
+      }));
+    }
+  };
+
   // List filter helper
   const filteredSessions = sessions.filter(s => {
     if (listFilter === 'all') return true;
@@ -997,13 +1008,31 @@ const BiblicalConnectionAdmin = ({
         </div>
 
         {activeTab === 'list' && (
-          <button
-            onClick={handleNewSession}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-red-500/10 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Crear Concurso</span>
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={handleToggleShowScoresInPortal}
+              className={`flex items-center gap-2 px-5 py-3 font-semibold rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-md border ${
+                clubSettings?.showBiblicalScoresInPortal
+                  ? 'bg-purple-600 hover:bg-purple-750 text-white border-transparent'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <Award className="w-5 h-5" />
+              <span>
+                {clubSettings?.showBiblicalScoresInPortal
+                  ? 'Ocultar Puntajes en Portal'
+                  : 'Mostrar Puntajes en Portal'}
+              </span>
+            </button>
+
+            <button
+              onClick={handleNewSession}
+              className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:shadow-red-500/10 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Crear Concurso</span>
+            </button>
+          </div>
         )}
       </div>
 

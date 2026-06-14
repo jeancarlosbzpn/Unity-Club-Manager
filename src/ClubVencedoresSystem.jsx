@@ -12281,6 +12281,8 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 members={members}
                 currentUser={currentUser}
                 units={units}
+                clubSettings={clubSettings}
+                onUpdateClubSettings={setClubSettings}
                 onSaveSession={handleSaveBiblicalSession}
                 onDeleteSession={handleDeleteBiblicalSession}
                 onUpdateSessionStatus={handleUpdateBiblicalSessionStatus}
@@ -27648,6 +27650,21 @@ const MemberPortal = ({
                   ? 'Hay una competencia bíblica en curso' 
                   : 'Participa en competencias y juegos de estudio bíblico'}
               </div>
+              
+              {clubSettings?.showBiblicalScoresInPortal && (() => {
+                const memberResponses = biblicalConnectionResponses.filter(r => String(r.memberId) === String(member.id) && r.status !== 'disqualified');
+                if (memberResponses.length > 0) {
+                  const totalBiblicalScore = memberResponses.reduce((sum, r) => sum + (Number(r.score) || 0), 0);
+                  return (
+                    <div className="mt-3 pt-3 border-t border-gray-200/50 flex justify-between items-center text-xs">
+                      <span className="font-bold text-gray-400 uppercase tracking-widest">Puntaje Acumulado:</span>
+                      <span className="font-black text-purple-600">{totalBiblicalScore} pts</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              
               <div className="mt-4 text-[8px] font-black uppercase tracking-widest text-purple-600 flex items-center gap-1 transition-colors group-active:text-purple-800">
                 Entrar al Portal Bíblico <ChevronRight className="w-3 h-3" />
               </div>
@@ -28543,6 +28560,7 @@ const MemberPortal = ({
                   sessions={biblicalConnectionSessions}
                   responses={biblicalConnectionResponses}
                   member={member}
+                  clubSettings={clubSettings}
                   onJoinSession={onJoinBiblicalSession}
                   onSubmitAnswers={(sessId, modId, modIdx, ans, qs) => onSubmitBiblicalAnswers(sessId, modId, modIdx, ans, qs)}
                   onDisqualifyMember={onDisqualifyBiblicalMember}

@@ -8,6 +8,7 @@ const BiblicalConnectionPortal = ({
   member,
   sessions = [],
   responses = [],
+  clubSettings = {},
   onJoinSession,
   onSubmitAnswers,
   onDisqualifyMember,
@@ -604,26 +605,68 @@ const BiblicalConnectionPortal = ({
     // ----------------------------------------------------
     // CASE D: DEFAULT DEFAULT (No active session, no recently finished)
     // ----------------------------------------------------
+    const memberResponses = responses.filter(r => String(r.memberId) === String(member.id) && r.status !== 'disqualified');
+    const totalScore = memberResponses.reduce((sum, r) => sum + (Number(r.score) || 0), 0);
+
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto">
-        <div className="w-16 h-16 bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-3xl flex items-center justify-center mb-6">
-          <BookOpen className="w-7 h-7" />
+      <div className="flex flex-col items-center justify-center py-10 max-w-xl mx-auto gap-8 w-full">
+        <div className="text-center max-w-sm mx-auto">
+          <div className="w-16 h-16 bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <BookOpen className="w-7 h-7" />
+          </div>
+          <h3 className="text-xl font-black text-slate-700 dark:text-slate-350 mb-1">
+            No hay concursos activos
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            En este momento no se está realizando ninguna Conexión Bíblica. Mantente atento y sigue estudiando la Biblia y el Espíritu de Profecía.
+          </p>
+          
+          <button
+            onClick={onRefreshData}
+            disabled={isSyncing}
+            className="mt-6 flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold rounded-lg transition mx-auto"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>Verificar si ya inició</span>
+          </button>
         </div>
-        <h3 className="text-xl font-black text-slate-700 dark:text-slate-350 mb-1">
-          No hay concursos activos
-        </h3>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          En este momento no se está realizando ninguna Conexión Bíblica. Mantente atento y sigue estudiando la Biblia y el Espíritu de Profecía.
-        </p>
-        
-        <button
-          onClick={onRefreshData}
-          disabled={isSyncing}
-          className="mt-6 flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold rounded-lg transition"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-          <span>Verificar si ya inició</span>
-        </button>
+
+        {clubSettings?.showBiblicalScoresInPortal && memberResponses.length > 0 && (
+          <div className="w-full bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 shadow-sm">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800/80">
+              <h4 className="font-black text-sm uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <Award className="w-5 h-5 text-amber-500" />
+                Mis Resultados Anteriores
+              </h4>
+              <span className="text-xs font-black text-purple-650 bg-purple-50 dark:bg-purple-950/20 px-3 py-1 rounded-full">
+                Total: {totalScore} pts
+              </span>
+            </div>
+
+            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+              {memberResponses.map(resp => {
+                const session = sessions.find(s => s.id === resp.sessionId);
+                const totalQuestions = session?.modules?.reduce((acc, m) => acc + (m.questions?.length || 0), 0) || 0;
+                
+                return (
+                  <div key={resp.id} className="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60 rounded-2xl">
+                    <div className="min-w-0 flex-1 text-left">
+                      <h5 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">
+                        {session?.title || 'Concurso Bíblico'}
+                      </h5>
+                      <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                        Aciertos: {resp.totalCorrect || 0} de {totalQuestions} preguntas
+                      </p>
+                    </div>
+                    <div className="text-right pl-4">
+                      <span className="text-lg font-black text-amber-500">{resp.score || 0} pts</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
