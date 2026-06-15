@@ -3,8 +3,9 @@ import {
   BookOpen, Plus, Play, Square, Check, X, Trash2, Edit2, 
   ChevronRight, ChevronDown, Award, Users, RefreshCw, Clock, 
   FileText, Save, ArrowRight, ArrowLeft, ToggleLeft, ToggleRight,
-  AlertCircle, Download, Image as ImageIcon
+  AlertCircle, Download, Image as ImageIcon, Trophy
 } from 'lucide-react';
+import FinalContestAdmin from './FinalContestAdmin';
 
 const BiblicalConnectionAdmin = ({
   sessions = [],
@@ -20,8 +21,16 @@ const BiblicalConnectionAdmin = ({
   onGradeManualResponse,
   onConsolidatePoints,
   onRestoreMember,
-  onForceCompleteMember
+  onForceCompleteMember,
+  // Final contest props
+  finalContestSessions = [],
+  finalContestResponses = [],
+  onSaveFinalSession,
+  onDeleteFinalSession,
+  onUpdateFinalSessionStatus,
+  onSaveFinalResponse,
 }) => {
+  const [mainMode, setMainMode] = useState('normal'); // 'normal' | 'final'
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'create' | 'monitor'
   const [selectedSession, setSelectedSession] = useState(null);
 
@@ -986,11 +995,64 @@ const BiblicalConnectionAdmin = ({
     }
   }, [monitorSession?.id, monitorSession?.status, liveLeaderboard]);
 
+  // ── If in Final mode, render FinalContestAdmin ─────────────────────────────
+  if (mainMode === 'final') {
+    return (
+      <div className="p-6 max-w-7xl mx-auto min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+        {/* Mode switcher */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex bg-white border border-gray-200 rounded-2xl p-1 gap-1 shadow-sm">
+            <button
+              onClick={() => setMainMode('normal')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            >
+              <BookOpen className="w-4 h-4" />
+              Normal
+            </button>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
+            >
+              <Trophy className="w-4 h-4" />
+              Final
+            </button>
+          </div>
+        </div>
+        <FinalContestAdmin
+          sessions={finalContestSessions}
+          responses={finalContestResponses}
+          members={members}
+          units={units}
+          currentUser={currentUser}
+          onSaveSession={onSaveFinalSession}
+          onDeleteSession={onDeleteFinalSession}
+          onUpdateSessionStatus={onUpdateFinalSessionStatus}
+          onSaveFinalResponse={onSaveFinalResponse}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-200">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        {/* Mode switcher pill */}
+        <div className="flex bg-white border border-gray-200 rounded-2xl p-1 gap-1 shadow-sm mb-0">
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-amber-500 to-red-500 text-white shadow-md"
+          >
+            <BookOpen className="w-4 h-4" />
+            Normal
+          </button>
+          <button
+            onClick={() => setMainMode('final')}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+          >
+            <Trophy className="w-4 h-4" />
+            Final
+          </button>
+        </div>
         <div>
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-tr from-amber-500 to-red-500 rounded-2xl shadow-lg shadow-amber-500/20 text-white">

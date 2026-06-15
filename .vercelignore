@@ -1,0 +1,5 @@
+node_modules_backup/
+node_modules/
+electron/
+dist-electron/
+release/

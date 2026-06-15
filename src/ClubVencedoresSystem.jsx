@@ -14,6 +14,10 @@ import Login from './components/Login';
 import BirthdayCardGenerator from './components/BirthdayCardGenerator';
 import BiblicalConnectionAdmin from './components/BiblicalConnectionAdmin';
 import BiblicalConnectionPortal from './components/BiblicalConnectionPortal';
+import FinalContestPresenter from './components/FinalContestPresenter';
+import FinalContestJudge from './components/FinalContestJudge';
+import FinalContestRanking from './components/FinalContestRanking';
+import FinalContestPortal from './components/FinalContestPortal';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import CarnetFront from './assets/Carnet/frontal.svg';
 import CarnetBack from './assets/Carnet/trasero.svg';
@@ -327,6 +331,23 @@ const aventurerosClasses = [
   { value: 'Manos Ayudadoras', label: 'Manos Ayudadoras (9 años)', minAge: 9, maxAge: 9, color: 'bg-purple-50 border-purple-200' }
 ];
 
+// ─── Hash-based routing for Final Contest external windows ───────────────────
+const FinalHashRouter = () => {
+  const hash = window.location.hash || '';
+  const parseHash = () => {
+    // Format: #final-presenter?session=XXX
+    const match = hash.match(/^#final-(presenter|judge|ranking)\?session=([^&]+)/);
+    if (!match) return null;
+    return { view: match[1], sessionId: match[2] };
+  };
+  const route = parseHash();
+  if (!route) return null;
+  if (route.view === 'presenter') return <FinalContestPresenter sessionId={route.sessionId} />;
+  if (route.view === 'judge') return <FinalContestJudge sessionId={route.sessionId} />;
+  if (route.view === 'ranking') return <FinalContestRanking sessionId={route.sessionId} />;
+  return null;
+};
+
 const ClubVencedoresSystem = () => {
   // Authentication state
   const [activityViewMode, setActivityViewMode] = useState('calendar'); // 'calendar' | 'list'
@@ -536,6 +557,10 @@ const ClubVencedoresSystem = () => {
   // Biblical Connection States
   const [biblicalConnectionSessions, setBiblicalConnectionSessions] = useState([]);
   const [biblicalConnectionResponses, setBiblicalConnectionResponses] = useState([]);
+
+  // Final Contest States
+  const [finalContestSessions, setFinalContestSessions] = useState([]);
+  const [finalContestResponses, setFinalContestResponses] = useState([]);
 
   // Reminders State
   const [reminders, setReminders] = useState([]);
@@ -1516,7 +1541,8 @@ const ClubVencedoresSystem = () => {
           // Previously missing — caused these modules to wipe data on every refresh:
           'campDetails', 'classRequirements', 'evaluationGroups', 'memberProgress',
           'requirementSections', 'reminders', 'fixedPaymentConcepts', 'fixedPayments',
-          'biblicalConnectionSessions', 'biblicalConnectionResponses'
+          'biblicalConnectionSessions', 'biblicalConnectionResponses',
+          'finalContestSessions', 'finalContestResponses'
         ];
         
         // Load all in parallel with individual error handling to prevent hangs
@@ -1541,7 +1567,8 @@ const ClubVencedoresSystem = () => {
           'evaluationGroups', 'requirementSections', 'reminders', 'disciplineRecords',
           'attendanceRecords', 'homeworks', 'memberHomeworkStatus', 'firstAidItems',
           'tents', 'lockedSaturdays', 'skippedSaturdays', 'inventory', 'unit_messages',
-          'saturdayMeetings', 'biblicalConnectionSessions', 'biblicalConnectionResponses'
+          'saturdayMeetings', 'biblicalConnectionSessions', 'biblicalConnectionResponses',
+          'finalContestSessions', 'finalContestResponses'
         ];
         mustBeArrays.forEach(k => {
           if (data[k] && !Array.isArray(data[k])) {
@@ -2071,6 +2098,8 @@ const ClubVencedoresSystem = () => {
         setSaturdayMeetings(allData.saturdayMeetings || []);
         setBiblicalConnectionSessions(allData.biblicalConnectionSessions || []);
         setBiblicalConnectionResponses(allData.biblicalConnectionResponses || []);
+        setFinalContestSessions(allData.finalContestSessions || []);
+        setFinalContestResponses(allData.finalContestResponses || []);
         
         // Fetch Clubs Global Registry
         const globalClubs = await dataService.readData('clubs');
@@ -2573,8 +2602,70 @@ const ClubVencedoresSystem = () => {
       }
 
       console.log('✅ Estado de la sesión de Conexión Bíblica actualizado.');
+
     } catch (e) {
       console.error('Error al actualizar el estado de la sesión:', e);
+    }
+  };
+
+  // --- HANDLERS PARA CONCURSO FINAL ---
+  const handleSaveFinalSession = async (sessionData) => {
+    try {
+      const exists = finalContestSessions.some(s => s.id === sessionData.id);
+      let updated;
+      if (exists) {
+        updated = finalContestSessions.map(s => s.id === sessionData.id ? sessionData : s);
+      } else {
+        updated = [...finalContestSessions, sessionData];
+      }
+      setFinalContestSessions(updated);
+      await dataService.writeData('finalContestSessions', updated);
+      console.log('✅ Sesión Final guardada exitosamente.');
+    } catch (e) {
+      console.error('Error al guardar la sesión Final:', e);
+    }
+  };
+
+  const handleDeleteFinalSession = async (sessionId) => {
+    try {
+      const updated = finalContestSessions.filter(s => s.id !== sessionId);
+      const updatedResp = finalContestResponses.filter(r => r.sessionId !== sessionId);
+      setFinalContestSessions(updated);
+      setFinalContestResponses(updatedResp);
+      await dataService.writeData('finalContestSessions', updated);
+      await dataService.writeData('finalContestResponses', updatedResp);
+      console.log('✅ Sesión Final eliminada.');
+    } catch (e) {
+      console.error('Error al eliminar la sesión Final:', e);
+    }
+  };
+
+  const handleUpdateFinalSessionStatus = async (sessionId, fields) => {
+    try {
+      const updated = finalContestSessions.map(s =>
+        s.id === sessionId ? { ...s, ...fields } : s
+      );
+      setFinalContestSessions(updated);
+      await dataService.writeData('finalContestSessions', updated);
+      console.log('✅ Estado de sesión Final actualizado.');
+    } catch (e) {
+      console.error('Error al actualizar la sesión Final:', e);
+    }
+  };
+
+  const handleSaveFinalResponse = async (responseData) => {
+    try {
+      const exists = finalContestResponses.some(r => r.id === responseData.id);
+      let updated;
+      if (exists) {
+        updated = finalContestResponses.map(r => r.id === responseData.id ? responseData : r);
+      } else {
+        updated = [...finalContestResponses, responseData];
+      }
+      setFinalContestResponses(updated);
+      await dataService.writeData('finalContestResponses', updated);
+    } catch (e) {
+      console.error('Error al guardar respuesta Final:', e);
     }
   };
 
@@ -11490,6 +11581,8 @@ const ClubVencedoresSystem = () => {
         if (allData.saturdayMeetings) setSaturdayMeetings(allData.saturdayMeetings);
         if (allData.biblicalConnectionSessions) setBiblicalConnectionSessions(allData.biblicalConnectionSessions);
         if (allData.biblicalConnectionResponses) setBiblicalConnectionResponses(allData.biblicalConnectionResponses);
+        if (allData.finalContestSessions) setFinalContestSessions(allData.finalContestSessions);
+        if (allData.finalContestResponses) setFinalContestResponses(allData.finalContestResponses);
         
         setSyncStatus('idle');
         return true;
@@ -11548,6 +11641,9 @@ const ClubVencedoresSystem = () => {
         onJoinBiblicalSession={handleJoinBiblicalSession}
         onSubmitBiblicalAnswers={handleSubmitBiblicalAnswers}
         onDisqualifyBiblicalMember={handleDisqualifyBiblicalMember}
+        finalContestSessions={finalContestSessions}
+        finalContestResponses={finalContestResponses}
+        onSaveFinalResponse={handleSaveFinalResponse}
         instructorName={(() => {
           const mClass = liveMember.pathfinderClass || liveMember.currentClass;
           const classEntry = pathfinderClasses.find(c => String(c.value) === String(mClass) || String(c.label) === String(mClass));
@@ -12276,7 +12372,7 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
             {activeModule === 'profile' && renderMemberProfile()}
             {activeModule === 'biblical-connection' && (
               <BiblicalConnectionAdmin
-                sessions={biblicalConnectionSessions}
+                              sessions={biblicalConnectionSessions}
                 responses={biblicalConnectionResponses}
                 members={members}
                 currentUser={currentUser}
@@ -12290,6 +12386,12 @@ p-0.5 rounded-full opacity-0 group-hover: opacity-100 transition-opacity
                 onConsolidatePoints={handleConsolidateBiblicalPoints}
                 onRestoreMember={handleRestoreBiblicalMember}
                 onForceCompleteMember={handleForceCompleteBiblicalMember}
+                finalContestSessions={finalContestSessions}
+                finalContestResponses={finalContestResponses}
+                onSaveFinalSession={handleSaveFinalSession}
+                onDeleteFinalSession={handleDeleteFinalSession}
+                onUpdateFinalSessionStatus={handleUpdateFinalSessionStatus}
+                onSaveFinalResponse={handleSaveFinalResponse}
               />
             )}
 
@@ -26275,7 +26377,10 @@ const MemberPortal = ({
   biblicalConnectionResponses = [],
   onJoinBiblicalSession,
   onSubmitBiblicalAnswers,
-  onDisqualifyBiblicalMember
+  onDisqualifyBiblicalMember,
+  finalContestSessions = [],
+  finalContestResponses = [],
+  onSaveFinalResponse
 }) => {
   const [showAwardsModal, setShowAwardsModal] = useState(false);
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
@@ -28556,6 +28661,21 @@ const MemberPortal = ({
               </button>
               
               <div className="mt-4">
+                {/* Show FinalContestPortal if there's an active Final session the member is in */}
+                {finalContestSessions.some(s => s.mode === 'final' && s.status === 'active' && (s.contestants || []).some(id => String(id) === String(member.id))) && (
+                  <div className="mb-6">
+                    <div className="text-xs font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse inline-block" />
+                      ⚡ Modalidad Final
+                    </div>
+                    <FinalContestPortal
+                      sessions={finalContestSessions}
+                      member={member}
+                      finalResponses={finalContestResponses}
+                      onSaveFinalResponse={onSaveFinalResponse}
+                    />
+                  </div>
+                )}
                 <BiblicalConnectionPortal
                   sessions={biblicalConnectionSessions}
                   responses={biblicalConnectionResponses}
@@ -28575,10 +28695,24 @@ const MemberPortal = ({
 };
 
 
-const ClubVencedoresApp = () => (
-  <ErrorBoundary>
-    <ClubVencedoresSystem />
-  </ErrorBoundary>
-);
+const ClubVencedoresApp = () => {
+  const hashRoute = (() => {
+    const hash = window.location.hash || '';
+    const match = hash.match(/^#final-(presenter|judge|ranking)\?session=([^&]+)/);
+    return match ? { view: match[1], sessionId: match[2] } : null;
+  })();
+
+  if (hashRoute) {
+    if (hashRoute.view === 'presenter') return <FinalContestPresenter sessionId={hashRoute.sessionId} />;
+    if (hashRoute.view === 'judge') return <FinalContestJudge sessionId={hashRoute.sessionId} />;
+    if (hashRoute.view === 'ranking') return <FinalContestRanking sessionId={hashRoute.sessionId} />;
+  }
+
+  return (
+    <ErrorBoundary>
+      <ClubVencedoresSystem />
+    </ErrorBoundary>
+  );
+};
 
 export default ClubVencedoresApp;

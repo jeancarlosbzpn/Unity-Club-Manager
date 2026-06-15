@@ -67,7 +67,8 @@ const ALL_COLLECTION_KEYS = [
   'inventory', 'inventoryCategories', 'firstAidItems', 'tents', 'tentAssignments',
   'uniformItems', 'uniformCategories', 'uniformInspections', 'memberUniforms',
   'reminders', 'campDetails', 'memberProgress', 'unit_messages',
-  'biblicalConnectionSessions', 'biblicalConnectionResponses'
+  'biblicalConnectionSessions', 'biblicalConnectionResponses',
+  'finalContestSessions', 'finalContestResponses'
 ];
 
 export const dataService = {
@@ -326,6 +327,8 @@ export const dataService = {
 };
 
 export function getDefaultValue(key) {
-  const arrays = ['members', 'transactions', 'activities', 'points', 'lockedSaturdays', 'units', 'users', 'inventory', 'inventoryCategories', 'tents', 'tentAssignments', 'uniformInspections', 'uniformItems', 'uniformCategories', 'firstAidItems', 'classRequirements', 'evaluationGroups', 'requirementSections', 'reminders', 'fixedPayments', 'fixedPaymentConcepts', 'disciplineRecords', 'announcements', 'qualifications', 'homeworks', 'memberHomeworkStatus', 'attendanceRecords', 'unit_messages', 'biblicalConnectionSessions', 'biblicalConnectionResponses'];
+  const arrays = ['members', 'transactions', 'activities', 'points', 'lockedSaturdays', 'units', 'users', 'inventory', 'inventoryCategories', 'tents', 'tentAssignments', 'uniformInspections', 'uniformItems', 'uniformCategories', 'firstAidItems', 'classRequirements', 'evaluationGroups', 'requirementSections', 'reminders', 'fixedPayments', 'fixedPaymentConcepts', 'disciplineRecords', 'announcements', 'qualifications', 'homeworks', 'memberHomeworkStatus', 'attendanceRecords', 'unit_messages', 'biblicalConnectionSessions', 'biblicalConnectionResponses', 'finalContestSessions', 'finalContestResponses'];
   return arrays.includes(key) ? [] : {};
 }
+
+export default dataService;
