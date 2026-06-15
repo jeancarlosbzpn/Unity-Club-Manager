@@ -73,6 +73,33 @@ const FinalContestAdmin = ({
     return units.find(u => String(u.id) === String(unitId))?.name || unitId;
   };
 
+  const calculateSequentialScore = useCallback((memberId, session) => {
+    let score = 0;
+    const seqModules = (session.modules || []).filter(m => m.type === 'sequential');
+    const memberResps = responses.filter(
+      r => String(r.memberId) === String(memberId) && r.sessionId === session.id
+    );
+    
+    memberResps.forEach(resp => {
+      const mod = seqModules.find(m => m.id === resp.moduleId);
+      if (mod && resp.answers) {
+        mod.questions.forEach(q => {
+          const memberAns = resp.answers[q.id];
+          if (memberAns !== undefined) {
+            if (q.type === 'true_false') {
+              const boolAns = memberAns === 'true' || memberAns === true;
+              const boolCorrect = q.correctAnswer === 'true' || q.correctAnswer === true;
+              if (boolAns === boolCorrect) score++;
+            } else if (String(memberAns).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()) {
+              score++;
+            }
+          }
+        });
+      }
+    });
+    return score;
+  }, [responses]);
+
   const filteredSessions = sessions.filter(s => {
     if (listFilter === 'all') return true;
     return s.status === listFilter;
@@ -110,9 +137,9 @@ const FinalContestAdmin = ({
 
   const handleMonitor = (session) => {
     setSelectedSession(session);
-    // Initialize ranking scores
+    // Initialize ranking scores with manualScore (fallbacks to score)
     const scores = {};
-    (session.ranking || []).forEach(r => { scores[r.memberId] = r.score ?? 0; });
+    (session.ranking || []).forEach(r => { scores[r.memberId] = r.manualScore ?? r.score ?? 0; });
     setRankingScores(scores);
     setActiveTab('monitor');
   };
@@ -142,7 +169,8 @@ const FinalContestAdmin = ({
           memberId,
           memberName: m ? `${m.firstName} ${m.lastName}` : memberId,
           unitName: m ? getUnitName(m.unitId) : '',
-          score: existing?.score ?? 0
+          score: existing?.score ?? 0,
+          manualScore: existing?.manualScore ?? existing?.score ?? 0
         };
       }),
       id: editingSessionId || 'final_' + Date.now(),
@@ -298,10 +326,15 @@ const FinalContestAdmin = ({
   const handleSaveRanking = async () => {
     if (!selectedSession) return;
     setSavingRanking(true);
-    const updatedRanking = (selectedSession.ranking || []).map(r => ({
-      ...r,
-      score: Number(rankingScores[r.memberId] ?? r.score ?? 0)
-    }));
+    const updatedRanking = (selectedSession.ranking || []).map(r => {
+      const manualVal = Number(rankingScores[r.memberId] ?? r.manualScore ?? r.score ?? 0);
+      const seqScore = calculateSequentialScore(r.memberId, selectedSession);
+      return {
+        ...r,
+        manualScore: manualVal,
+        score: seqScore + manualVal // Total score
+      };
+    });
     await onUpdateSessionStatus(selectedSession.id, { ranking: updatedRanking });
     setSelectedSession(prev => prev ? { ...prev, ranking: updatedRanking } : prev);
     setSavingRanking(false);
@@ -771,22 +804,36 @@ const FinalContestAdmin = ({
           ) : (
             <div className="space-y-2">
               {(sess.ranking || [])
-                .sort((a, b) => (rankingScores[b.memberId] ?? b.score ?? 0) - (rankingScores[a.memberId] ?? a.score ?? 0))
+                .map(r => {
+                  const seqScore = calculateSequentialScore(r.memberId, sess);
+                  const manualVal = Number(rankingScores[r.memberId] ?? r.manualScore ?? r.score ?? 0);
+                  return { ...r, seqScore, manualVal, totalScore: seqScore + manualVal };
+                })
+                .sort((a, b) => b.totalScore - a.totalScore)
                 .map((contestant, idx) => (
-                  <div key={contestant.memberId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div key={contestant.memberId} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-xl border border-gray-100 dark:border-slate-800/60">
                     <div className="w-6 h-6 flex items-center justify-center text-xs font-black text-gray-400">{idx + 1}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-gray-800 text-sm truncate">{contestant.memberName}</div>
-                      <div className="text-xs text-gray-400">{contestant.unitName}</div>
+                      <div className="font-bold text-gray-800 dark:text-slate-200 text-sm truncate">{contestant.memberName}</div>
+                      <div className="text-xs text-gray-400 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+                        <span>{contestant.unitName}</span>
+                        <span className="text-gray-300 dark:text-slate-700">|</span>
+                        <span className="text-indigo-500 font-semibold">Celular (Auto): {contestant.seqScore} pts</span>
+                      </div>
                     </div>
-                    <input
-                      type="number"
-                      min="0"
-                      value={rankingScores[contestant.memberId] ?? contestant.score ?? 0}
-                      onChange={e => setRankingScores(p => ({ ...p, [contestant.memberId]: Number(e.target.value) }))}
-                      className="w-20 px-3 py-1.5 border-2 border-gray-200 rounded-lg text-center text-sm font-black text-gray-800 focus:outline-none focus:border-amber-300"
-                    />
-                    <span className="text-xs text-gray-400 font-bold">pts</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400 font-bold">Jueces:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={rankingScores[contestant.memberId] ?? contestant.manualVal ?? 0}
+                        onChange={e => setRankingScores(p => ({ ...p, [contestant.memberId]: Number(e.target.value) }))}
+                        className="w-16 px-2 py-1 border-2 border-gray-200 dark:border-slate-700 dark:bg-slate-800 rounded-lg text-center text-sm font-black text-gray-800 dark:text-white focus:outline-none focus:border-amber-300"
+                      />
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-bold min-w-[50px] text-right">
+                        Total: <strong className="text-amber-500">{contestant.totalScore}</strong> pts
+                      </span>
+                    </div>
                   </div>
                 ))}
             </div>

@@ -18,11 +18,50 @@ const FinalContestRanking = ({ sessionId }) => {
 
   const fetchSession = useCallback(async () => {
     try {
-      const all = await dataService.readData('finalContestSessions');
-      const sessions = Array.isArray(all) ? all : [];
+      const [allSessions, allResponses] = await Promise.all([
+        dataService.readData('finalContestSessions'),
+        dataService.readData('finalContestResponses')
+      ]);
+      const sessions = Array.isArray(allSessions) ? allSessions : [];
+      const responses = Array.isArray(allResponses) ? allResponses : [];
       const found = sessions.find(s => s.id === sessionId);
       if (found) {
-        setSession(found);
+        const updatedRanking = (found.ranking || []).map(r => {
+          let seqScore = 0;
+          const seqModules = (found.modules || []).filter(m => m.type === 'sequential');
+          const memberResps = responses.filter(
+            resp => String(resp.memberId) === String(r.memberId) && resp.sessionId === found.id
+          );
+          
+          memberResps.forEach(resp => {
+            const mod = seqModules.find(m => m.id === resp.moduleId);
+            if (mod && resp.answers) {
+              mod.questions.forEach(q => {
+                const memberAns = resp.answers[q.id];
+                if (memberAns !== undefined) {
+                  if (q.type === 'true_false') {
+                    const boolAns = memberAns === 'true' || memberAns === true;
+                    const boolCorrect = q.correctAnswer === 'true' || q.correctAnswer === true;
+                    if (boolAns === boolCorrect) seqScore++;
+                  } else if (String(memberAns).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()) {
+                    seqScore++;
+                  }
+                }
+              });
+            }
+          });
+          
+          const manualVal = r.manualScore ?? r.score ?? 0;
+          return {
+            ...r,
+            score: seqScore + manualVal
+          };
+        });
+        
+        setSession({
+          ...found,
+          ranking: updatedRanking
+        });
         setLastUpdate(new Date());
       }
     } catch (e) {
