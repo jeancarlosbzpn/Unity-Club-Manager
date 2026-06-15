@@ -866,7 +866,28 @@ const FinalContestAdmin = ({
       <ImportQuestionsModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        onImport={(importedModules) => setForm(p => ({ ...p, modules: importedModules }))}
+        onImport={(importedModules) => setForm(p => {
+          const existing = p.modules || [];
+          if (existing.length === 1 && existing[0].questions.length === 0 && existing[0].title === 'Módulo 1') {
+            return { ...p, modules: importedModules };
+          }
+          const clonedExisting = JSON.parse(JSON.stringify(existing));
+          importedModules.forEach(importedMod => {
+            const existingMod = clonedExisting.find(
+              m => m.title.trim().toLowerCase() === importedMod.title.trim().toLowerCase()
+            );
+            if (existingMod) {
+              const newQuestions = importedMod.questions.map((q, idx) => ({
+                ...q,
+                id: 'q_import_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4)
+              }));
+              existingMod.questions = [...existingMod.questions, ...newQuestions];
+            } else {
+              clonedExisting.push(importedMod);
+            }
+          });
+          return { ...p, modules: clonedExisting };
+        })}
       />
     </div>
   );
