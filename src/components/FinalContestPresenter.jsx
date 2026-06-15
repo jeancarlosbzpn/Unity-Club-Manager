@@ -128,8 +128,46 @@ const FinalContestPresenter = ({ sessionId }) => {
     );
   }
 
-  const contestaModule = session.modules?.find(m => m.type === 'contesta');
-  const questions = contestaModule?.questions || [];
+  const activeModuleIndex = session.activeModuleIndex ?? -1;
+  const activeModule = session.modules?.[activeModuleIndex];
+
+  if (activeModuleIndex === -1 || !activeModule) {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #0a0f1e 0%, #0f172a 50%, #020617 100%)',
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16, fontFamily: "'Segoe UI', system-ui, sans-serif"
+      }}>
+        <div style={{ fontSize: 64, animation: 'bounce 2s infinite' }}>⏳</div>
+        <style>{`@keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }`}</style>
+        <div style={{ color: '#fff', fontSize: 24, fontWeight: 900, letterSpacing: '-0.5px' }}>Esperando al Administrador</div>
+        <div style={{ color: '#64748b', fontSize: 15, textAlign: 'center', maxWidth: 400, padding: '0 20px', lineHeight: 1.5 }}>
+          El concurso está activo, pero el administrador aún no ha habilitado ningún módulo.
+        </div>
+      </div>
+    );
+  }
+
+  if (activeModule.type === 'sequential') {
+    return (
+      <div style={{
+        background: 'linear-gradient(135deg, #0a0f1e 0%, #0f172a 50%, #020617 100%)',
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 16, fontFamily: "'Segoe UI', system-ui, sans-serif"
+      }}>
+        <div style={{ fontSize: 64 }}>📝</div>
+        <div style={{ color: '#fbbf24', fontSize: 12, fontWeight: 900, letterSpacing: '0.25em', textTransform: 'uppercase' }}>
+          Módulo en Curso (Celulares)
+        </div>
+        <div style={{ color: '#fff', fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px' }}>{activeModule.title}</div>
+        <div style={{ color: '#64748b', fontSize: 15, textAlign: 'center', maxWidth: 450, padding: '0 20px', lineHeight: 1.5 }}>
+          Este es un módulo secuencial. Los participantes están respondiendo las preguntas directamente desde sus dispositivos móviles.
+        </div>
+      </div>
+    );
+  }
+
+  const questions = activeModule.questions || [];
 
   return (
     <div style={{
@@ -192,7 +230,7 @@ const FinalContestPresenter = ({ sessionId }) => {
           ) : (
             <>
               <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 24 }}>
-                Selecciona un número para revelar la pregunta
+                Módulo Activo: {activeModule.title}
               </div>
               <div style={{
                 display: 'grid',
@@ -207,7 +245,7 @@ const FinalContestPresenter = ({ sessionId }) => {
                   return (
                     <button
                       key={q.id}
-                      onClick={() => handleReveal(contestaModule.id, q, idx)}
+                      onClick={() => handleReveal(activeModule.id, q, idx)}
                       style={{
                         aspectRatio: '1',
                         borderRadius: 16,
@@ -278,13 +316,16 @@ const FinalContestPresenter = ({ sessionId }) => {
               color: '#fbbf24',
               fontSize: 11,
               fontWeight: 700,
-              letterSpacing: '0.2em',
+              letterSpacing: '0.1em',
               textTransform: 'uppercase',
               display: 'inline-flex',
               width: 'fit-content',
-              marginBottom: 24
+              marginBottom: 24,
+              gap: 8
             }}>
-              Pregunta #{(session.modules?.find(m => m.type === 'contesta')?.questions || []).findIndex(q => q.id === activeQuestion.question.id) + 1}
+              <span>{activeModule.title}</span>
+              <span style={{ opacity: 0.5 }}>|</span>
+              <span>Pregunta #{questions.findIndex(q => q.id === activeQuestion.question.id) + 1}</span>
             </div>
             <div style={{
               color: '#fff',

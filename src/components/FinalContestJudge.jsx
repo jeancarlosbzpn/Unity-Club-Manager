@@ -172,9 +172,60 @@ const FinalContestJudge = ({ sessionId }) => {
     );
   }
 
-  // ── Judge main view ────────────────────────────────────────────────────────
-  const contestaModule = session.modules?.find(m => m.type === 'contesta');
-  const questions = contestaModule?.questions || [];
+  const activeModuleIndex = session.activeModuleIndex ?? -1;
+  const activeModule = session.modules?.[activeModuleIndex];
+
+  if (activeModuleIndex === -1 || !activeModule) {
+    return (
+      <div style={styles.fullscreen}>
+        <div style={{
+          background: 'rgba(15,23,42,0.9)',
+          border: '1px solid rgba(129,140,248,0.25)',
+          borderRadius: 24,
+          padding: '40px',
+          width: '100%',
+          maxWidth: 420,
+          backdropFilter: 'blur(20px)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 64, marginBottom: 16, animation: 'bounceJudge 2s infinite' }}>⏳</div>
+          <style>{`@keyframes bounceJudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }`}</style>
+          <div style={{ color: '#fff', fontSize: 20, fontWeight: 900, marginBottom: 8 }}>Esperando Módulo Activo</div>
+          <div style={{ color: '#64748b', fontSize: 14, lineHeight: 1.5 }}>
+            El concurso está en curso, pero el administrador aún no ha habilitado ningún módulo.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeModule.type === 'sequential') {
+    return (
+      <div style={styles.fullscreen}>
+        <div style={{
+          background: 'rgba(15,23,42,0.9)',
+          border: '1px solid rgba(129,140,248,0.25)',
+          borderRadius: 24,
+          padding: '40px',
+          width: '100%',
+          maxWidth: 420,
+          backdropFilter: 'blur(20px)',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>📝</div>
+          <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Módulo Secuencial Activo
+          </div>
+          <div style={{ color: '#fff', fontSize: 22, fontWeight: 900, marginBottom: 12 }}>{activeModule.title}</div>
+          <div style={{ color: '#64748b', fontSize: 14, lineHeight: 1.5 }}>
+            Los concursantes están respondiendo preguntas secuenciales directamente desde sus celulares. Este portal se activará cuando comience un módulo de "Contesta".
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const questions = activeModule.questions || [];
 
   return (
     <div style={{
@@ -215,7 +266,7 @@ const FinalContestJudge = ({ sessionId }) => {
         {/* Left: Board */}
         <div style={{ width: 280, flexShrink: 0 }}>
           <div style={{ color: '#64748b', fontSize: 11, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 16 }}>
-            Tablero
+            Tablero: {activeModule.title}
           </div>
           {questions.length === 0 ? (
             <div style={{ color: '#475569', fontSize: 14, textAlign: 'center', marginTop: 40 }}>
@@ -280,8 +331,10 @@ const FinalContestJudge = ({ sessionId }) => {
                 padding: '28px',
                 marginBottom: 16
               }}>
-                <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 12 }}>
-                  Pregunta #{questions.findIndex(q => q.id === activeQuestion.question.id) + 1}
+                <div style={{ color: '#818cf8', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>
+                  <span>{activeModule.title}</span>
+                  <span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
+                  <span>Pregunta #{questions.findIndex(q => q.id === activeQuestion.question.id) + 1}</span>
                 </div>
                 <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, lineHeight: 1.4 }}>
                   {activeQuestion.question.questionText}
