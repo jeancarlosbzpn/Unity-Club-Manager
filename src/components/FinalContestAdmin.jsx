@@ -2,8 +2,9 @@ import React, { useState, useCallback } from 'react';
 import {
   Trophy, Plus, Play, Square, Trash2, Edit2, ChevronDown, ChevronRight,
   Users, ExternalLink, Copy, CheckCircle, AlertCircle, Award, Save,
-  ToggleLeft, ToggleRight, BookOpen, Zap, Eye, RefreshCw, X, Star
+  ToggleLeft, ToggleRight, BookOpen, Zap, Eye, RefreshCw, X, Star, Upload
 } from 'lucide-react';
+import ImportQuestionsModal from './ImportQuestionsModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FinalContestAdmin
@@ -37,6 +38,7 @@ const FinalContestAdmin = ({
   const [selectedSession, setSelectedSession] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // ── Form state ─────────────────────────────────────────────────────────────
   const emptyForm = {
@@ -462,6 +464,16 @@ const FinalContestAdmin = ({
       {/* Modules */}
       {activeFormTab === 'modules' && (
         <div className="space-y-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Lista de Módulos</span>
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-3 py-1.5 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all"
+            >
+              <Upload className="w-3.5 h-3.5" /> Importar Preguntas (Excel/JSON)
+            </button>
+          </div>
           {form.modules.map((mod, modIdx) => (
             <div key={mod.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
               {/* Module header */}
@@ -851,6 +863,11 @@ const FinalContestAdmin = ({
       {activeTab === 'create' && renderForm()}
       {activeTab === 'monitor' && renderMonitor()}
       {showParticipantsModal && renderParticipantsModal()}
+      <ImportQuestionsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={(importedModules) => setForm(p => ({ ...p, modules: importedModules }))}
+      />
     </div>
   );
 };

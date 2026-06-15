@@ -3,9 +3,10 @@ import {
   BookOpen, Plus, Play, Square, Check, X, Trash2, Edit2, 
   ChevronRight, ChevronDown, Award, Users, RefreshCw, Clock, 
   FileText, Save, ArrowRight, ArrowLeft, ToggleLeft, ToggleRight,
-  AlertCircle, Download, Image as ImageIcon, Trophy
+  AlertCircle, Download, Image as ImageIcon, Trophy, Upload
 } from 'lucide-react';
 import FinalContestAdmin from './FinalContestAdmin';
+import ImportQuestionsModal from './ImportQuestionsModal';
 
 const BiblicalConnectionAdmin = ({
   sessions = [],
@@ -545,6 +546,7 @@ const BiblicalConnectionAdmin = ({
 
   // Filter list states
   const [listFilter, setListFilter] = useState('all'); // 'all' | 'active' | 'draft' | 'completed'
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Open / Close Form Helpers
   const handleNewSession = () => {
@@ -1336,6 +1338,19 @@ const BiblicalConnectionAdmin = ({
             {/* SUB-VIEW: MODULES & QUESTIONS BUILDER */}
             {activeFormTab === 'modules' && (
               <div className="space-y-6">
+                <div className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                  <div>
+                    <h4 className="text-sm font-black text-slate-800 dark:text-white">Módulos del Concurso</h4>
+                    <p className="text-xs text-slate-450 dark:text-slate-400 mt-0.5">Agrega preguntas manualmente o súbelas desde un archivo.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="px-3.5 py-2 bg-indigo-50 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all shadow-sm"
+                  >
+                    <Upload className="w-4 h-4" /> Importar Preguntas (Excel/JSON)
+                  </button>
+                </div>
                 
                 {/* Modules Sidebar / List */}
                 <div className="flex flex-col gap-6">
@@ -2489,6 +2504,11 @@ const BiblicalConnectionAdmin = ({
           </div>
         </div>
       )}
+      <ImportQuestionsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={(importedModules) => setSessionFormData(p => ({ ...p, modules: importedModules }))}
+      />
     </div>
   );
 };
