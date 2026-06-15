@@ -340,6 +340,15 @@ const FinalContestAdmin = ({
     setSavingRanking(false);
   };
 
+  const handleKickJudge = async (sessionId, judgeName) => {
+    if (!confirm(`¿Desconectar al juez "${judgeName}"?`)) return;
+    const sess = sessions.find(s => s.id === sessionId);
+    if (!sess) return;
+    const updatedJudges = (sess.connectedJudges || []).filter(j => j.name !== judgeName);
+    await onUpdateSessionStatus(sessionId, { connectedJudges: updatedJudges });
+    setSelectedSession(prev => prev ? { ...prev, connectedJudges: updatedJudges } : prev);
+  };
+
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDERS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -850,8 +859,15 @@ const FinalContestAdmin = ({
           ) : (
             <div className="flex flex-wrap gap-2">
               {(sess.connectedJudges || []).map((j, i) => (
-                <span key={i} className="px-3 py-1 bg-white border border-indigo-200 rounded-full text-xs font-bold text-indigo-700">
-                  ⚖️ {j.name}
+                <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-indigo-200 rounded-full text-xs font-bold text-indigo-700 shadow-sm">
+                  <span>⚖️ {j.name}</span>
+                  <button
+                    onClick={() => handleKickJudge(sess.id, j.name)}
+                    className="p-0.5 hover:bg-red-50 text-indigo-400 hover:text-red-500 rounded-full transition-colors"
+                    title="Desconectar Juez"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </span>
               ))}
             </div>
